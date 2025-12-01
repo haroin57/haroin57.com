@@ -1,0 +1,9 @@
+[
+  {
+    "slug": "first_blog",
+    "title": "ReactでWebサイトを実装した",
+    "summary": "Vite + React + Tailwindで個人サイトを作った話。",
+    "createdAt": "2025-11-30",
+    "html": "<p>ここに本文を書きます。</p>\n<ul>\n<li>箇条書き</li>\n<li>コード</li>\n<li>リンク など…</li>\n</ul>\n"
+  }
+]
