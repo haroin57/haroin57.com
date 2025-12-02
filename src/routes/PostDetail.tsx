@@ -47,7 +47,7 @@ function PostDetail() {
               ) : null}
               {post.html ? (
                 <div
-                  className="prose prose-invert max-w-none font-morisawa-dragothic"
+                  className="prose prose-invert max-w-none font-morisawa-dragothic text-sm sm:text-[15px]"
                   style={{ fontWeight: 500, color: 'var(--fg-strong)' }}
                   dangerouslySetInnerHTML={{ __html: post.html }}
                 />
@@ -56,7 +56,7 @@ function PostDetail() {
             {sortedPosts.length > 0 ? (
               <section className="mt-12 space-y-3">
                 <h2 className="text-xl font-semibold text-[color:var(--fg-strong,inherit)]">More posts</h2>
-                <ul className="font-vdl-logomaru list-disc space-y-2 pl-5">
+                <ul className="font-vdl-logomaru list-disc space-y-2 pl-5 text-sm sm:text-[15px]">
                   {sortedPosts.map((p) => (
                     <li key={p.slug ?? p.title}>
                       <Link

@@ -49,7 +49,7 @@ function Posts() {
                 </Link>
               </h2>
               {p.summary ? (
-                <p className="text-sm text-[color:var(--fg,inherit)] opacity-80">{p.summary}</p>
+                <p className="text-xs sm:text-sm text-[color:var(--fg,inherit)] opacity-80">{p.summary}</p>
               ) : null}
             </li>
           ))}
