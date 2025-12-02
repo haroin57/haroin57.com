@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useEffect } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
+import AccessCounter from '../components/AccessCounter'
 
 type Post = { slug?: string; title?: string; html?: string; summary?: string; createdAt?: string }
 const posts: Post[] = Array.isArray(postsData) ? (postsData as Post[]) : []
@@ -60,7 +61,10 @@ function Posts() {
         className="mt-12 border-t border-white/20 px-6 py-6 flex items-center justify-between"
         style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
       >
-        <div className="text-xs opacity-70">© haroin</div>
+        <div className="text-xs opacity-70 flex items-center gap-3">
+          <AccessCounter />
+          <span>© haroin</span>
+        </div>
         <div className="flex items-center gap-4">
           <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
             <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
