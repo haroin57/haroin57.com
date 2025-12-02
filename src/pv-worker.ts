@@ -28,10 +28,20 @@ function buildCorsHeaders(origin: string) {
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url)
-    // /api/pv 以外は静的アセットにフォールバック
+    // /api/pv 以外は静的アセットにフォールバック（SPA対応でindex.html返却）
     if (!url.pathname.startsWith('/api/pv')) {
       if (env.ASSETS && typeof env.ASSETS.fetch === 'function') {
-        return env.ASSETS.fetch(req)
+        const assetRes = await env.ASSETS.fetch(req)
+        // アセットが見つかった場合はそのまま返却
+        if (assetRes.status !== 404) return assetRes
+        // 拡張子なし＋HTMLリクエストなら index.html を返す（SPAルーティング用）
+        const accept = req.headers.get('accept') || ''
+        const hasExt = /\.[^\/]+$/.test(url.pathname)
+        if (!hasExt && accept.includes('text/html')) {
+          const indexUrl = new URL('/index.html', req.url)
+          return env.ASSETS.fetch(new Request(indexUrl.toString(), req))
+        }
+        return assetRes
       }
       return new Response('not found', { status: 404 })
     }
