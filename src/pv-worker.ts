@@ -26,6 +26,7 @@ export default {
     const origin = req.headers.get('origin') || ''
     const referer = req.headers.get('referer') || ''
     const corsHeaders = buildCorsHeaders(allowedOrigin)
+    const started = Date.now()
 
     // CORS preflight
     if (req.method === 'OPTIONS') {
@@ -43,6 +44,7 @@ export default {
         ? referer.startsWith(allowedOrigin)
         : origin === allowedOrigin
     if (!isAllowed) {
+      console.warn('pv forbidden', { origin, referer })
       return new Response('forbidden', { status: 403, headers: corsHeaders })
     }
 
@@ -53,6 +55,8 @@ export default {
     if (alreadyHit) {
       // レート超過時は現在値だけ返す（加算しない）
       const current = Number((await env.HAROIN_PV.get('total')) ?? '0')
+      const duration = Date.now() - started
+      console.log('pv rate-limited', { ip, durationMs: duration, total: current })
       return new Response(JSON.stringify({ total: current }), {
         status: 200,
         headers: { ...corsHeaders, 'content-type': 'application/json' },
@@ -67,6 +71,8 @@ export default {
     const current = Number((await env.HAROIN_PV.get(key)) ?? '0')
     const next = Number.isFinite(current) ? current + 1 : 1
     await env.HAROIN_PV.put(key, String(next))
+    const duration = Date.now() - started
+    console.log('pv ok', { ip, durationMs: duration, total: next })
 
     return new Response(JSON.stringify({ total: next }), {
       headers: { ...corsHeaders, 'content-type': 'application/json' },
