@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 // サーバーで集計するPVカウンター
 // 期待するエンドポイント: POST { } -> { total: number }
 // .envなどで VITE_PV_ENDPOINT を指定できるようにしています。
-const API_ENDPOINT = 'https://haroin-pv.harutomann2003.workers.dev'
+const API_ENDPOINT = '/api/pv' // default endpoint
 const CACHE_KEY = 'haroin-pv-last'
 
 function AccessCounter() {
