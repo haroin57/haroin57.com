@@ -33,13 +33,13 @@ function Posts() {
             Home
           </Link>
         </header>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
           Posts
         </h1>
         <ul className="space-y-6 font-vdl-logomaru">
           {posts.map((p, idx) => (
             <li key={p.slug ?? p.title ?? idx} className="space-y-1">
-              <h2 className="text-2xl text-[color:var(--fg-strong,inherit)]">
+              <h2 className="text-lg sm:text-xl text-[color:var(--fg-strong,inherit)]">
                 <Link
                   to={p.slug ? `/posts/${p.slug}` : '/posts'}
                   className="underline-thin hover:text-accent"
