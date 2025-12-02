@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -90,21 +90,8 @@ body {
   font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
 }
 
-.font-morisawa {
-  font-family: "gothic mb101", "morisawa", "bc-barell", "Space Grotesk", system-ui, -apple-system, sans-serif;
-}
-
-.font-source-han-sans {
-  font-family: "Source Han Sans", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "bc-barell", "Space Grotesk", system-ui, -apple-system, sans-serif;
-}
-
 .font-ab-countryroad {
   font-family: ab-countryroad, "bc-barell", "Space Grotesk", system-ui, -apple-system, sans-serif;
-}
-
-.font-vdl-marugothic {
-  font-family: vdl-v7marugothic, "Hiragino Sans", "Yu Gothic", system-ui, -apple-system, sans-serif;
-  font-weight: 500;
 }
 
 .font-vdl-logomaru {
