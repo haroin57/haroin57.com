@@ -162,4 +162,16 @@ img {
     text-decoration-thickness: 0.5px;
     text-underline-offset: 4px;
   }
+
+.footer-logo {
+  transition: filter 200ms ease;
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+  @media (prefers-color-scheme: dark) {
+    .footer-logo {
+      filter: invert(1) hue-rotate(180deg);
+    }
+  }
 }

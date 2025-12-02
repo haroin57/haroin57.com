@@ -1,10 +1,15 @@
 import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
 
 type Post = { slug?: string; title?: string; html?: string; summary?: string; createdAt?: string }
 const posts: Post[] = Array.isArray(postsData) ? (postsData as Post[]) : []
 
 function Posts() {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [])
+
   return (
     <div className="relative overflow-hidden">
       <div className="pointer-events-none fixed inset-0 -z-10 flex items-center justify-center">
@@ -58,10 +63,10 @@ function Posts() {
         <div className="text-xs opacity-70">© haroin</div>
         <div className="flex items-center gap-4">
           <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/X_logo.svg" alt="X profile" className="h-6 w-6" />
+            <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
           </a>
           <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/github.svg" alt="GitHub profile" className="h-7 w-7" />
+            <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
           </a>
         </div>
       </footer>

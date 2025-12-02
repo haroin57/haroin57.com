@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import postsData from './data/posts.json' with { type: 'json' }
 
@@ -21,6 +21,14 @@ const latestPosts: PostMeta[] = [...allPosts]
 
 function App() {
   const [openInterests, setOpenInterests] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const navigate = useNavigate()
+
+  const handlePostsClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    setLeaving(true)
+    setTimeout(() => navigate('/posts'), 180)
+  }
 
   return (
     <div className="relative overflow-hidden">
@@ -34,7 +42,7 @@ function App() {
       </div>
 
       <main
-        className="relative mx-auto min-h-screen max-w-4xl px-6 pb-20 pt-8 page-fade"
+        className={`relative mx-auto min-h-screen max-w-4xl px-6 pb-20 pt-8 ${leaving ? 'page-exit' : 'page-fade'}`}
         style={{ fontFamily: `"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif`, color: 'var(--fg)' }}
       >
         <header className="flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
@@ -66,7 +74,7 @@ function App() {
               type="button"
               onClick={() => setOpenInterests((v) => !v)}
               aria-expanded={openInterests}
-              className="group relative inline-flex items-center justify-center overflow-hidden rounded-md border border-white/20 bg-transparent px-4 py-2 text-lg font-semibold duration-500"
+              className="group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-transparent px-4 py-2 text-lg font-semibold"
               style={{ color: 'var(--fg)' }}
             >
               <div className="translate-y-0 opacity-100 transition duration-500 ease-in-out group-hover:-translate-y-[150%] group-hover:opacity-0">
@@ -79,7 +87,8 @@ function App() {
                   viewBox="0 0 15 15"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
+                  className="h-6 w-6 transition-transform duration-300"
+                  style={{ transform: openInterests ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 >
                   <path
                     d="M7.5 2C7.77614 2 8 2.22386 8 2.5L8 11.2929L11.1464 8.14645C11.3417 7.95118 11.6583 7.95118 11.8536 8.14645C12.0488 8.34171 12.0488 8.65829 11.8536 8.85355L7.85355 12.8536C7.75979 12.9473 7.63261 13 7.5 13C7.36739 13 7.24021 12.9473 7.14645 12.8536L3.14645 8.85355C2.95118 8.65829 2.95118 8.34171 3.14645 8.14645C3.34171 7.95118 3.65829 7.95118 3.85355 8.14645L7 11.2929L7 2.5C7 2.22386 7.22386 2 7.5 2Z"
@@ -107,10 +116,11 @@ function App() {
           <div className="flex items-center justify-between">
             <Link
               to="/posts"
-              className="group relative inline-flex items-center justify-center overflow-hidden rounded-md border border-white/20 bg-transparent px-4 py-2 text-lg font-semibold hover:bg-white/10"
+              onClick={handlePostsClick}
+              className="relative inline-flex h-12 items-center justify-center overflow-hidden rounded border border-white/20 bg-transparent px-5 py-2.5 text-lg font-semibold transition-all duration-300 hover:bg-white/10"
               style={{ color: 'var(--fg)' }}
             >
-              Posts (ja)
+              <span className="relative">Posts (ja)</span>
             </Link>
           </div>
           <div className="glass-panel">
@@ -134,10 +144,10 @@ function App() {
         <div className="text-xs opacity-70">© haroin</div>
         <div className="flex items-center gap-4">
           <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/X_logo.svg" alt="X profile" className="h-6 w-6" />
+            <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
           </a>
           <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/github.svg" alt="GitHub profile" className="h-7 w-7" />
+            <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
           </a>
         </div>
       </footer>

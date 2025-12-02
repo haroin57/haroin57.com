@@ -39,7 +39,7 @@ function PostDetail() {
         ) : (
           <>
             <article className="space-y-4">
-              <h1 className="text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong)] md:text-4xl">
+              <h1 className="text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)] md:text-4xl">
                 {post.title}
               </h1>
               {post.createdAt ? (
@@ -82,10 +82,10 @@ function PostDetail() {
         <div className="text-xs opacity-70">© haroin</div>
         <div className="flex items-center gap-4">
           <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/X_logo.svg" alt="X profile" className="h-6 w-6" />
+            <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
           </a>
           <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/github.svg" alt="GitHub profile" className="h-7 w-7" />
+            <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
           </a>
         </div>
       </footer>
