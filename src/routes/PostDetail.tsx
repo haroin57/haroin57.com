@@ -39,7 +39,7 @@ function PostDetail() {
         ) : (
           <>
             <article className="space-y-4">
-              <h1 className="text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)] md:text-4xl">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
                 {post.title}
               </h1>
               {post.createdAt ? (

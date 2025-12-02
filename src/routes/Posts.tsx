@@ -33,7 +33,7 @@ function Posts() {
             Home
           </Link>
         </header>
-        <h1 className="text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)] md:text-4xl">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
           Posts
         </h1>
         <ul className="space-y-6 font-vdl-logomaru">
