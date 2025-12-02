@@ -1,12 +1,5 @@
 [
   {
-    "slug": "first_blog copy",
-    "title": "ReactでWebサイトを実装した",
-    "summary": "Vite + React + Tailwindで個人サイトを作った",
-    "createdAt": "2025-11-30",
-    "html": "<p>鋭意執筆中！！！</p>\n"
-  },
-  {
     "slug": "first_blog",
     "title": "ReactでWebサイトを実装した",
     "summary": "Vite + React + Tailwindで個人サイトを作った",
