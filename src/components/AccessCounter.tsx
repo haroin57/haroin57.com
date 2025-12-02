@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 // サーバーで集計するPVカウンター
 // 期待するエンドポイント: POST { } -> { total: number }
 // .envなどで VITE_PV_ENDPOINT を指定できるようにしています。
-const API_ENDPOINT = import.meta.env.VITE_PV_ENDPOINT || '/api/pv'
+const API_ENDPOINT = "https://haroin57-web.harutomann2003.workers.dev"
 
 function AccessCounter() {
   const [count, setCount] = useState<number | null>(null)
