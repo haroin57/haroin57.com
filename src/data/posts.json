@@ -1,9 +1,16 @@
 [
   {
+    "slug": "first_blog copy",
+    "title": "ReactでWebサイトを実装した",
+    "summary": "Vite + React + Tailwindで個人サイトを作った",
+    "createdAt": "2025-11-30",
+    "html": "<p>鋭意執筆中！！！</p>\n"
+  },
+  {
     "slug": "first_blog",
     "title": "ReactでWebサイトを実装した",
-    "summary": "Vite + React + Tailwindで個人サイトを作った話。",
+    "summary": "Vite + React + Tailwindで個人サイトを作った",
     "createdAt": "2025-11-30",
-    "html": "<p>ここに本文を書きます。</p>\n<ul>\n<li>箇条書き</li>\n<li>コード</li>\n<li>リンク など…</li>\n</ul>\n"
+    "html": "<p>鋭意執筆中！！！</p>\n"
   }
 ]

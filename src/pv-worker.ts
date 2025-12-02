@@ -4,9 +4,14 @@ type KVNamespace = {
   put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>
 }
 
+type StaticAssetFetcher = {
+  fetch: (req: Request) => Promise<Response>
+}
+
 type Env = {
   HAROIN_PV: KVNamespace
   ALLOWED_ORIGIN?: string
+  ASSETS: StaticAssetFetcher
 }
 
 const DEFAULT_ORIGIN = 'https://haroin57.com'
@@ -22,6 +27,12 @@ function buildCorsHeaders(origin: string) {
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
+    const url = new URL(req.url)
+    // /api/pv 以外は静的アセットにフォールバック
+    if (!url.pathname.startsWith('/api/pv')) {
+      return env.ASSETS.fetch(req)
+    }
+
     const allowedOrigin = env.ALLOWED_ORIGIN || DEFAULT_ORIGIN
     const origin = req.headers.get('origin') || ''
     const referer = req.headers.get('referer') || ''
