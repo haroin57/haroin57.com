@@ -1,8 +1,9 @@
 {
-  "name": "haroin-pv",
+  "name": "haroin57-web",
   "main": "src/pv-worker.ts",
   "account_id": "fcf1f31d2f7647cf7be50abe38ef69cf",
   "compatibility_date": "2025-12-02",
+  "assets": { "directory": "./dist" },
   "kv_namespaces": [
     { "binding": "HAROIN_PV", "id": "186445ba0495498facbca1e8c5c67bcc", "preview_id": "e16a6f8f2e954f4cacf9a50c275e0169" }
   ]
