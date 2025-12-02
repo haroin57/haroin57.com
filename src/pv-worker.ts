@@ -30,7 +30,10 @@ export default {
     const url = new URL(req.url)
     // /api/pv 以外は静的アセットにフォールバック
     if (!url.pathname.startsWith('/api/pv')) {
-      return env.ASSETS.fetch(req)
+      if (env.ASSETS && typeof env.ASSETS.fetch === 'function') {
+        return env.ASSETS.fetch(req)
+      }
+      return new Response('not found', { status: 404 })
     }
 
     const allowedOrigin = env.ALLOWED_ORIGIN || DEFAULT_ORIGIN
