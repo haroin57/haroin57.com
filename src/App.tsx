@@ -61,7 +61,7 @@ function App() {
             <h1 className="text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong)] md:text-4xl">
               haroin57 web
             </h1>
-            <p className="text-lg leading-relaxed">
+            <p className="text-sm sm:text-base leading-relaxed">
               I&apos;m haroin, an engineering student belonging to Shinshu University, interested in distributed systems, web
               development, and desktop music.
             </p>
