@@ -28,23 +28,27 @@ function buildCorsHeaders(origin: string) {
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url)
-    // /api/pv 以外は静的アセットにフォールバック（SPA対応でindex.html返却）
+    // /api/pv 以外は静的アセット（ASSETS）へ。見つからない場合は SPA 用に index.html を返す。
     if (!url.pathname.startsWith('/api/pv')) {
       if (env.ASSETS && typeof env.ASSETS.fetch === 'function') {
+        // GET/HEAD 以外はそのまま 404/405 を返す
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+          return env.ASSETS.fetch(req)
+        }
+
         const assetRes = await env.ASSETS.fetch(req)
-        // アセットが見つかった場合はそのまま返却
         if (assetRes.status !== 404) return assetRes
-        // 拡張子なし＋GET/HEADで、HTMLまたは*/ * なら index.html を返す（SPAルーティング用）
+
+        // 拡張子なし＋HTML希望なら index.html を返す（SPAルーティング）
         const accept = req.headers.get('accept') || ''
         const hasExt = /\.[^\/]+$/.test(url.pathname)
-        const isPageRequest =
-          (req.method === 'GET' || req.method === 'HEAD') &&
-          !hasExt &&
-          (accept.includes('text/html') || accept.includes('*/*'))
-        if (isPageRequest) {
+        const wantsHtml = accept.includes('text/html') || accept.includes('*/*')
+        if (!hasExt && wantsHtml) {
           const indexUrl = new URL('/index.html', req.url)
-          return env.ASSETS.fetch(new Request(indexUrl.toString(), req))
+          const indexReq = new Request(indexUrl.toString(), { method: 'GET', headers: req.headers })
+          return env.ASSETS.fetch(indexReq)
         }
+
         return assetRes
       }
       return new Response('not found', { status: 404 })
