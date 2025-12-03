@@ -17,11 +17,23 @@ async function main() {
     const full = await fs.readFile(path.join(POSTS_DIR, file), 'utf8')
     const { data, content } = matter(full) // frontmatterが無ければ data は空
     const processed = await remark().use(html).process(content)
+
+    const tags =
+      Array.isArray(data.tags) && data.tags.length > 0
+        ? data.tags.map((t: unknown) => String(t))
+        : typeof data.tags === 'string'
+          ? data.tags
+              .split(',')
+              .map((t: string) => t.trim())
+              .filter(Boolean)
+          : []
+
     posts.push({
       slug: file.replace(/\.md$/, ''),
       title: data.title || file,
       summary: data.summary || '',
       createdAt: data.date || null,
+      tags,
       html: processed.toString(),
     })
   }
