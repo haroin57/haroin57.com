@@ -34,10 +34,14 @@ export default {
         const assetRes = await env.ASSETS.fetch(req)
         // アセットが見つかった場合はそのまま返却
         if (assetRes.status !== 404) return assetRes
-        // 拡張子なし＋HTMLリクエストなら index.html を返す（SPAルーティング用）
+        // 拡張子なし＋GET/HEADで、HTMLまたは*/ * なら index.html を返す（SPAルーティング用）
         const accept = req.headers.get('accept') || ''
         const hasExt = /\.[^\/]+$/.test(url.pathname)
-        if (!hasExt && accept.includes('text/html')) {
+        const isPageRequest =
+          (req.method === 'GET' || req.method === 'HEAD') &&
+          !hasExt &&
+          (accept.includes('text/html') || accept.includes('*/*'))
+        if (isPageRequest) {
           const indexUrl = new URL('/index.html', req.url)
           return env.ASSETS.fetch(new Request(indexUrl.toString(), req))
         }
@@ -47,6 +51,13 @@ export default {
     }
 
     const allowedOrigin = env.ALLOWED_ORIGIN || DEFAULT_ORIGIN
+    const allowedHost = (() => {
+      try {
+        return new URL(allowedOrigin).host
+      } catch {
+        return ''
+      }
+    })()
     const origin = req.headers.get('origin') || ''
     const referer = req.headers.get('referer') || ''
     const corsHeaders = buildCorsHeaders(allowedOrigin)
@@ -64,9 +75,9 @@ export default {
 
     // Origin/Referer チェック（他サイトからの不正加算防止）
     const isAllowed =
-      origin === '' // ブラウザ以外のクライアントは referer で確認
-        ? referer.startsWith(allowedOrigin)
-        : origin === allowedOrigin
+      origin === allowedOrigin ||
+      (origin === '' && referer.startsWith(allowedOrigin)) ||
+      (origin === '' && referer === '' && url.host === allowedHost)
     if (!isAllowed) {
       console.warn('pv forbidden', { origin, referer })
       return new Response('forbidden', { status: 403, headers: corsHeaders })
