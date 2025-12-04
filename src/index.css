@@ -7,9 +7,10 @@
 :root {
   color-scheme: dark;
   --fg: #e2e8f0;
-  --fg-strong: #f8fafc;
+  --fg-strong: #e2e8f0;
   --overlay: 0.15;
 }
+
 
 @media (prefers-color-scheme: light) {
   :root {
@@ -90,6 +91,28 @@ body {
   font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
 }
 
+/* Local project font: a-otf-gothic-mb101-pr6n
+   Place the font files in `public/fonts/` with names:
+   - a-otf-gothic-mb101-pr6n.woff2
+   - a-otf-gothic-mb101-pr6n.woff
+   - a-otf-gothic-mb101-pr6n.otf
+*/
+@font-face {
+  font-family: 'a-otf-gothic-mb101-pr6n';
+  src: url('/fonts/a-otf-gothic-mb101-pr6n.woff2') format('woff2'),
+       url('/fonts/a-otf-gothic-mb101-pr6n.woff') format('woff'),
+       url('/fonts/a-otf-gothic-mb101-pr6n.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-a-otf-gothic {
+  font-family: 'a-otf-gothic-mb101-pr6n', sans-serif;
+  font-weight: 300;
+  font-style: normal;
+}
+
 .font-ab-countryroad {
   font-family: ab-countryroad, "bc-barell", "Space Grotesk", system-ui, -apple-system, sans-serif;
 }
@@ -129,6 +152,81 @@ img {
 .prose li {
   margin-top: 0.15rem;
   margin-bottom: 0.15rem;
+}
+
+.prose p {
+  margin: 0.75rem 0;
+  line-height: 1.7;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  margin: 1.2rem 0 0.6rem;
+  font-weight: 600;
+  color: var(--fg-strong);
+}
+
+.prose h1 {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.prose h2 {
+  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+}
+
+.prose h3 {
+  font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+}
+
+.prose a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--fg);
+}
+
+.prose a:hover {
+  color: var(--fg-strong);
+}
+
+.prose pre {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  overflow-x: auto;
+  margin: 0.85rem 0 1rem;
+}
+
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.95rem;
+}
+
+.prose pre code {
+  display: block;
+  white-space: pre;
+}
+
+.prose .remark-code-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 -0.4rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--fg-strong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px 6px 0 0;
+}
+
+.prose .remark-code-title + pre {
+  margin-top: 0.35rem;
+  border-radius: 0 6px 6px 6px;
 }
 
 @layer components {
