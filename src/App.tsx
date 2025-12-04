@@ -75,7 +75,7 @@ function App() {
               type="button"
               onClick={() => setOpenInterests((v) => !v)}
               aria-expanded={openInterests}
-              className="group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-transparent px-4 py-2 text-lg font-semibold"
+              className="group relative inline-flex h-12 w-36 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-transparent px-5 py-2 text-lg font-semibold"
               style={{ color: 'var(--fg)' }}
             >
               <div className="translate-y-0 opacity-100 transition duration-500 ease-in-out group-hover:-translate-y-[150%] group-hover:opacity-0">
@@ -118,7 +118,7 @@ function App() {
             <Link
               to="/posts"
               onClick={handlePostsClick}
-              className="relative inline-flex h-12 items-center justify-center overflow-hidden rounded border border-white/20 bg-transparent px-5 py-2.5 text-lg font-semibold transition-all duration-300 hover:bg-white/10"
+              className="relative inline-flex h-12 w-36 items-center justify-center overflow-hidden rounded border border-white/20 bg-transparent px-5 py-2.5 text-lg font-semibold transition-all duration-300 hover:bg-white/10"
               style={{ color: 'var(--fg)' }}
             >
               <span className="relative">Posts (ja)</span>
