@@ -81,7 +81,7 @@ function App() {
               <div className="translate-y-0 opacity-100 transition duration-500 ease-in-out md:group-hover:-translate-y-[150%] md:group-hover:opacity-0">
                 Interests
               </div>
-              <div className="absolute translate-y-0 opacity-100 transition duration-500 ease-in-out md:translate-y-[150%] md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100">
+              <div className="absolute translate-y-full opacity-0 transition duration-500 ease-in-out md:translate-y-[150%] md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100">
                 <svg
                   width="15"
                   height="15"

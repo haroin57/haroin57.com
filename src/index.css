@@ -23,7 +23,7 @@
     position: fixed;
     inset: 0;
     pointer-events: none;
-    background: rgba(255,255,255,0.50);
+    background: rgba(255,255,255,0.75);
     mix-blend-mode: screen; /* 白を透かす */
     z-index: 0;             /* コンテンツより背面、背景画像より前面 */
   }
@@ -102,7 +102,7 @@ body {
   src: url('/fonts/a-otf-gothic-mb101-pr6n.woff2') format('woff2'),
        url('/fonts/a-otf-gothic-mb101-pr6n.woff') format('woff'),
        url('/fonts/a-otf-gothic-mb101-pr6n.otf') format('opentype');
-  font-weight: 300;
+  font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
@@ -227,6 +227,18 @@ img {
 .prose .remark-code-title + pre {
   margin-top: 0.35rem;
   border-radius: 0 6px 6px 6px;
+}
+
+@media (prefers-color-scheme: light) {
+  .prose pre {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+
+  .prose .remark-code-title {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.12);
+  }
 }
 
 @layer components {

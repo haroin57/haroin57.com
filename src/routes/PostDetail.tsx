@@ -41,7 +41,7 @@ function PostDetail() {
           <p className="text-[color:var(--fg,inherit)]">Post not found.</p>
         ) : (
           <>
-            <article className="space-y-4">
+            <article className="space-y-4 w-full">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
                 {post.title}
               </h1>
@@ -63,7 +63,7 @@ function PostDetail() {
               ) : null}
               {post.html ? (
                 <div
-                  className="prose prose-invert font-extralight max-w-none font-a-otf-gothic text-base sm:text-[15px]"
+                  className="prose prose-invert font-medium font-a-otf-gothic text-sm sm:text-[15px] w-full"
                   style={{ color: 'var(--fg-strong)' }}
                   dangerouslySetInnerHTML={{ __html: post.html }}
                 />
