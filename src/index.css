@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
+@import 'katex/dist/katex.min.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -217,12 +219,31 @@ img {
   white-space: pre;
 }
 
+.prose pre .line {
+  display: block;
+  padding-right: 1rem;
+}
+
+.prose pre .line[data-line-number]::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 2.5rem;
+  margin-right: 0.75rem;
+  text-align: right;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.prose pre {
+  counter-reset: line;
+}
+
 .prose .remark-code-title {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  margin: 0 0 -0.4rem;
-  padding: 0.25rem 0.6rem;
+  margin: 0 0 0;
+  padding: 0.35rem 0.6rem;
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--fg-strong);
@@ -233,7 +254,7 @@ img {
 }
 
 .prose .remark-code-title + pre {
-  margin-top: 0.35rem;
+  margin-top: 0;
   border-radius: 0;
 }
 
@@ -247,6 +268,30 @@ img {
     background: rgba(0, 0, 0, 0.08);
     border-color: rgba(0, 0, 0, 0.12);
   }
+}
+
+/* TOC */
+.prose .toc-box {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0);
+  padding: 1.3rem 1.5rem 1.3rem 2.4rem;
+  margin: 1.5rem 0 1.5rem;
+  border-radius: 10px;
+}
+
+.prose .toc-box ul {
+  margin: 0;
+  padding-left: 1.4rem;
+  list-style-position: outside;
+}
+
+.prose .toc-box li {
+  margin: 0.3rem 0;
+}
+
+.prose .toc-box a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 @layer components {
