@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import Posts from './routes/Posts'
 import PostDetail from './routes/PostDetail'
+import Products from './routes/Products'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
@@ -11,6 +12,7 @@ createRoot(document.getElementById('root')!).render(
       <Route path="/" element={<App />} />
       <Route path="/posts" element={<Posts />} />
       <Route path="/posts/:slug" element={<PostDetail />} />
+      <Route path="/products" element={<Products />} />
     </Routes>
   </BrowserRouter>
 )
