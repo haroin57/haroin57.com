@@ -262,11 +262,27 @@ img {
   .prose pre {
     background: rgba(0, 0, 0, 0.08);
     border-color: rgba(0, 0, 0, 0.12);
+    color: var(--fg-strong);
+  }
+
+  /* rehype-pretty-code が付けるトークン色を上書き（ライトで白くならないように） */
+  .prose pre code,
+  .prose pre [data-line] span {
+    color: #111 !important;
   }
 
   .prose .remark-code-title {
     background: rgba(0, 0, 0, 0.08);
     border-color: rgba(0, 0, 0, 0.12);
+  }
+
+  .prose code {
+    color: var(--fg-strong);
+  }
+
+  .glass-panel {
+    border-color: rgba(0, 0, 0, 0.12);
+    background-color: rgba(0, 0, 0, 0.04);
   }
 }
 
@@ -292,6 +308,36 @@ img {
 .prose .toc-box a {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+@media (prefers-color-scheme: light) {
+  .prose .toc-box {
+    border-color: rgba(0, 0, 0, 0.18);
+    background: rgba(0, 0, 0, 0.05);
+  }
+}
+
+.posts-divider {
+  padding-left: 0;
+  list-style: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.posts-divider > li {
+  list-style: none;
+}
+
+.posts-divider > li + li {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (prefers-color-scheme: light) {
+  .posts-divider {
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+  .posts-divider > li + li {
+    border-color: rgba(0, 0, 0, 0.2);
+  }
 }
 
 @layer components {

@@ -94,7 +94,7 @@ function Posts() {
           </div>
         ) : null}
 
-        <ul className="font-vdl-logomaru divide-y divide-white/20" style={{ borderTopWidth: '0.5px' }}>
+        <ul className="font-vdl-logomaru posts-divider">
           {filtered.map((p, idx) => (
             <li key={p.slug ?? p.title ?? idx} className="space-y-2 py-4">
               <p className="text-xs text-[color:var(--fg,inherit)] opacity-75">{p.createdAt}</p>
