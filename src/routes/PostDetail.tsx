@@ -88,21 +88,27 @@ function PostDetail() {
   }, [slug])
 
   const handleGood = async () => {
-    if (!slug || hasVoted || isVoting) return
+    if (!slug || isVoting) return
+    const action = hasVoted ? 'unvote' : 'vote'
     setIsVoting(true)
     try {
       const res = await fetch(GOOD_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, action: 'vote' }),
+        body: JSON.stringify({ slug, action }),
       })
       const data = (await res.json()) as { total?: number; voted?: boolean }
       if (res.ok) {
-        const total = typeof data.total === 'number' ? data.total : goodCount + 1
+        const total = typeof data.total === 'number' ? data.total : goodCount + (action === 'vote' ? 1 : -1)
         setGoodCount(total)
-        setHasVoted(true)
+        const voted = action === 'vote'
+        setHasVoted(voted)
         window.localStorage.setItem(`good-count-${slug}`, String(total))
-        window.localStorage.setItem(`good-voted-${slug}`, '1')
+        if (voted) {
+          window.localStorage.setItem(`good-voted-${slug}`, '1')
+        } else {
+          window.localStorage.removeItem(`good-voted-${slug}`)
+        }
       }
     } catch (e) {
       // ignore
@@ -194,16 +200,16 @@ function PostDetail() {
               <button
                 type="button"
                 onClick={handleGood}
-                disabled={hasVoted}
+                disabled={isVoting}
                 className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition border ${
                   hasVoted
-                    ? 'border-white/20 bg-white/10 text-[color:var(--fg)] opacity-70 cursor-not-allowed'
+                    ? 'border-white/20 bg-white/10 text-[color:var(--fg)]'
                     : 'border-white/40 bg-white/10 hover:border-white/80 hover:bg-white/20'
                 }`}
                 style={{ color: 'var(--fg)' }}
               >
                 <img src="/good.svg" alt="Good" className="good-icon h-5 w-5" />
-                <span className="tracking-wide">{isVoting ? '...' : `Good ${goodCount}`}</span>
+                <span className="tracking-wide">{isVoting ? '...' : `${hasVoted ? 'Good!' : 'Good'} ${goodCount}`}</span>
               </button>
             </section>
           </>

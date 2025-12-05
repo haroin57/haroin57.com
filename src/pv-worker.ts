@@ -3,6 +3,7 @@
 type KVNamespace = {
   get: (key: string) => Promise<string | null>
   put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>
+  delete: (key: string) => Promise<void>
 }
 
 type Env = {
@@ -60,7 +61,7 @@ async function handleGood(req: Request, env: Env, corsHeaders: Record<string, st
   }
 
   const slug = payload.slug?.trim()
-  const action = payload.action === 'vote' ? 'vote' : 'get'
+  const action = payload.action === 'vote' ? 'vote' : payload.action === 'unvote' ? 'unvote' : 'get'
   if (!slug) {
     return new Response('missing slug', { status: 400, headers: corsHeaders })
   }
@@ -71,13 +72,30 @@ async function handleGood(req: Request, env: Env, corsHeaders: Record<string, st
   const current = Number((await env.HAROIN_PV.get(countKey)) ?? '0') || 0
   const alreadyVoted = Boolean(await env.HAROIN_PV.get(ipKey))
 
-  if (action !== 'vote' || alreadyVoted) {
+  if (action === 'get' || (action === 'vote' && alreadyVoted)) {
     return new Response(JSON.stringify({ total: current, voted: alreadyVoted }), {
       status: 200,
       headers: { ...corsHeaders, 'content-type': 'application/json' },
     })
   }
 
+  if (action === 'unvote') {
+    if (!alreadyVoted) {
+      return new Response(JSON.stringify({ total: current, voted: false }), {
+        status: 200,
+        headers: { ...corsHeaders, 'content-type': 'application/json' },
+      })
+    }
+    const next = Math.max(0, current - 1)
+    await env.HAROIN_PV.put(countKey, String(next))
+    await env.HAROIN_PV.delete(ipKey)
+    console.log('good unvote', { ip, slug, total: next })
+    return new Response(JSON.stringify({ total: next, voted: false }), {
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  // vote
   const next = current + 1
   await env.HAROIN_PV.put(countKey, String(next))
   await env.HAROIN_PV.put(ipKey, '1')
