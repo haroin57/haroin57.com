@@ -90,6 +90,11 @@ function PostDetail() {
   const handleGood = async () => {
     if (!slug || isVoting) return
     const action = hasVoted ? 'unvote' : 'vote'
+    const prevCount = goodCount
+    const prevVoted = hasVoted
+    const optimistic = action === 'vote' ? prevCount + 1 : Math.max(0, prevCount - 1)
+    setGoodCount(optimistic)
+    setHasVoted(!prevVoted)
     setIsVoting(true)
     try {
       const res = await fetch(GOOD_ENDPOINT, {
@@ -99,19 +104,22 @@ function PostDetail() {
       })
       const data = (await res.json()) as { total?: number; voted?: boolean }
       if (res.ok) {
-        const total = typeof data.total === 'number' ? data.total : goodCount + (action === 'vote' ? 1 : -1)
+        const total = typeof data.total === 'number' ? data.total : optimistic
+        const voted = typeof data.voted === 'boolean' ? data.voted : action === 'vote'
         setGoodCount(total)
-        const voted = action === 'vote'
         setHasVoted(voted)
         window.localStorage.setItem(`good-count-${slug}`, String(total))
-        if (voted) {
-          window.localStorage.setItem(`good-voted-${slug}`, '1')
-        } else {
-          window.localStorage.removeItem(`good-voted-${slug}`)
-        }
+        if (voted) window.localStorage.setItem(`good-voted-${slug}`, '1')
+        else window.localStorage.removeItem(`good-voted-${slug}`)
+      } else {
+        // revert on failure
+        setGoodCount(prevCount)
+        setHasVoted(prevVoted)
       }
     } catch (e) {
-      // ignore
+      // revert on error
+      setGoodCount(prevCount)
+      setHasVoted(prevVoted)
     } finally {
       setIsVoting(false)
     }
