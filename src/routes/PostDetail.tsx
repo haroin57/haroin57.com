@@ -217,7 +217,7 @@ function PostDetail() {
                 style={{ color: 'var(--fg)' }}
               >
                 <img src="/good.svg" alt="Good" className="good-icon h-5 w-5" />
-                <span className="tracking-wide">{isVoting ? '...' : `${hasVoted ? 'Good!' : 'Good'} ${goodCount}`}</span>
+                <span className="tracking-wide">{`${hasVoted ? 'Good!' : 'Good'} ${goodCount}`}</span>
               </button>
             </section>
           </>
