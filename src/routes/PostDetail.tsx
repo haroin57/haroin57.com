@@ -10,6 +10,7 @@ type TaggedPost = Post & { tags?: string[] }
 
 const posts: TaggedPost[] = Array.isArray(postsData) ? (postsData as TaggedPost[]) : []
 const GOOD_ENDPOINT = import.meta.env.VITE_GOOD_ENDPOINT || '/api/good'
+const SERVER_APPLY_DELAY_MS = 350
 
 function PostDetail() {
   const { slug } = useParams<{ slug: string }>()
@@ -104,6 +105,8 @@ function PostDetail() {
       })
       const data = (await res.json()) as { total?: number; voted?: boolean }
       if (res.ok) {
+        // サーバー応答の適用をわずかに遅らせ、楽観的な表示を維持する
+        await new Promise((resolve) => setTimeout(resolve, SERVER_APPLY_DELAY_MS))
         const total = typeof data.total === 'number' ? data.total : optimistic
         const voted = typeof data.voted === 'boolean' ? data.voted : action === 'vote'
         setGoodCount(total)
