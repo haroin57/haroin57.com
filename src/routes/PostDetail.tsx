@@ -1,17 +1,115 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
 
-type Post = { slug?: string; title?: string; html?: string; createdAt?: string }
+type Post = { slug?: string; title?: string; summary?: string; html?: string; createdAt?: string }
 // tagsはgen-postsで配列化される前提
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type TaggedPost = Post & { tags?: string[] }
 
 const posts: TaggedPost[] = Array.isArray(postsData) ? (postsData as TaggedPost[]) : []
+const GOOD_ENDPOINT = import.meta.env.VITE_GOOD_ENDPOINT || '/api/good'
 
 function PostDetail() {
   const { slug } = useParams<{ slug: string }>()
   const post = posts.find((p) => p.slug === slug)
+  const location = useLocation()
+  const [goodCount, setGoodCount] = useState<number>(0)
+  const [hasVoted, setHasVoted] = useState<boolean>(false)
+  const [isVoting, setIsVoting] = useState<boolean>(false)
+
+  const shareUrl = useMemo(() => {
+    if (typeof window === 'undefined') return ''
+    return `${window.location.origin}${location.pathname}`
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (!post) return
+    const title = `${post.title ?? 'Post'} | haroin57`
+    document.title = title
+
+    const ensureMeta = (key: 'name' | 'property', value: string) => {
+      let el = document.querySelector(`meta[${key}="${value}"]`) as HTMLMetaElement | null
+      if (!el) {
+        el = document.createElement('meta')
+        el.setAttribute(key, value)
+        document.head.appendChild(el)
+      }
+      return el
+    }
+
+    const descSource = post.summary
+      ? post.summary
+      : post.html
+        ? post.html.replace(/<[^>]+>/g, '').slice(0, 120) || 'haroin57 web'
+        : 'haroin57 web'
+
+    ensureMeta('name', 'description').setAttribute('content', descSource)
+    ensureMeta('property', 'og:title').setAttribute('content', post.title ?? 'haroin57 web')
+    ensureMeta('property', 'og:description').setAttribute('content', descSource)
+    ensureMeta('property', 'og:url').setAttribute('content', shareUrl)
+    ensureMeta('name', 'twitter:title').setAttribute('content', post.title ?? 'haroin57 web')
+    ensureMeta('name', 'twitter:description').setAttribute('content', descSource)
+    ensureMeta('name', 'twitter:card').setAttribute('content', 'summary_large_image')
+    ensureMeta('name', 'twitter:url').setAttribute('content', shareUrl)
+  }, [post, shareUrl])
+
+  useEffect(() => {
+    if (!slug) return
+    let mounted = true
+    const savedVote = typeof window !== 'undefined' && window.localStorage.getItem(`good-voted-${slug}`) === '1'
+    const fetchCount = async () => {
+      try {
+        const res = await fetch(GOOD_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug, action: 'get' }),
+        })
+        if (!res.ok) throw new Error('failed')
+        const data = (await res.json()) as { total?: number; voted?: boolean }
+        if (!mounted) return
+        setGoodCount(typeof data.total === 'number' ? data.total : 0)
+        setHasVoted(savedVote || Boolean(data.voted))
+        if (!savedVote && data.voted) {
+          window.localStorage.setItem(`good-voted-${slug}`, '1')
+          if (typeof data.total === 'number') {
+            window.localStorage.setItem(`good-count-${slug}`, String(data.total))
+          }
+        }
+      } catch (e) {
+        // ignore fetch errors
+      }
+    }
+    fetchCount()
+    return () => {
+      mounted = false
+    }
+  }, [slug])
+
+  const handleGood = async () => {
+    if (!slug || hasVoted || isVoting) return
+    setIsVoting(true)
+    try {
+      const res = await fetch(GOOD_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, action: 'vote' }),
+      })
+      const data = (await res.json()) as { total?: number; voted?: boolean }
+      if (res.ok) {
+        const total = typeof data.total === 'number' ? data.total : goodCount + 1
+        setGoodCount(total)
+        setHasVoted(true)
+        window.localStorage.setItem(`good-count-${slug}`, String(total))
+        window.localStorage.setItem(`good-voted-${slug}`, '1')
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      setIsVoting(false)
+    }
+  }
 
   return (
     <div className="relative overflow-hidden">
@@ -48,19 +146,33 @@ function PostDetail() {
               {post.createdAt ? (
                 <p className="text-sm text-[color:var(--fg,inherit)] opacity-80">{post.createdAt}</p>
               ) : null}
-              {post.tags && post.tags.length > 0 ? (
-                <div className="flex flex-wrap gap-2 text-[11px] sm:text-xs">
-                  {post.tags.map((tag) => (
-                    <Link
-                      key={tag}
-                      to={`/posts?tag=${encodeURIComponent(tag)}`}
-                      className="px-2 py-1 rounded-full border border-white/20 bg-white/5 hover:border-white/60 transition"
-                    >
-                      {tag}
-                    </Link>
-                  ))}
-                </div>
-              ) : null}
+              <div className="flex flex-wrap items-center gap-3">
+                {post.tags && post.tags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 text-[11px] sm:text-xs">
+                    {post.tags.map((tag) => (
+                      <Link
+                        key={tag}
+                        to={`/posts?tag=${encodeURIComponent(tag)}`}
+                        className="px-2 py-1 rounded-full border border-white/20 bg-white/5 hover:border-white/60 transition"
+                      >
+                        {tag}
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
+                {shareUrl ? (
+                  <a
+                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(post.title ?? '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-white/20 bg-white/5 hover:border-white/60 transition text-[12px]"
+                    aria-label="Share on X"
+                  >
+                    <img src="/X_logo.svg" alt="X" className="h-4 w-4" />
+                    <span>Share</span>
+                  </a>
+                ) : null}
+              </div>
               {post.html ? (
                 <div
                   className="prose prose-invert font-medium font-a-otf-gothic text-sm sm:text-[15px] w-full"
@@ -78,6 +190,22 @@ function PostDetail() {
                 ← Posts一覧へ
               </Link>
             </section>
+            <section className="mt-10 flex justify-center">
+              <button
+                type="button"
+                onClick={handleGood}
+                disabled={hasVoted}
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition border ${
+                  hasVoted
+                    ? 'border-white/20 bg-white/10 text-[color:var(--fg)] opacity-70 cursor-not-allowed'
+                    : 'border-white/40 bg-white/10 hover:border-white/80 hover:bg-white/20'
+                }`}
+                style={{ color: 'var(--fg)' }}
+              >
+                <img src="/good.svg" alt="Good" className="good-icon h-5 w-5" />
+                <span className="tracking-wide">{isVoting ? '...' : `Good ${goodCount}`}</span>
+              </button>
+            </section>
           </>
         )}
       </main>
@@ -88,7 +216,7 @@ function PostDetail() {
       >
         <div className="text-xs opacity-70 flex items-center gap-3">
           <AccessCounter />
-          <span>© haroin</span>
+          <span>c haroin</span>
         </div>
         <div className="flex items-center gap-4">
           <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">

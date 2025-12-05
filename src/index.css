@@ -353,11 +353,11 @@ img {
     @apply text-sm font-semibold uppercase tracking-[0.24em] text-slate-400;
   }
 
-  .underline-thin {
-    text-decoration-line: underline;
-    text-decoration-thickness: 0.5px;
-    text-underline-offset: 4px;
-  }
+.underline-thin {
+  text-decoration-line: underline;
+  text-decoration-thickness: 0.5px;
+  text-underline-offset: 4px;
+}
 
 .footer-logo {
   transition: filter 200ms ease;
@@ -367,6 +367,16 @@ img {
 
   @media (prefers-color-scheme: dark) {
     .footer-logo {
+      filter: invert(1) hue-rotate(180deg);
+    }
+  }
+
+  .good-icon {
+    transition: filter 180ms ease;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .good-icon {
       filter: invert(1) hue-rotate(180deg);
     }
   }
