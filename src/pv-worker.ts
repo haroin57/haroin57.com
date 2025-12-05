@@ -61,7 +61,8 @@ async function handleGood(req: Request, env: Env, corsHeaders: Record<string, st
   }
 
   const slug = payload.slug?.trim()
-  const action = payload.action === 'vote' ? 'vote' : payload.action === 'unvote' ? 'unvote' : 'get'
+  const actionRaw = payload.action?.toLowerCase()
+  const action = actionRaw === 'vote' ? 'vote' : actionRaw === 'unvote' ? 'unvote' : 'get'
   if (!slug) {
     return new Response('missing slug', { status: 400, headers: corsHeaders })
   }
@@ -80,12 +81,6 @@ async function handleGood(req: Request, env: Env, corsHeaders: Record<string, st
   }
 
   if (action === 'unvote') {
-    if (!alreadyVoted) {
-      return new Response(JSON.stringify({ total: current, voted: false }), {
-        status: 200,
-        headers: { ...corsHeaders, 'content-type': 'application/json' },
-      })
-    }
     const next = Math.max(0, current - 1)
     await env.HAROIN_PV.put(countKey, String(next))
     await env.HAROIN_PV.delete(ipKey)
