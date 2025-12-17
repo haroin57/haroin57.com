@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+/* Google Fonts は index.html で非ブロッキング読み込み */
 
 @import 'katex/dist/katex.min.css';
 
@@ -7,21 +7,36 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+  scrollbar-gutter: stable;
   --fg: #e2e8f0;
-  --fg-strong: #e2e8f0;
-  --overlay: 0.15;
-  --bg-wash: 0;
-  --bg-wash-color: #fff;
+  --fg-strong: #ffffff;
+  --overlay: 1.00;
+  --bg-wash: 0.55;
+  --bg-wash-color: #000;
   --home-progress: 0;
   --home-wash-start: 0;
   --home-wash-end: 0;
-  --ui-border: rgba(255, 255, 255, 0.22);
+  --ui-border: rgba(255, 255, 255, 0.28);
   --ui-border-strong: rgba(255, 255, 255, 0.6);
-  --ui-surface: rgba(255, 255, 255, 0.06);
-  --ui-surface-hover: rgba(255, 255, 255, 0.1);
+  --ui-surface: rgba(0, 0, 0, 0.35);
+  --ui-surface-hover: rgba(0, 0, 0, 0.45);
+
+  /* トランジション用変数 */
+  --ui-fade-opacity: 1;
+
+  /* 滑らかなイージング関数 */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out-smooth: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* アニメーション時間 */
+  --duration-fast: 200ms;
+  --duration-normal: 350ms;
+  --duration-slow: 500ms;
 }
 
+/* 背景オーバーレイ - body上に常に表示（ページ遷移で変化しない） */
 body::before {
   content: "";
   position: fixed;
@@ -29,36 +44,35 @@ body::before {
   pointer-events: none;
   background: var(--bg-wash-color);
   opacity: var(--bg-wash);
-  z-index: 0;             /* コンテンツより背面、背景画像より前面 */
+  z-index: 0;
 }
 
 body.home-page::before {
-  background: #000;
-  opacity: calc(
-    var(--home-wash-start, 0) +
-      (var(--home-wash-end, 0) - var(--home-wash-start, 0)) * var(--home-progress, 0)
-  );
+  opacity: 0.25;
 }
 
+/* 背景画像のトランジション強化 */
+.pointer-events-none.fixed img {
+  transition:
+    filter 300ms var(--ease-out-quart),
+    transform 400ms var(--ease-out-expo),
+    opacity 400ms var(--ease-out-quart);
+}
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color-scheme: light;
-    --fg: #e2e8f0;
-    --fg-strong: #ffffff;
-    --overlay: 1.00;
-    --bg-wash: 0.55;
-    --bg-wash-color: #000;
-    --ui-border: rgba(255, 255, 255, 0.22);
-    --ui-border-strong: rgba(255, 255, 255, 0.6);
-    --ui-surface: rgba(255, 255, 255, 0.06);
-    --ui-surface-hover: rgba(255, 255, 255, 0.1);
-  }
+/* グローバル背景コンテナ */
+.global-bg-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  body.home-page {
-    --home-wash-start: 0.25;
-    --home-wash-end: 0.8;
-  }
+/* グローバル背景画像 - ルートに応じてopacityが変わる */
+.global-bg {
+  transition: opacity 600ms var(--ease-out-quart);
 }
 
 body {
@@ -67,183 +81,39 @@ body {
   min-height: 100vh;
 }
 
-.page-fade {
-  animation: pageFade 320ms ease;
+/* ページ遷移アニメーション - 60fps GPU accelerated */
+.page-transition-enter {
+  opacity: 0;
+  transform: translate3d(0, 0, 0);
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-@keyframes pageFade {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-.page-exit {
-  animation: pageExit 180ms ease forwards;
-}
-
-@keyframes pageExit {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-}
-
-.route-transition {
+.page-transition-exit {
   display: none;
 }
 
-@media (prefers-color-scheme: light) {
-  body.route-transitioning {
-    overflow: hidden;
-  }
-
-  .route-transition {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    overflow: hidden;
-    contain: strict;
-    isolation: isolate;
-  }
-
-  .route-transition.is-active {
-    pointer-events: all;
-    cursor: progress;
-  }
-
-  .route-transition__arrow {
-    --arrow-color: #000;
-    --arrow-head: clamp(140px, 18vw, 420px);
-    --arrow-h: 100vh;
-    --rt-delay: 0ms;
-    position: absolute;
-    left: 0;
-    width: calc(100vw + var(--arrow-head));
-    height: var(--arrow-h);
-    transform: translate3d(-110%, 0, 0);
-    contain: paint;
-    backface-visibility: hidden;
-    transform-style: preserve-3d;
-  }
-
-  .route-transition__arrow::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: calc(var(--arrow-head) - 1px);
-    background: var(--arrow-color);
-  }
-
-  .route-transition__arrow::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    right: 0;
-    width: 0;
-    height: 0;
-    transform: translateY(-50%);
-    border-top: calc(var(--arrow-h) / 2) solid transparent;
-    border-bottom: calc(var(--arrow-h) / 2) solid transparent;
-    border-left: var(--arrow-head) solid var(--arrow-color);
-  }
-
-  .route-transition.is-active .route-transition__arrow {
-    animation:
-      routeArrowSweep 650ms cubic-bezier(0.22, 1, 0.36, 1) var(--rt-delay, 0ms) both,
-      routeArrowHide 1ms steps(1, end) var(--rt-hide, 9999ms) both;
-    will-change: transform;
-  }
-
-  .route-transition.is-active .route-transition__arrow.arrow--lime {
-    top: 0;
-    --arrow-h: 32vh;
-    --arrow-color: #b6d700;
-  }
-
-  .route-transition.is-active .route-transition__arrow.arrow--purple {
-    top: 18vh;
-    --arrow-h: 44vh;
-    --arrow-color: #a45be5;
-  }
-
-  .route-transition.is-active .route-transition__arrow.arrow--cyan {
-    bottom: 0;
-    --arrow-h: 34vh;
-    --arrow-color: #6ad2d7;
-  }
-
-  .route-transition.is-active .route-transition__arrow.arrow--pink {
-    top: 48vh;
-    --arrow-h: 26vh;
-    --arrow-color: #f2549d;
-  }
-
-  .route-transition.is-active .route-transition__arrow.arrow--orange {
-    top: 62vh;
-    --arrow-h: 22vh;
-    --arrow-color: #f6a623;
-  }
-
-  .route-transition.is-active .route-transition__arrow.arrow--blue {
-    top: 6vh;
-    --arrow-h: 20vh;
-    --arrow-color: #3a86ff;
-  }
-
-  .route-transition.is-active .route-transition__arrow.arrow--black {
-    top: 0;
-    --arrow-h: 100vh;
-    --arrow-color: #000;
-    animation: routeArrowSweepEnd 760ms linear var(--rt-delay, 0ms) both;
-  }
-
-  @keyframes routeArrowSweep {
-    0% {
-      transform: translate3d(-110%, 0, 0);
-    }
-    55% {
-      transform: translate3d(0%, 0, 0);
-    }
-    82% {
-      transform: translate3d(0%, 0, 0);
-    }
-    100% {
-      transform: translate3d(0%, 0, 0);
-    }
-  }
-
-  @keyframes routeArrowHide {
-    to {
-      transform: translate3d(-110%, 0, 0);
-    }
-  }
-
-  @keyframes routeArrowSweepEnd {
-    0% {
-      transform: translate3d(-110%, 0, 0);
-    }
-    100% {
-      transform: translate3d(110%, 0, 0);
-    }
-  }
+.page-transition-exit-active {
+  display: none;
 }
 
+/* Collapse - 滑らかな開閉 */
 .collapse {
   overflow: hidden;
-  transition: max-height 280ms ease, opacity 280ms ease, visibility 280ms ease;
+  transition:
+    max-height 400ms var(--ease-out-expo),
+    opacity 300ms var(--ease-out-quart),
+    visibility 400ms;
 }
 
 .collapse.open {
@@ -256,36 +126,68 @@ body {
   max-height: 0;
   opacity: 0;
   visibility: hidden;
+  transition:
+    max-height 300ms var(--ease-in-out-smooth),
+    opacity 200ms ease-out,
+    visibility 300ms;
 }
 
+/* Reveal アニメーション - GPU accelerated */
 .reveal {
   opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 700ms ease, transform 700ms ease;
+  transform: translate3d(0, 16px, 0);
+  transition:
+    opacity var(--duration-normal) var(--ease-out-expo),
+    transform var(--duration-normal) var(--ease-out-expo);
   will-change: opacity, transform;
+  backface-visibility: hidden;
 }
 
 .reveal.is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
 }
 
+/* スタガーアニメーション用 */
+.reveal[data-delay="1"] { transition-delay: 100ms; }
+.reveal[data-delay="2"] { transition-delay: 200ms; }
+.reveal[data-delay="3"] { transition-delay: 300ms; }
+.reveal[data-delay="4"] { transition-delay: 400ms; }
+.reveal[data-delay="5"] { transition-delay: 500ms; }
+
+/* Home Hero - パララックス風の滑らかな動き */
 .home-hero {
-  transform: translateY(calc(var(--home-progress, 0) * -24px));
-  opacity: clamp(0, calc(1 - (var(--home-progress, 0) * 1.1)), 1);
-  will-change: transform, opacity;
+  --progress: var(--home-progress, 0);
+  transform:
+    translateY(calc(var(--progress) * -32px))
+    scale(calc(1 - var(--progress) * 0.03));
+  opacity: clamp(0, calc(1 - var(--progress) * 1.2), 1);
+  filter: blur(calc(var(--progress) * 4px));
+  transition:
+    transform 120ms var(--ease-out-quart),
+    opacity 120ms var(--ease-out-quart),
+    filter 100ms linear;
+  will-change: transform, opacity, filter;
 }
 
+/* reduced motion 対応 */
 @media (prefers-reduced-motion: reduce) {
-  .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
   }
 
-  .home-hero {
+  .reveal,
+  .home-hero,
+  .page-transition-enter,
+  .page-transition-enter-active,
+  .page-transition-exit,
+  .page-transition-exit-active {
     opacity: 1;
     transform: none;
+    filter: none;
+    transition: none;
   }
 }
 
@@ -334,9 +236,6 @@ body {
   font-weight: 500;
 }
 
-a {
-  @apply transition-colors;
-}
 
 img {
   border: none;
@@ -356,9 +255,65 @@ img {
   margin-bottom: 0.5rem;
 }
 
+.prose ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .prose li {
   margin-top: 0.15rem;
   margin-bottom: 0.15rem;
+}
+
+.prose strong {
+  font-weight: 700;
+  color: var(--fg-strong);
+}
+
+.prose em {
+  font-style: italic;
+}
+
+/* テーブルのスタイル */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.prose table thead {
+  background: var(--ui-surface-hover);
+}
+
+.prose table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--fg-strong);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.prose table td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.prose table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.prose table tbody tr {
+  background: var(--ui-surface);
+  transition: background-color 200ms var(--ease-out-quart);
+}
+
+.prose table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .prose p {
@@ -391,6 +346,9 @@ img {
   text-decoration: underline;
   text-underline-offset: 3px;
   color: var(--fg);
+  transition:
+    color 200ms var(--ease-out-quart),
+    text-decoration-color 200ms var(--ease-out-quart);
 }
 
 .prose a:hover {
@@ -398,12 +356,101 @@ img {
 }
 
 .prose pre {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
   border-radius: 0;
   padding: 0.75rem 0.9rem;
   overflow-x: auto;
   margin: 0.85rem 0 1rem;
+}
+
+/* MDN-style code blocks (language label + copy button) */
+.prose figure[data-rehype-pretty-code-figure].mdn-code {
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0.85rem 0 1rem;
+}
+
+.prose figure[data-rehype-pretty-code-figure].mdn-code pre {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  padding: 0.9rem 1rem;
+}
+
+.prose figure[data-rehype-pretty-code-figure].mdn-code .mdn-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-surface-hover);
+}
+
+.prose figure[data-rehype-pretty-code-figure].mdn-code .mdn-code-lang {
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--fg-strong);
+}
+
+.prose figure[data-rehype-pretty-code-figure].mdn-code .mdn-code-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.prose figure[data-rehype-pretty-code-figure].mdn-code .mdn-code-copy {
+  appearance: none;
+  border: 1px solid var(--ui-border-strong);
+  background: transparent;
+  color: var(--fg);
+  border-radius: 8px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.prose figure[data-rehype-pretty-code-figure].mdn-code .mdn-code-copy:hover {
+  background: var(--ui-surface);
+  border-color: var(--ui-border-strong);
+}
+
+.prose figure[data-rehype-pretty-code-figure].mdn-code .mdn-code-copy.is-copied {
+  border-color: rgba(94, 234, 212, 0.85);
+  color: rgba(94, 234, 212, 0.95);
+}
+
+/* MDN: info string tokens -> classes (example-good / example-bad / hidden) */
+.prose figure[data-rehype-pretty-code-figure].mdn-code.example-good {
+  border-left: 4px solid rgba(94, 234, 212, 0.85);
+}
+
+.prose figure[data-rehype-pretty-code-figure].mdn-code.example-bad {
+  border-left: 4px solid rgba(248, 113, 113, 0.85);
+}
+
+/* KaTeX 数式スタイル */
+.prose .katex-display {
+  font-size: 1.3em;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+}
+
+.prose .katex-display > .katex {
+  text-align: center;
+}
+
+.prose .katex {
+  font-size: 1.25em;
 }
 
 .prose code {
@@ -412,8 +459,8 @@ img {
 }
 
 .prose :not(pre) > code {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
   padding: 0.15rem 0.35rem;
   border-radius: 6px;
   font-size: 0.9rem;
@@ -453,8 +500,8 @@ img {
   font-weight: 500;
   color: var(--fg-strong);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
   border-radius: 0;
 }
 
@@ -465,8 +512,8 @@ img {
 
 /* TOC */
 .prose .toc-box {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
   padding: 1.3rem 1.5rem 1.3rem 2.4rem;
   margin: 1.5rem 0 1.5rem;
   border-radius: 10px;
@@ -485,6 +532,62 @@ img {
 .prose .toc-box a {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* MDN-style callouts / admonitions */
+.prose .notecard,
+.prose .callout {
+  margin: 1rem 0;
+  padding: 0.95rem 1.05rem;
+  border-radius: 12px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+}
+
+.prose .notecard.note {
+  border-left: 4px solid rgba(94, 234, 212, 0.85);
+}
+
+.prose .notecard.warning {
+  border-left: 4px solid rgba(251, 191, 36, 0.9);
+}
+
+.prose .callout {
+  border-left: 4px solid rgba(129, 140, 248, 0.9);
+}
+
+.prose .notecard > :first-child,
+.prose .callout > :first-child {
+  margin-top: 0;
+}
+
+.prose .notecard > :last-child,
+.prose .callout > :last-child {
+  margin-bottom: 0;
+}
+
+/* MDN-style definition lists */
+.prose dl.definition-list {
+  margin: 1.1rem 0;
+}
+
+.prose dl.definition-list dt {
+  font-weight: 700;
+  margin-top: 0.9rem;
+}
+
+.prose dl.definition-list dt:first-child {
+  margin-top: 0;
+}
+
+.prose dl.definition-list dd {
+  margin: 0.25rem 0 0.8rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--ui-border);
+}
+
+.prose dl.definition-list dd > p {
+  margin: 0.35rem 0;
 }
 
 .posts-divider {
@@ -515,11 +618,44 @@ img {
   .section-title {
     @apply text-sm font-semibold uppercase tracking-[0.24em] text-slate-400;
   }
+}
 
 .underline-thin {
   text-decoration-line: underline;
   text-decoration-thickness: 0.5px;
   text-underline-offset: 4px;
+}
+
+/* INP最適化: ボタン・リンクのタッチ応答性向上 */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* INP最適化: content-visibility で画面外要素のレンダリングを遅延 */
+.prose,
+article,
+footer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
+}
+
+/* INP最適化: インタラクティブ要素のレンダリング優先度 */
+/* active:scale-* を使うボタンは除外（transformアニメーションを妨げないため） */
+button:not([class*="active:scale"]),
+a,
+input,
+select,
+textarea {
+  contain: layout style;
+}
+
+/* GPU accelerated hover/active states */
+.glass-panel,
+[class*="hover:"]:not(button):not(button *) {
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .footer-logo {
@@ -529,14 +665,43 @@ img {
   filter: invert(1) hue-rotate(180deg);
 }
 
-  .good-icon {
-    transition: filter 180ms ease;
-    filter: invert(1) hue-rotate(180deg);
-  }
+.good-icon {
+  transition: filter 180ms ease;
+  filter: invert(1) hue-rotate(180deg);
+}
 
-  .x-share-icon {
-    transition: filter 180ms ease;
-    filter: invert(1) hue-rotate(180deg);
-  }
+.x-share-icon {
+  transition: filter 180ms ease;
+  filter: invert(1) hue-rotate(180deg);
+}
 
+/* INP最適化: アクティブ状態の即時フィードバック（ボタン除外） */
+a:active,
+[role="button"]:not(button):active {
+  transform: scale(0.98);
+  transition: transform 50ms ease-out;
+}
+
+/* INP最適化: ホバー状態のGPUアクセラレーション */
+button,
+a {
+  will-change: auto;
+}
+
+button:hover,
+a:hover {
+  will-change: transform, opacity;
+}
+
+/* レイアウトシフト防止 */
+img {
+  aspect-ratio: attr(width) / attr(height);
+}
+
+/* フォント読み込み中のレイアウトシフト防止 */
+body {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

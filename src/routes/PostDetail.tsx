@@ -1,16 +1,49 @@
-import { Link, useLocation, useParams } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useParams, Link } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState, useCallback, startTransition } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
 
 type Post = { slug?: string; title?: string; summary?: string; html?: string; createdAt?: string }
 // tagsはgen-postsで配列化される前提
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type TaggedPost = Post & { tags?: string[] }
 
 const posts: TaggedPost[] = Array.isArray(postsData) ? (postsData as TaggedPost[]) : []
 const GOOD_ENDPOINT = import.meta.env.VITE_GOOD_ENDPOINT || '/api/good'
 const SERVER_APPLY_DELAY_MS = 350
+
+function extractCodeText(codeElement: HTMLElement): string {
+  const lineElements = codeElement.querySelectorAll('[data-line]')
+  if (lineElements.length === 0) return codeElement.textContent ?? ''
+  return Array.from(lineElements)
+    .map((el) => el.textContent ?? '')
+    .join('\n')
+}
+
+async function writeToClipboard(text: string): Promise<boolean> {
+  if (!text) return false
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    try {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.setAttribute('readonly', '')
+      textarea.style.position = 'fixed'
+      textarea.style.top = '0'
+      textarea.style.left = '0'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.focus()
+      textarea.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(textarea)
+      return ok
+    } catch {
+      return false
+    }
+  }
+}
 
 function PostDetail() {
   const { slug } = useParams<{ slug: string }>()
@@ -19,6 +52,40 @@ function PostDetail() {
   const [goodCount, setGoodCount] = useState<number>(0)
   const [hasVoted, setHasVoted] = useState<boolean>(false)
   const [isVoting, setIsVoting] = useState<boolean>(false)
+  const proseRef = useRef<HTMLDivElement | null>(null)
+  const pageRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [])
+
+  useEffect(() => {
+    const root = pageRef.current
+    if (!root) return
+
+    const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
+    if (targets.length === 0) return
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reducedMotion) {
+      targets.forEach((el) => el.classList.add('is-visible'))
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          ;(entry.target as HTMLElement).classList.add('is-visible')
+          observer.unobserve(entry.target)
+        }
+      },
+      { threshold: 0.01, rootMargin: '0px 0px 50px 0px' }
+    )
+
+    targets.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
 
   const shareUrl = useMemo(() => {
     if (typeof window === 'undefined') return ''
@@ -78,7 +145,7 @@ function PostDetail() {
             window.localStorage.setItem(`good-count-${slug}`, String(data.total))
           }
         }
-      } catch (e) {
+      } catch {
         // ignore fetch errors
       }
     }
@@ -88,15 +155,142 @@ function PostDetail() {
     }
   }, [slug])
 
-  const handleGood = async () => {
+  useEffect(() => {
+    const proseRoot = proseRef.current
+    if (!proseRoot) return
+
+    const timeouts = new Map<HTMLButtonElement, number>()
+    const onClick = async (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null
+      const button = target?.closest?.('button.mdn-code-copy') as HTMLButtonElement | null
+      if (!button) return
+
+      const figure = button.closest('figure[data-rehype-pretty-code-figure]') as HTMLElement | null
+      const code = figure?.querySelector('pre > code') as HTMLElement | null
+      if (!code) return
+
+      const codeText = extractCodeText(code).trimEnd()
+      if (!codeText) return
+
+      const ok = await writeToClipboard(codeText)
+      if (!ok) return
+
+      const prev = timeouts.get(button)
+      if (prev) window.clearTimeout(prev)
+      button.classList.add('is-copied')
+      button.textContent = 'Copied'
+
+      const timer = window.setTimeout(() => {
+        button.classList.remove('is-copied')
+        button.textContent = 'Copy'
+        timeouts.delete(button)
+      }, 1200)
+
+      timeouts.set(button, timer)
+    }
+
+    proseRoot.addEventListener('click', onClick)
+    return () => {
+      proseRoot.removeEventListener('click', onClick)
+      for (const timer of timeouts.values()) {
+        window.clearTimeout(timer)
+      }
+      timeouts.clear()
+    }
+  }, [post?.html])
+
+  useEffect(() => {
+    const body = document.body
+    body.classList.add('post-detail-page')
+
+    const rootStyle = window.getComputedStyle(document.documentElement)
+    const baseWashRaw = rootStyle.getPropertyValue('--bg-wash').trim()
+    const baseWash = Number.isFinite(Number.parseFloat(baseWashRaw)) ? Number.parseFloat(baseWashRaw) : 0
+
+    const startPx = 48
+    const rangePx = 420
+    const maxBlurPx = 5
+    const maxExtraWash = 0.12
+
+    let rafId = 0
+    const update = () => {
+      const y = window.scrollY || 0
+      const t = Math.max(0, Math.min(1, (y - startPx) / rangePx))
+      const blur = t * maxBlurPx
+      const wash = Math.min(0.9, baseWash + t * maxExtraWash)
+      const scale = 1 + blur / 140
+
+      body.style.setProperty('--bg-blur', `${blur.toFixed(2)}px`)
+      body.style.setProperty('--bg-scale', scale.toFixed(4))
+      body.style.setProperty('--bg-wash', wash.toFixed(3))
+    }
+
+    const onScroll = () => {
+      if (rafId) return
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0
+        update()
+      })
+    }
+
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (rafId) window.cancelAnimationFrame(rafId)
+
+      const parseNumber = (value: string, fallback: number) => {
+        const n = Number.parseFloat(value)
+        return Number.isFinite(n) ? n : fallback
+      }
+
+      const startBlur = parseNumber(body.style.getPropertyValue('--bg-blur'), 0)
+      const startScale = parseNumber(body.style.getPropertyValue('--bg-scale'), 1)
+      const startWash = parseNumber(body.style.getPropertyValue('--bg-wash'), baseWash)
+      const durationMs = 120
+      const startedAt = performance.now()
+
+      const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - startedAt) / durationMs)
+        const k = easeOutCubic(t)
+        const blur = startBlur * (1 - k)
+        const scale = startScale + (1 - startScale) * k
+        const wash = startWash + (baseWash - startWash) * k
+
+        body.style.setProperty('--bg-blur', `${blur.toFixed(2)}px`)
+        body.style.setProperty('--bg-scale', scale.toFixed(4))
+        body.style.setProperty('--bg-wash', wash.toFixed(3))
+
+        if (t < 1) {
+          window.requestAnimationFrame(tick)
+          return
+        }
+
+        body.classList.remove('post-detail-page')
+        body.style.removeProperty('--bg-blur')
+        body.style.removeProperty('--bg-scale')
+        body.style.removeProperty('--bg-wash')
+      }
+
+      window.requestAnimationFrame(tick)
+    }
+  }, [])
+
+  const handleGood = useCallback(async () => {
     if (!slug || isVoting) return
     const action = hasVoted ? 'unvote' : 'vote'
     const prevCount = goodCount
     const prevVoted = hasVoted
     const optimistic = action === 'vote' ? prevCount + 1 : Math.max(0, prevCount - 1)
-    setGoodCount(optimistic)
-    setHasVoted(!prevVoted)
+
+    // 楽観的更新をstartTransitionでラップ
+    startTransition(() => {
+      setGoodCount(optimistic)
+      setHasVoted(!prevVoted)
+    })
     setIsVoting(true)
+
     try {
       const res = await fetch(GOOD_ENDPOINT, {
         method: 'POST',
@@ -109,45 +303,42 @@ function PostDetail() {
         await new Promise((resolve) => setTimeout(resolve, SERVER_APPLY_DELAY_MS))
         const total = typeof data.total === 'number' ? data.total : optimistic
         const voted = typeof data.voted === 'boolean' ? data.voted : action === 'vote'
-        setGoodCount(total)
-        setHasVoted(voted)
+        startTransition(() => {
+          setGoodCount(total)
+          setHasVoted(voted)
+        })
         window.localStorage.setItem(`good-count-${slug}`, String(total))
         if (voted) window.localStorage.setItem(`good-voted-${slug}`, '1')
         else window.localStorage.removeItem(`good-voted-${slug}`)
       } else {
         // revert on failure
+        startTransition(() => {
+          setGoodCount(prevCount)
+          setHasVoted(prevVoted)
+        })
+      }
+    } catch {
+      // revert on error
+      startTransition(() => {
         setGoodCount(prevCount)
         setHasVoted(prevVoted)
-      }
-    } catch (e) {
-      // revert on error
-      setGoodCount(prevCount)
-      setHasVoted(prevVoted)
+      })
     } finally {
       setIsVoting(false)
     }
-  }
+  }, [slug, isVoting, hasVoted, goodCount])
 
   return (
-    <div className="relative overflow-hidden">
-      <div className="pointer-events-none fixed inset-0 -z-10 flex items-center justify-center">
-        <img
-          src="/profile.png"
-          alt="haroin profile"
-          className="select-none"
-          style={{ width: '100vw', height: '100vh', objectFit: 'cover', opacity: 'var(--overlay)' }}
-        />
-      </div>
-
+    <div ref={pageRef} className="relative overflow-hidden">
       <main
-        className="relative mx-auto min-h-screen max-w-4xl px-6 py-12 space-y-6 page-fade"
+        className="relative z-10 mx-auto min-h-screen max-w-4xl px-4 py-10 space-y-6 page-fade sm:px-6 sm:py-12"
         style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
       >
         <header
-          className="flex items-center gap-4 text-lg font-semibold"
+          className="reveal flex items-center gap-4 text-lg font-semibold"
           style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
         >
-          <Link to="/" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+          <Link to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
             Home
           </Link>
         </header>
@@ -156,7 +347,7 @@ function PostDetail() {
           <p className="text-[color:var(--fg,inherit)]">Post not found.</p>
         ) : (
           <>
-            <article className="space-y-4 w-full">
+            <article className="reveal space-y-4 w-full">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
                 {post.title}
               </h1>
@@ -170,35 +361,55 @@ function PostDetail() {
                       <Link
                         key={tag}
                         to={`/posts?tag=${encodeURIComponent(tag)}`}
-                        className="px-2 py-1 rounded-full border border-white/20 bg-white/5 hover:border-white/60 transition"
+                        className="px-2 py-1 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
                       >
                         {tag}
                       </Link>
                     ))}
                   </div>
                 ) : null}
-                {shareUrl ? (
-                  <a
-                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(post.title ?? '')}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-white/20 bg-white/5 hover:border-white/60 transition text-[12px]"
-                    aria-label="Share on X"
-                  >
-                    <img src="/X_logo.svg" alt="X" className="h-4 w-4" />
-                    <span>Share</span>
-                  </a>
-                ) : null}
               </div>
               {post.html ? (
                 <div
+                  ref={proseRef}
                   className="prose prose-invert font-medium font-a-otf-gothic text-sm sm:text-[15px] w-full"
                   style={{ color: 'var(--fg-strong)' }}
                   dangerouslySetInnerHTML={{ __html: post.html }}
                 />
               ) : null}
             </article>
-            <section className="mt-12">
+            <section className="mt-10 flex justify-center">
+              <button
+                type="button"
+                onClick={handleGood}
+                disabled={isVoting}
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition border ${
+                  hasVoted
+                    ? 'border-[color:var(--ui-border-strong)] bg-[color:var(--ui-surface)] hover:bg-[color:var(--ui-surface-hover)]'
+                    : 'border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]'
+                }`}
+                style={{ color: 'var(--fg)' }}
+              >
+                <img src="/good.svg" alt="Good" className="good-icon h-5 w-5" />
+                <span className="tracking-wide">{`${hasVoted ? 'Good!' : 'Good'} ${goodCount}`}</span>
+              </button>
+            </section>
+            {shareUrl ? (
+              <section className="mt-4 flex justify-center">
+                <a
+                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(post.title ?? '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] text-sm"
+                  aria-label="Share on X"
+                  style={{ color: 'var(--fg)' }}
+                >
+                  <span>Share on</span>
+                  <img src="/X_logo.svg" alt="X" className="x-share-icon h-4 w-4" />
+                </a>
+              </section>
+            ) : null}
+            <section className="mt-6 flex justify-start">
               <Link
                 to="/posts"
                 className="font-morisawa-dragothic underline-thin hover:text-accent text-base sm:text-[15px]"
@@ -207,33 +418,17 @@ function PostDetail() {
                 ← Posts一覧へ
               </Link>
             </section>
-            <section className="mt-10 flex justify-center">
-              <button
-                type="button"
-                onClick={handleGood}
-                disabled={isVoting}
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition border ${
-                  hasVoted
-                    ? 'border-white/20 bg-white/10 text-[color:var(--fg)]'
-                    : 'border-white/40 bg-white/10 hover:border-white/80 hover:bg-white/20'
-                }`}
-                style={{ color: 'var(--fg)' }}
-              >
-                <img src="/good.svg" alt="Good" className="good-icon h-5 w-5" />
-                <span className="tracking-wide">{`${hasVoted ? 'Good!' : 'Good'} ${goodCount}`}</span>
-              </button>
-            </section>
           </>
         )}
       </main>
 
       <footer
-        className="mt-12 border-t border-white/20 px-6 py-6 flex items-center justify-between"
+        className="relative z-10 mt-12 flex items-center justify-between border-t border-[color:var(--ui-border)] px-4 py-6 sm:px-6"
         style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
       >
         <div className="text-xs opacity-70 flex items-center gap-3">
           <AccessCounter />
-          <span>c haroin</span>
+          <span>© haroin</span>
         </div>
         <div className="flex items-center gap-4">
           <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">

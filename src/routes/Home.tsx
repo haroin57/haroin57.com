@@ -1,13 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import PrefetchLink from '../components/PrefetchLink'
 import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
-import { TransitionLink } from '../components/RouteTransition'
-import { useRouteTransition } from '../components/RouteTransitionContext'
 
 type Interest = { title: string; text: string }
 type PostMeta = { slug?: string; title?: string; createdAt?: string }
-
-const UP_SCROLL_THRESHOLD = 280
 
 const interests: Interest[] = [
   { title: 'Go, Java, Typescript', text: 'Distributed computing, microservices, and Web development.' },
@@ -26,96 +24,15 @@ const latestPosts: PostMeta[] = [...allPosts]
 function Home() {
   const [openInterests, setOpenInterests] = useState(false)
   const pageRef = useRef<HTMLDivElement | null>(null)
-  const leavingRef = useRef(false)
-  const accumulatorRef = useRef(0)
-  const touchLastYRef = useRef<number | null>(null)
-  const { isTransitioning, transitionTo } = useRouteTransition()
+  const navigate = useNavigate()
 
-  const navigateToLanding = useCallback(() => {
-    if (leavingRef.current) return
-    if (isTransitioning) return
-    const started = transitionTo('/')
-    if (!started) return
-    leavingRef.current = true
-  }, [isTransitioning, transitionTo])
+  const handleBack = useCallback(() => {
+    navigate('/')
+  }, [navigate])
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
-
-  useEffect(() => {
-    const isAtTop = () => (window.scrollY || 0) <= 2
-
-    const onWheel = (e: WheelEvent) => {
-      if (leavingRef.current) return
-      if (!isAtTop()) {
-        accumulatorRef.current = 0
-        return
-      }
-
-      const dy = e.deltaY
-      if (!Number.isFinite(dy) || dy === 0) return
-
-      if (dy < 0) {
-        accumulatorRef.current += -dy
-        if (accumulatorRef.current >= UP_SCROLL_THRESHOLD) {
-          navigateToLanding()
-        }
-        return
-      }
-
-      accumulatorRef.current = 0
-    }
-
-    const onTouchStart = (e: TouchEvent) => {
-      if (leavingRef.current) return
-      if (e.touches.length !== 1) return
-      touchLastYRef.current = e.touches[0]?.clientY ?? null
-      accumulatorRef.current = 0
-    }
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (leavingRef.current) return
-      if (touchLastYRef.current === null) return
-      if (e.touches.length !== 1) return
-      if (!isAtTop()) return
-
-      const y = e.touches[0]?.clientY
-      if (typeof y !== 'number') return
-
-      const dy = y - touchLastYRef.current
-      touchLastYRef.current = y
-      if (!Number.isFinite(dy) || dy === 0) return
-
-      if (dy > 0) {
-        accumulatorRef.current += dy
-        if (accumulatorRef.current >= UP_SCROLL_THRESHOLD) {
-          navigateToLanding()
-        }
-        return
-      }
-
-      accumulatorRef.current = 0
-    }
-
-    const reset = () => {
-      touchLastYRef.current = null
-      accumulatorRef.current = 0
-    }
-
-    window.addEventListener('wheel', onWheel, { passive: true })
-    window.addEventListener('touchstart', onTouchStart, { passive: true })
-    window.addEventListener('touchmove', onTouchMove, { passive: true })
-    window.addEventListener('touchend', reset, { passive: true })
-    window.addEventListener('touchcancel', reset, { passive: true })
-    return () => {
-      window.removeEventListener('wheel', onWheel)
-      window.removeEventListener('touchstart', onTouchStart)
-      window.removeEventListener('touchmove', onTouchMove)
-      window.removeEventListener('touchend', reset)
-      window.removeEventListener('touchcancel', reset)
-    }
-  }, [navigateToLanding])
 
   useEffect(() => {
     const root = pageRef.current
@@ -138,7 +55,7 @@ function Home() {
           observer.unobserve(entry.target)
         }
       },
-      { threshold: 0.15, rootMargin: '0px 0px -10% 0px' }
+      { threshold: 0.01, rootMargin: '0px 0px 50px 0px' }
     )
 
     targets.forEach((el) => observer.observe(el))
@@ -146,47 +63,41 @@ function Home() {
   }, [])
 
   return (
-    <div ref={pageRef} className="relative overflow-hidden">
-      <div className="pointer-events-none fixed inset-0 -z-10 flex items-center justify-center">
-        <picture>
-          <source media="(prefers-color-scheme: light)" srcSet="/background.png" />
-          <img
-            src="/profile.png"
-            alt=""
-            className="select-none"
-            style={{
-              width: '100vw',
-              height: '100vh',
-              objectFit: 'cover',
-              opacity: 'var(--overlay)',
-              filter: 'blur(var(--bg-blur, 0px))',
-              transform: 'scale(var(--bg-scale, 1))',
-              transformOrigin: 'center',
-            }}
-          />
-        </picture>
-      </div>
-
+    <div ref={pageRef} className="relative">
       <main
-        className="relative z-10 min-h-screen flex flex-col page-fade"
+        className="relative z-10 min-h-screen flex flex-col"
         style={{ fontFamily: `"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif`, color: 'var(--fg)' }}
       >
         <button
           type="button"
-          onClick={navigateToLanding}
-          className="group fixed left-1/2 top-6 z-20 inline-flex h-12 w-12 -translate-x-1/2 items-center justify-center overflow-hidden rounded-full bg-neutral-950 font-medium text-neutral-200 transition-all duration-300 hover:w-32"
+          onClick={handleBack}
+          className="group fixed left-1/2 top-6 z-30 -translate-x-1/2 inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-neutral-950 font-medium text-neutral-200 active:scale-95 transition-transform"
         >
-          <div className="inline-flex whitespace-nowrap opacity-0 transition-all duration-200 group-hover:-translate-x-3 group-hover:opacity-100">
-            Back
-          </div>
-          <div className="absolute right-3.5">
+          <div className="transition-transform duration-300 group-hover:-translate-y-[300%]">
             <svg
               width="15"
               height="15"
               viewBox="0 0 15 15"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 -rotate-90 transition-transform duration-200 group-hover:-translate-y-0.5"
+              className="h-5 w-5 -rotate-90"
+            >
+              <path
+                d="M8.14645 3.14645C8.34171 2.95118 8.65829 2.95118 8.85355 3.14645L12.8536 7.14645C13.0488 7.34171 13.0488 7.65829 12.8536 7.85355L8.85355 11.8536C8.65829 12.0488 8.34171 12.0488 8.14645 11.8536C7.95118 11.6583 7.95118 11.3417 8.14645 11.1464L11.2929 8H2.5C2.22386 8 2 7.77614 2 7.5C2 7.22386 2.22386 7 2.5 7H11.2929L8.14645 3.85355C7.95118 3.65829 7.95118 3.34171 8.14645 3.14645Z"
+                fill="currentColor"
+                fillRule="evenodd"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <div className="absolute translate-y-[300%] transition-transform duration-300 group-hover:translate-y-0">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 15 15"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 -rotate-90"
             >
               <path
                 d="M8.14645 3.14645C8.34171 2.95118 8.65829 2.95118 8.85355 3.14645L12.8536 7.14645C13.0488 7.34171 13.0488 7.65829 12.8536 7.85355L8.85355 11.8536C8.65829 12.0488 8.34171 12.0488 8.14645 11.8536C7.95118 11.6583 7.95118 11.3417 8.14645 11.1464L11.2929 8H2.5C2.22386 8 2 7.77614 2 7.5C2 7.22386 2.22386 7 2.5 7H11.2929L8.14645 3.85355C7.95118 3.65829 7.95118 3.34171 8.14645 3.14645Z"
@@ -256,36 +167,32 @@ function Home() {
                 <li className="space-y-3 py-6">
                   <section className="space-y-3">
                     <div className="flex items-center">
-                      <TransitionLink
+                      <PrefetchLink
                         to="/posts"
                         className="reveal relative inline-flex h-11 min-w-[7.5rem] items-center justify-center overflow-hidden rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2.5 text-base font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] sm:h-12 sm:px-5 sm:text-lg"
-                        style={{ color: 'var(--fg)', transitionDelay: '0ms' }}
+                        style={{ color: 'var(--fg)' }}
                       >
                         <span className="relative">Posts (ja)</span>
-                      </TransitionLink>
+                      </PrefetchLink>
                     </div>
-                    <div
-                      className="reveal px-1 text-base font-medhium text-[color:var(--fg-strong)]"
-                      style={{ transitionDelay: '110ms' }}
-                    >
+                    <div className="reveal px-1 text-base font-medhium text-[color:var(--fg-strong)]">
                       Latest Posts
                     </div>
-                    <div className="reveal glass-panel" style={{ transitionDelay: '190ms' }}>
+                    <div className="reveal glass-panel">
                       <div className="p-4 sm:p-6">
                         <ul className="list-disc space-y-3 pl-5 text-base font-vdl-logomaru">
                           {latestPosts.map((post, idx) => (
                             <li
                               key={post.slug ?? post.title ?? idx}
                               className="reveal"
-                              style={{ transitionDelay: `${260 + idx * 70}ms` }}
                             >
-                              <TransitionLink
+                              <Link
                                 to={post.slug ? `/posts/${post.slug}` : '/posts'}
                                 className="text-base underline-thin hover:text-accent"
                                 style={{ color: 'var(--fg)' }}
                               >
                                 {post.title ?? 'Untitled'}
-                              </TransitionLink>
+                              </Link>
                             </li>
                           ))}
                         </ul>
@@ -297,13 +204,13 @@ function Home() {
                 <li className="space-y-3 py-6">
                   <section className="space-y-3">
                     <div className="flex items-center">
-                      <TransitionLink
+                      <PrefetchLink
                         to="/products"
                         className="reveal relative inline-flex h-11 min-w-[7.5rem] items-center justify-center overflow-hidden rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2.5 text-base font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] sm:h-12 sm:px-5 sm:text-lg"
-                        style={{ color: 'var(--fg)', transitionDelay: '0ms' }}
+                        style={{ color: 'var(--fg)' }}
                       >
                         <span className="relative">Products</span>
-                      </TransitionLink>
+                      </PrefetchLink>
                     </div>
                   </section>
                 </li>

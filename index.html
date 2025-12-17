@@ -14,7 +14,7 @@
       content="分散システム、Web開発、デスクトップ音楽のメモやブログをまとめたharoinの個人サイト。"
     />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/profile.png" />
+    <meta property="og:image" content="/background.png" />
     <meta property="og:url" content="https://haroin57.com" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="haroin57 web" />
@@ -22,11 +22,16 @@
       name="twitter:description"
       content="分散システム、Web開発、デスクトップ音楽のメモやブログをまとめたharoinの個人サイト。"
     />
-    <meta name="twitter:image" content="/profile.png" />
-    <link rel="preload" as="image" href="/profile.png" />
+    <meta name="twitter:image" content="/background.png" />
+    <link rel="preload" as="image" href="/background.webp" type="image/webp" fetchpriority="high" />
     <!-- フォント読み込み高速化 -->
     <link rel="preconnect" href="https://use.typekit.net" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="dns-prefetch" href="https://use.typekit.net" />
+    <!-- Google Fonts - 非ブロッキング読み込み -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
     <title>haroin57 web</title>
     <!-- Adobe Fonts (bc-barell, AB-countryroad など) -->
     <script>
@@ -63,5 +68,14 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- INP最適化: 長いタスクを分割するスケジューラー -->
+    <script>
+      // scheduler.yield() ポリフィル（INP改善）
+      if (!('scheduler' in window)) {
+        window.scheduler = {
+          yield: () => new Promise(resolve => setTimeout(resolve, 0))
+        };
+      }
+    </script>
   </body>
 </html>

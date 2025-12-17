@@ -6,8 +6,36 @@ export default defineConfig({
   plugins: [
     react({
       babel: {
-        plugins: [['babel-plugin-react-compiler']],
+        plugins: [
+          [
+            'babel-plugin-react-compiler',
+            {
+              target: '19', // React 19
+            },
+          ],
+        ],
       },
     }),
   ],
+  build: {
+    // チャンク分割の最適化
+    rollupOptions: {
+      output: {
+        manualChunks: (id: string) => {
+          // React関連を別チャンクに (Windows/Unix両対応)
+          if (id.includes('node_modules/react') || id.includes('node_modules\\react')) {
+            return 'react-vendor'
+          }
+          // 重いライブラリを分離
+          if (id.includes('node_modules/remark') || id.includes('node_modules\\remark') ||
+              id.includes('node_modules/rehype') || id.includes('node_modules\\rehype')) {
+            return 'markdown'
+          }
+          return undefined
+        },
+      },
+    },
+    // ターゲットを最新ブラウザに
+    target: 'esnext',
+  },
 })

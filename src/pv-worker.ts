@@ -56,7 +56,7 @@ async function handleGood(req: Request, env: Env, corsHeaders: Record<string, st
   let payload: { slug?: string; action?: string } = {}
   try {
     payload = await req.json()
-  } catch (e) {
+  } catch {
     return new Response('bad request', { status: 400, headers: corsHeaders })
   }
 

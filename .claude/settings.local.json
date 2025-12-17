@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --experimental-strip-types -e:*)",
+      "Bash(npm run build:*)",
+      "Bash(ls:*)",
+      "Bash(command -v convert:*)",
+      "Bash(command -v:*)",
+      "Bash(npx sharp:*)",
+      "Bash(npx squoosh-cli:*)",
+      "Bash(npx @aspect/cwebp:*)",
+      "Bash(npx imagemin-cli:*)",
+      "Bash(npx imagemin:*)",
+      "Bash(npm install:*)",
+      "Bash(node scripts/convert-to-webp.mjs:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
