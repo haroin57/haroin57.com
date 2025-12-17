@@ -1,177 +1,168 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import postsData from './data/posts.json' with { type: 'json' }
-import AccessCounter from './components/AccessCounter'
+import { useCallback, useEffect, useRef } from 'react'
+import { useRouteTransition } from './components/RouteTransitionContext'
 
-type Interest = { title: string; text: string }
-type PostMeta = { slug?: string; title?: string; createdAt?: string }
-
-const interests: Interest[] = [
-  { title: 'Go, Java, Typescript', text: 'Distributed computing, microservices, and Web development.' },
-  { title: 'Frameworks', text: 'React, Next.js, Tailwind CSS' },
-  { title: 'Linux', text: 'Virtual machines, shell scripting' },
-  { title: 'Desktop music', text: 'Creating music using digital audio workstations.' },
-  { title: 'Bike touring', text: 'Exploring new places and enjoying nature on two wheels.' },
-  { title: 'PaaS', text: 'Cloudflare, Vercel, AWS' },
-]
-
-const allPosts: PostMeta[] = Array.isArray(postsData) ? (postsData as PostMeta[]) : []
-const latestPosts: PostMeta[] = [...allPosts]
-  .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
-  .slice(0, 5)
+const SCROLL_THRESHOLD = 280
 
 function App() {
-  const [openInterests, setOpenInterests] = useState(false)
-  const [leaving, setLeaving] = useState(false)
-  const navigate = useNavigate()
+  const { isTransitioning, transitionTo } = useRouteTransition()
+  const leavingRef = useRef(false)
+  const accumulatorRef = useRef(0)
+  const touchLastYRef = useRef<number | null>(null)
+  const isTransitioningRef = useRef(isTransitioning)
 
-  const handlePostsClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault()
-    setLeaving(true)
-    setTimeout(() => navigate('/posts'), 180)
-  }
+  useEffect(() => {
+    isTransitioningRef.current = isTransitioning
+  }, [isTransitioning])
+
+  const navigateToHome = useCallback(() => {
+    if (leavingRef.current) return
+    if (isTransitioningRef.current) return
+    const started = transitionTo('/home')
+    if (!started) return
+    leavingRef.current = true
+    document.body.style.setProperty('--home-progress', '1')
+  }, [transitionTo])
+
+  useEffect(() => {
+    document.body.classList.add('home-page')
+    document.body.style.setProperty('--home-progress', '0')
+
+    const setProgress = (progress: number) => {
+      const next = Math.max(0, Math.min(1, progress))
+      document.body.style.setProperty('--home-progress', String(next))
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      const dy = e.deltaY
+      if (!Number.isFinite(dy) || dy === 0) return
+      e.preventDefault()
+      if (leavingRef.current) return
+
+      accumulatorRef.current = Math.max(0, Math.min(SCROLL_THRESHOLD, accumulatorRef.current + dy))
+      const progress = accumulatorRef.current / SCROLL_THRESHOLD
+      setProgress(progress)
+      if (progress >= 1) navigateToHome()
+    }
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault()
+        if (leavingRef.current) return
+        navigateToHome()
+      }
+    }
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (leavingRef.current) return
+      if (e.touches.length !== 1) return
+      touchLastYRef.current = e.touches[0]?.clientY ?? null
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchLastYRef.current === null) return
+      if (e.touches.length !== 1) return
+
+      const y = e.touches[0]?.clientY
+      if (typeof y !== 'number') return
+      e.preventDefault()
+      if (leavingRef.current) return
+
+      const dy = touchLastYRef.current - y
+      touchLastYRef.current = y
+      accumulatorRef.current = Math.max(0, Math.min(SCROLL_THRESHOLD, accumulatorRef.current + dy))
+      const progress = accumulatorRef.current / SCROLL_THRESHOLD
+      setProgress(progress)
+      if (progress >= 1) navigateToHome()
+    }
+
+    const resetTouch = () => {
+      if (leavingRef.current) return
+      touchLastYRef.current = null
+    }
+
+    window.addEventListener('wheel', onWheel, { passive: false })
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('touchend', resetTouch, { passive: true })
+    window.addEventListener('touchcancel', resetTouch, { passive: true })
+
+    return () => {
+      document.body.classList.remove('home-page')
+      document.body.style.removeProperty('--home-progress')
+      window.removeEventListener('wheel', onWheel)
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', resetTouch)
+      window.removeEventListener('touchcancel', resetTouch)
+    }
+  }, [navigateToHome])
 
   return (
     <div className="relative overflow-hidden">
       <div className="pointer-events-none fixed inset-0 -z-10 flex items-center justify-center">
-        <img
-          src="/profile.png"
-          alt="haroin profile"
-          className="select-none"
-          style={{ width: '100vw', height: '100vh', objectFit: 'cover', opacity: 'var(--overlay)' }}
-        />
-      </div>
+        <picture>
+          <source media="(prefers-color-scheme: light)" srcSet="/background.png" />
+           <img
+             src="/profile.png"
+             alt=""
+             className="select-none"
+             style={{
+               width: '100vw',
+               height: '100vh',
+               objectFit: 'cover',
+               opacity: 'var(--overlay)',
+               filter: 'blur(var(--bg-blur, 0px))',
+               transform: 'scale(var(--bg-scale, 1))',
+               transformOrigin: 'center',
+             }}
+           />
+         </picture>
+       </div>
 
       <main
-        className={`relative mx-auto min-h-screen max-w-4xl px-6 pb-20 pt-8 ${leaving ? 'page-exit' : 'page-fade'}`}
+        className="relative z-10 mx-auto h-[100svh] max-w-4xl px-4 page-fade sm:px-6"
         style={{ fontFamily: `"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif`, color: 'var(--fg)' }}
-      >
-        <header className="flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
-          <nav
-            className="flex items-center gap-6 text-lg font-semibold"
-            style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
-          >
-            <Link to="/" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
-              Home
-            </Link>
-          </nav>
-        </header>
-
-        <section className="relative space-y-8">
-          <div className="space-y-5">
-            <h1 className="text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong)] md:text-4xl">
-              haroin57 web
-            </h1>
-            <p className="text-base sm:text-lg leading-relaxed">
+        >
+          <section className="home-hero relative flex min-h-[100svh] flex-col items-center justify-center text-center">
+            <div className="space-y-6">
+              <h1 className="text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong)] sm:text-5xl md:text-6xl">
+                haroin57 web
+              </h1>
+            <p className="mx-auto max-w-2xl text-base leading-relaxed opacity-90 sm:text-lg md:text-xl">
               I&apos;m haroin, an engineering student belonging to Shinshu University, interested in distributed systems, web
               development, and desktop music.
             </p>
           </div>
-        </section>
-
-        <section className="mt-10 space-y-4">
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setOpenInterests((v) => !v)}
-              aria-expanded={openInterests}
-              className="group relative inline-flex h-12 w-30 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-transparent px-5 py-2 text-lg font-semibold"
-              style={{ color: 'var(--fg)' }}
-            >
-              <div className="translate-y-0 opacity-100 transition duration-500 ease-in-out md:group-hover:-translate-y-[150%] md:group-hover:opacity-0">
-                Interests
-              </div>
-              <div className="absolute translate-y-full opacity-0 transition duration-500 ease-in-out md:translate-y-[150%] md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 15 15"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 transition-transform duration-300"
-                  style={{ transform: openInterests ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                >
-                  <path
-                    d="M7.5 2C7.77614 2 8 2.22386 8 2.5L8 11.2929L11.1464 8.14645C11.3417 7.95118 11.6583 7.95118 11.8536 8.14645C12.0488 8.34171 12.0488 8.65829 11.8536 8.85355L7.85355 12.8536C7.75979 12.9473 7.63261 13 7.5 13C7.36739 13 7.24021 12.9473 7.14645 12.8536L3.14645 8.85355C2.95118 8.65829 2.95118 8.34171 3.14645 8.14645C3.34171 7.95118 3.65829 7.95118 3.85355 8.14645L7 11.2929L7 2.5C7 2.22386 7.22386 2 7.5 2Z"
-                    fill="currentColor"
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </button>
-          </div>
-          <div className={`glass-panel collapse ${openInterests ? 'open' : 'closed'}`}>
-            <ul className="list-disc space-y-4 pl-6 text-base">
-              {interests.map((item) => (
-                <li key={item.title}>
-                  <div className="text-lg font-medium">{item.title}</div>
-                  <div className="mt-1 text-sm opacity-90">{item.text}</div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className="mt-10 space-y-3">
-          <div className="flex items-center justify-between">
-            <Link
-              to="/posts"
-              onClick={handlePostsClick}
-              className="relative inline-flex h-12 w-30 items-center justify-center overflow-hidden rounded border border-white/20 bg-transparent px-5 py-2.5 text-lg font-semibold transition-all duration-300 hover:bg-white/10"
-              style={{ color: 'var(--fg)' }}
-            >
-              <span className="relative">Posts (ja)</span>
-            </Link>
-          </div>
-          <div className="text-base font-medhium text-[color:var(--fg-strong)] px-1">Latest Posts</div>
-          <div className="glass-panel">
-            <ul className="list-disc space-y-3 pl-6 text-base font-vdl-logomaru">
-              {latestPosts.map((post) => (
-                <li key={post.slug ?? post.title}>
-                  <Link
-                    to={post.slug ? `/posts/${post.slug}` : '/posts'}
-                    className="text-base underline-thin hover:text-accent"
-                    style={{ color: 'var(--fg)' }}
-                  >
-                    {post.title ?? 'Untitled'}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className="mt-8 space-y-3">
-          <div className="flex items-center justify-between">
-            <Link
-              to="/products"
-              className="relative inline-flex h-12 w-30 items-center justify-center overflow-hidden rounded border border-white/20 bg-transparent px-5 py-2.5 text-lg font-semibold transition-all duration-300 hover:bg-white/10"
-              style={{ color: 'var(--fg)' }}
-            >
-              <span className="relative">Products</span>
-            </Link>
-          </div>
+          <button
+            type="button"
+            onClick={navigateToHome}
+            className="group absolute bottom-10 left-1/2 inline-flex h-12 w-12 -translate-x-1/2 items-center justify-center overflow-hidden rounded-full bg-neutral-950 font-medium text-neutral-200 transition-all duration-300 hover:w-32"
+          >
+            <div className="inline-flex whitespace-nowrap opacity-0 transition-all duration-200 group-hover:-translate-x-3 group-hover:opacity-100">
+              Explore
+            </div>
+            <div className="absolute right-3.5">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 15 15"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 rotate-90"
+              >
+                <path
+                  d="M8.14645 3.14645C8.34171 2.95118 8.65829 2.95118 8.85355 3.14645L12.8536 7.14645C13.0488 7.34171 13.0488 7.65829 12.8536 7.85355L8.85355 11.8536C8.65829 12.0488 8.34171 12.0488 8.14645 11.8536C7.95118 11.6583 7.95118 11.3417 8.14645 11.1464L11.2929 8H2.5C2.22386 8 2 7.77614 2 7.5C2 7.22386 2.22386 7 2.5 7H11.2929L8.14645 3.85355C7.95118 3.65829 7.95118 3.34171 8.14645 3.14645Z"
+                  fill="currentColor"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+          </button>
         </section>
       </main>
-
-      <footer
-        className="mt-12 border-t border-white/20 px-6 py-6 flex items-center justify-between"
-        style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
-      >
-        <div className="text-xs opacity-70 flex items-center gap-3">
-          <AccessCounter />
-          <span>© haroin</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
-          </a>
-          <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
-          </a>
-        </div>
-      </footer>
     </div>
   )
 }
