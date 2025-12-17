@@ -16,25 +16,22 @@ function GlobalBackground() {
 
   return (
     <div className="global-bg-container">
-      <picture>
-        <source type="image/webp" srcSet="/background.webp" />
-        <img
-          src="/background.png"
-          alt=""
-          className="global-bg select-none"
-          fetchPriority="high"
-          decoding="async"
-          style={{
-            width: '100vw',
-            height: '100vh',
-            objectFit: 'cover',
-            opacity,
-            filter: 'blur(var(--bg-blur, 0px))',
-            transform: 'scale(var(--bg-scale, 1))',
-            transformOrigin: 'center',
-          }}
-        />
-      </picture>
+      <img
+        src="/background.webp"
+        alt=""
+        className="global-bg select-none"
+        fetchPriority="high"
+        decoding="async"
+        style={{
+          width: '100vw',
+          height: '100vh',
+          objectFit: 'cover',
+          opacity,
+          filter: 'blur(var(--bg-blur, 0px))',
+          transform: 'scale(var(--bg-scale, 1))',
+          transformOrigin: 'center',
+        }}
+      />
     </div>
   )
 }
