@@ -1,4 +1,4 @@
-// scripts/gen-posts.ts
+// scripts/gen-product-posts.ts
 import fs from 'fs/promises'
 import path from 'path'
 import fg from 'fast-glob'
@@ -15,8 +15,8 @@ import rehypeStringify from 'rehype-stringify'
 import { SKIP, visit } from 'unist-util-visit'
 import { toString } from 'mdast-util-to-string'
 
-const POSTS_DIR = path.join(process.cwd(), 'content/posts')
-const OUT_PATH = path.join(process.cwd(), 'src/data/posts.json')
+const PRODUCTS_DIR = path.join(process.cwd(), 'content/products')
+const OUT_PATH = path.join(process.cwd(), 'src/data/product-posts.json')
 
 type HastNode = { type: string; [key: string]: unknown }
 type HastRoot = { type: 'root'; children: HastNode[] }
@@ -39,8 +39,8 @@ type MdastCode = { type: 'code'; lang?: string; meta?: string; value: string; da
 type MdastParent = { type: string; children: MdastNode[] }
 
 async function main() {
-  const files = await fg('**/*.md', { cwd: POSTS_DIR })
-  const posts = []
+  const files = await fg('**/*.md', { cwd: PRODUCTS_DIR })
+  const productPosts = []
 
 
   const CODE_LANGUAGE_LABELS: Record<string, string> = {
@@ -63,6 +63,12 @@ async function main() {
     typescript: 'TS',
     yaml: 'YAML',
     yml: 'YAML',
+    java: 'Java',
+    python: 'Python',
+    py: 'Python',
+    sql: 'SQL',
+    protobuf: 'Proto',
+    proto: 'Proto',
   }
 
   const normalizeClassName = (value: unknown): string[] => {
@@ -160,7 +166,6 @@ async function main() {
       const headings: { depth: number; text: string; id?: string }[] = []
       visit(tree, 'heading', (node: MdastHeading) => {
         const text = toString(node).trim()
-        // 目次見出しそのものは除外
         if (text === '目次') return
         if (node.depth >= 2 && node.depth <= 4) {
           const id = typeof node.data?.id === 'string' ? node.data.id : undefined
@@ -173,7 +178,6 @@ async function main() {
       )
       if (tocIndex === -1 || headings.length === 0) return
 
-      // 通常のリストとして作成
       const list: MdastList = {
         type: 'list',
         ordered: false,
@@ -202,7 +206,6 @@ async function main() {
     return (tree: HastRoot) => {
       let foundTocHeading = false
       visit(tree, 'element', (node: HastElement, index: number | undefined, parent: HastNode | undefined) => {
-        // 目次見出しを探す
         if (!foundTocHeading && node.tagName === 'h2') {
           const children = node.children || []
           const textContent = children
@@ -220,10 +223,8 @@ async function main() {
           }
         }
 
-        // 目次見出しの直後のulをdivで包む
         if (foundTocHeading && node.tagName === 'ul' && parent && parent.type === 'root' && index !== undefined) {
           const parentRoot = parent as HastRoot
-          // ulをdiv.toc-boxで包む
           const wrapper: HastElement = {
             type: 'element',
             tagName: 'div',
@@ -231,7 +232,7 @@ async function main() {
             children: [node],
           }
           parentRoot.children[index] = wrapper
-          foundTocHeading = false // リセット
+          foundTocHeading = false
           return SKIP
         }
       })
@@ -375,7 +376,6 @@ async function main() {
       const nested = item.children.find((child, idx) => idx > 0 && child.type === 'list') as MdastList | undefined
       if (!nested || nested.ordered) return null
       const defItems = (nested.children || []).filter((c) => c.type === 'listItem') as MdastListItem[]
-      // MDNの定義リスト構文は dd が 1つのみ（複数 dd はエラー）
       if (defItems.length !== 1) return null
       for (const def of defItems) {
         const first = def.children?.[0] as MdastNode | undefined
@@ -430,7 +430,6 @@ async function main() {
 
       let lang = raw.trim()
 
-      // legacy: ```lang:title 形式（MDNに寄せるため title 部分は無視）
       const colonIdx = lang.indexOf(':')
       if (colonIdx !== -1) lang = lang.slice(0, colonIdx)
 
@@ -526,9 +525,8 @@ async function main() {
   }
 
   for (const file of files) {
-    const full = await fs.readFile(path.join(POSTS_DIR, file), 'utf8')
-    const { data, content } = matter(full) // frontmatterが無ければ data は空
-    // MDNのMarkdownガイドに寄せて、GFM + MDN独自構文（callout/定義リスト/コードブロック）を処理
+    const full = await fs.readFile(path.join(PRODUCTS_DIR, file), 'utf8')
+    const { data, content } = matter(full)
     const processed = await remark()
       .use(remarkGfm)
       .use(remarkSlug)
@@ -550,8 +548,8 @@ async function main() {
         showLineNumbers: true,
       })
       .use(rehypeMdnCodeHeaders)
-      .use(rehypeRaw) // 既存のHTMLを通す
-      .use(wrapTocInDiv) // 目次をdivで包む（rehypeRawの後に配置）
+      .use(rehypeRaw)
+      .use(wrapTocInDiv)
       .use(wrapTablesForResponsive)
       .use(rehypeStringify, { allowDangerousHtml: true })
       .process(content)
@@ -566,8 +564,12 @@ async function main() {
               .filter(Boolean)
           : []
 
-    posts.push({
-      slug: file.replace(/\.md$/, ''),
+    // slugはファイル名から取得（products.jsonのslugと一致させる）
+    const slug = file.replace(/\.md$/, '')
+
+    productPosts.push({
+      slug,
+      productSlug: data.product || slug, // frontmatterのproductフィールドを使用
       title: data.title || file,
       summary: data.summary || '',
       createdAt: data.date || null,
@@ -576,11 +578,10 @@ async function main() {
     })
   }
 
-  // ソート（必要なら）
-  posts.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+  productPosts.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
   await fs.mkdir(path.dirname(OUT_PATH), { recursive: true })
-  await fs.writeFile(OUT_PATH, JSON.stringify(posts, null, 2), 'utf8')
-  console.log(`Generated ${posts.length} posts -> ${OUT_PATH}`)
+  await fs.writeFile(OUT_PATH, JSON.stringify(productPosts, null, 2), 'utf8')
+  console.log(`Generated ${productPosts.length} product posts -> ${OUT_PATH}`)
 }
 
 main().catch((err) => {

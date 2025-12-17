@@ -8,6 +8,7 @@ const Home = lazy(() => import('../routes/Home'))
 const Posts = lazy(() => import('../routes/Posts'))
 const PostDetail = lazy(() => import('../routes/PostDetail'))
 const Products = lazy(() => import('../routes/Products'))
+const ProductDetail = lazy(() => import('../routes/ProductDetail'))
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -30,6 +31,7 @@ function AnimatedRoutes() {
               <Route path="/posts" element={<Posts />} />
               <Route path="/posts/:slug" element={<PostDetail />} />
               <Route path="/products" element={<Products />} />
+              <Route path="/products/:slug" element={<ProductDetail />} />
             </Routes>
           </Suspense>
         </div>

@@ -277,10 +277,17 @@ img {
 }
 
 /* テーブルのスタイル */
+.prose .table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1rem 0;
+  border-radius: 10px;
+}
+
 .prose table {
   width: 100%;
+  min-width: 480px;
   border-collapse: collapse;
-  margin: 1rem 0;
   border: 1px solid var(--ui-border);
   border-radius: 10px;
   overflow: hidden;
@@ -704,4 +711,178 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================
+   Mermaid ダイアグラムスタイル
+   （glass-panel UIに合わせた黒ベースデザイン + 透過背景）
+   ========================== */
+.mermaid-block {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  overflow-x: auto;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.mermaid-block.mermaid-rendered {
+  min-height: 100px;
+}
+
+.mermaid-block svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Mermaidのテキストスタイル調整 */
+.mermaid-block .nodeLabel,
+.mermaid-block .edgeLabel,
+.mermaid-block .label {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.mermaid-block .node rect,
+.mermaid-block .node circle,
+.mermaid-block .node ellipse,
+.mermaid-block .node polygon {
+  stroke-width: 1.5px;
+}
+
+/* フローチャートのスタイル（白の半透明ライン） */
+.mermaid-block .flowchart-link {
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 2px;
+}
+
+/* 矢印のスタイル */
+.mermaid-block marker path {
+  fill: rgba(255, 255, 255, 0.6);
+}
+
+/* シーケンス図のスタイル（透過背景） */
+.mermaid-block .actor {
+  fill: rgba(0, 0, 0, 0.35);
+  stroke: rgba(255, 255, 255, 0.4);
+}
+
+.mermaid-block .actor-line {
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-dasharray: 5 5;
+}
+
+/* メッセージライン */
+.mermaid-block .messageLine0,
+.mermaid-block .messageLine1 {
+  stroke: rgba(255, 255, 255, 0.5);
+}
+
+/* サブグラフ（クラスター）のスタイル（透過） */
+.mermaid-block .cluster rect {
+  fill: rgba(0, 0, 0, 0.2);
+  stroke: rgba(255, 255, 255, 0.3);
+}
+
+/* エッジラベル背景（透過） */
+.mermaid-block .edgeLabel rect {
+  fill: rgba(0, 0, 0, 0.4);
+}
+
+/* 状態遷移図のスタイル（透過） */
+.mermaid-block .statediagram-state rect {
+  fill: rgba(0, 0, 0, 0.3);
+  stroke: rgba(255, 255, 255, 0.4);
+}
+
+/* クラス図のスタイル（透過） */
+.mermaid-block .classGroup rect {
+  fill: rgba(0, 0, 0, 0.3);
+  stroke: rgba(255, 255, 255, 0.4);
+}
+
+/* ER図のスタイル（透過） */
+.mermaid-block .er.entityBox {
+  fill: rgba(0, 0, 0, 0.3);
+  stroke: rgba(255, 255, 255, 0.4);
+}
+
+/* エラー表示 */
+.mermaid-error {
+  padding: 1rem;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 8px;
+  color: #f87171;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* レスポンシブ対応 - Mermaid */
+@media (max-width: 640px) {
+  .mermaid-block {
+    margin: 1rem -1rem;
+    padding: 1rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .mermaid-block svg {
+    min-width: 360px;
+  }
+
+  /* スクロールヒントのグラデーション */
+  .mermaid-block::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 24px;
+    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.4));
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s;
+  }
+
+  .mermaid-block.scrolled-end::after {
+    opacity: 0;
+  }
+}
+
+/* モバイル全般のタッチ操作最適化 */
+@media (max-width: 640px) {
+  /* テーブルのレスポンシブ */
+  .prose table {
+    min-width: 400px;
+    font-size: 0.875rem;
+  }
+
+  .prose table th,
+  .prose table td {
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* コードブロックのスクロール */
+  .prose pre {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ボタンのタップターゲットサイズ確保 */
+  .mdn-code-copy {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* リンクのタップターゲット */
+  .prose a {
+    padding: 2px 0;
+  }
 }

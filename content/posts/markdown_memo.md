@@ -321,3 +321,330 @@ Markdown内に書いた HTML はそのまま通ります（例: `<br />`, `<div>
 
 <br/>
 
+## Mermaid ダイアグラム
+
+コードブロックの言語を `mermaid` に指定すると、ダイアグラムとして描画されます。
+
+<br/>
+
+### フローチャート (flowchart)
+
+システムの流れや構成を表現するのに便利です。
+
+````md
+```mermaid
+flowchart TB
+    A[開始] --> B{条件分岐}
+    B -->|Yes| C[処理1]
+    B -->|No| D[処理2]
+    C --> E[終了]
+    D --> E
+```
+````
+
+表示例:
+
+```mermaid
+flowchart TB
+    A[開始] --> B{条件分岐}
+    B -->|Yes| C[処理1]
+    B -->|No| D[処理2]
+    C --> E[終了]
+    D --> E
+```
+
+フローチャートの方向:
+- `TB` (Top to Bottom): 上から下
+- `LR` (Left to Right): 左から右
+- `BT` (Bottom to Top): 下から上
+- `RL` (Right to Left): 右から左
+
+ノードの形状:
+- `[text]`: 四角形
+- `(text)`: 角丸四角形
+- `{text}`: ひし形（条件分岐）
+- `((text))`: 円形
+- `[[text]]`: サブルーチン
+
+<br/>
+
+### サブグラフ (subgraph)
+
+関連する要素をグループ化できます。
+
+````md
+```mermaid
+flowchart TB
+    subgraph Frontend["フロントエンド"]
+        React[React]
+        Router[React Router]
+    end
+
+    subgraph Backend["バックエンド"]
+        API[API Server]
+        DB[(Database)]
+    end
+
+    React --> API
+    API --> DB
+```
+````
+
+表示例:
+
+```mermaid
+flowchart TB
+    subgraph Frontend["フロントエンド"]
+        React[React]
+        Router[React Router]
+    end
+
+    subgraph Backend["バックエンド"]
+        API[API Server]
+        DB[(Database)]
+    end
+
+    React --> API
+    API --> DB
+```
+
+<br/>
+
+### シーケンス図 (sequenceDiagram)
+
+処理の流れや通信を時系列で表現できます。
+
+````md
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as Client
+    participant S as Server
+
+    U->>C: ボタンクリック
+    C->>S: APIリクエスト
+    S-->>C: レスポンス
+    C-->>U: 結果表示
+```
+````
+
+表示例:
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as Client
+    participant S as Server
+
+    U->>C: ボタンクリック
+    C->>S: APIリクエスト
+    S-->>C: レスポンス
+    C-->>U: 結果表示
+```
+
+矢印の種類:
+- `->>`: 実線矢印（同期メッセージ）
+- `-->>`: 点線矢印（応答）
+- `-x`: 非同期メッセージ
+- `--x`: 非同期応答
+
+<br/>
+
+### 状態遷移図 (stateDiagram-v2)
+
+状態の変化を表現できます。
+
+````md
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Loading: データ取得開始
+    Loading --> Success: 成功
+    Loading --> Error: 失敗
+    Success --> Idle: リセット
+    Error --> Idle: リトライ
+```
+````
+
+表示例:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Loading: データ取得開始
+    Loading --> Success: 成功
+    Loading --> Error: 失敗
+    Success --> Idle: リセット
+    Error --> Idle: リトライ
+```
+
+- `[*]`: 開始/終了状態
+- `-->`: 遷移
+- `: ラベル`: 遷移条件/イベント
+
+<br/>
+
+### クラス図 (classDiagram)
+
+オブジェクト指向設計を表現できます。
+
+````md
+```mermaid
+classDiagram
+    class User {
+        +String name
+        +String email
+        +login()
+        +logout()
+    }
+
+    class Post {
+        +String title
+        +String content
+        +publish()
+    }
+
+    User "1" --> "*" Post: 投稿する
+```
+````
+
+表示例:
+
+```mermaid
+classDiagram
+    class User {
+        +String name
+        +String email
+        +login()
+        +logout()
+    }
+
+    class Post {
+        +String title
+        +String content
+        +publish()
+    }
+
+    User "1" --> "*" Post: 投稿する
+```
+
+<br/>
+
+### ER図 (erDiagram)
+
+データベース設計を表現できます。
+
+````md
+```mermaid
+erDiagram
+    USER ||--o{ POST : writes
+    POST ||--|{ TAG : has
+
+    USER {
+        int id PK
+        string name
+        string email
+    }
+
+    POST {
+        int id PK
+        string title
+        text content
+        int user_id FK
+    }
+
+    TAG {
+        int id PK
+        string name
+    }
+```
+````
+
+表示例:
+
+```mermaid
+erDiagram
+    USER ||--o{ POST : writes
+    POST ||--|{ TAG : has
+
+    USER {
+        int id PK
+        string name
+        string email
+    }
+
+    POST {
+        int id PK
+        string title
+        text content
+        int user_id FK
+    }
+
+    TAG {
+        int id PK
+        string name
+    }
+```
+
+関係の記法:
+- `||--||`: 1対1
+- `||--o{`: 1対多（0以上）
+- `||--|{`: 1対多（1以上）
+- `}o--o{`: 多対多
+
+<br/>
+
+### 円グラフ (pie)
+
+割合を可視化できます。
+
+````md
+```mermaid
+pie title 言語の使用率
+    "TypeScript" : 45
+    "JavaScript" : 30
+    "Python" : 15
+    "その他" : 10
+```
+````
+
+表示例:
+
+```mermaid
+pie title 言語の使用率
+    "TypeScript" : 45
+    "JavaScript" : 30
+    "Python" : 15
+    "その他" : 10
+```
+
+<br/>
+
+### スタイルのカスタマイズ
+
+ノードにスタイルを適用できます。
+
+````md
+```mermaid
+flowchart LR
+    A[通常] --> B[強調]
+    B --> C[薄い]
+
+    style B fill:#134e4a,stroke:#5eead4,stroke-width:2px
+    style C opacity:0.5
+```
+````
+
+表示例:
+
+```mermaid
+flowchart LR
+    A[通常] --> B[強調]
+    B --> C[薄い]
+
+    style B fill:#134e4a,stroke:#5eead4,stroke-width:2px
+    style C opacity:0.5
+```
+
+<br/>
+

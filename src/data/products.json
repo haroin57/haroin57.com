@@ -1,0 +1,75 @@
+[
+  {
+    "slug": "haroin57-com",
+    "name": "haroin57.com",
+    "description": "Personal portfolio website built with React and TypeScript",
+    "language": "TypeScript",
+    "tags": ["React", "Vite", "Tailwind CSS", "Cloudflare Pages"],
+    "url": "https://github.com/haroin57/haroin57.com",
+    "demo": "https://haroin57.com",
+    "content": {
+      "overview": "React 19とViteで構築したポートフォリオサイトです。パフォーマンスとユーザー体験を重視し、Cloudflare Pagesにデプロイしています。",
+      "features": [
+        "React 19 + React Compiler による最適化",
+        "Vite + Rolldownによる高速ビルド",
+        "Tailwind CSS v4によるスタイリング",
+        "ページ遷移アニメーション（CSSTransition）",
+        "INP最適化（startTransition, content-visibility）",
+        "Markdownによるブログ投稿システム",
+        "KaTeXによる数式レンダリング対応"
+      ],
+      "techStack": [
+        { "category": "Frontend", "items": ["React 19", "TypeScript", "Tailwind CSS v4"] },
+        { "category": "Build", "items": ["Vite 7", "Rolldown", "React Compiler"] },
+        { "category": "Deploy", "items": ["Cloudflare Pages", "Wrangler"] },
+        { "category": "Other", "items": ["remark/rehype", "KaTeX", "shiki"] }
+      ]
+    }
+  },
+  {
+    "slug": "timetable-bot",
+    "name": "timetable-bot",
+    "description": "LINE bot for managing timetables with GPT-powered natural language processing",
+    "language": "Python",
+    "tags": ["LINE", "Bot", "GPT", "OpenAI"],
+    "url": "https://github.com/haroin57/timetable-bot",
+    "content": {
+      "overview": "GPTを活用したLINE時間割管理Botです。自然言語でメッセージを送るだけで時間割の登録・表示・リマインダー設定ができます。画像からの時間割抽出にも対応。",
+      "features": [
+        "GPTによる自然言語メッセージ解析",
+        "画像からの時間割抽出（GPT-4o Vision）",
+        "時間割の登録・編集・削除",
+        "曜日別・週間スケジュール表示",
+        "授業開始前のリマインダー通知"
+      ],
+      "techStack": [
+        { "category": "Runtime", "items": ["Python 3.11+", "FastAPI"] },
+        { "category": "AI/API", "items": ["OpenAI GPT", "LINE Messaging API"] },
+        { "category": "Database", "items": ["SQLite", "APScheduler"] }
+      ]
+    }
+  },
+  {
+    "slug": "distributed-system",
+    "name": "distributed-system",
+    "description": "Distributed system implementation for learning distributed computing",
+    "language": "Java",
+    "tags": ["Distributed Computing", "Microservices"],
+    "url": "https://github.com/haroin57/distoributed-system",
+    "content": {
+      "overview": "分散システムの学習を目的としたJava実装です。分散合意アルゴリズムやマイクロサービスアーキテクチャの基礎を実装しています。",
+      "features": [
+        "Raftコンセンサスアルゴリズムの実装",
+        "gRPCによるノード間通信",
+        "リーダー選出とログレプリケーション",
+        "障害検知とフェイルオーバー",
+        "分散キーバリューストア"
+      ],
+      "techStack": [
+        { "category": "Language", "items": ["Java 21"] },
+        { "category": "Communication", "items": ["gRPC", "Protocol Buffers"] },
+        { "category": "Build", "items": ["Gradle"] }
+      ]
+    }
+  }
+]

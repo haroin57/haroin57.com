@@ -75,7 +75,7 @@ function Posts() {
         <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-12">
           <div className="mx-auto w-full max-w-2xl space-y-6 text-left">
             <header
-              className="reveal flex items-center gap-4 text-lg font-semibold"
+              className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
               style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
             >
               <Link to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
@@ -118,8 +118,8 @@ function Posts() {
             <ul className="reveal font-vdl-logomaru posts-divider">
               {filtered.map((p, idx) => (
                 <li key={p.slug ?? p.title ?? idx} className="space-y-2 py-4">
-                  <p className="text-xs text-[color:var(--fg,inherit)] opacity-75">{p.createdAt}</p>
-                  <h2 className="text-lg sm:text-xl text-[color:var(--fg-strong,inherit)]">
+                  <p className="text-xs sm:text-sm text-[color:var(--fg,inherit)] opacity-75">{p.createdAt}</p>
+                  <h2 className="text-lg sm:text-2xl text-[color:var(--fg-strong,inherit)]">
                     <Link
                       to={p.slug ? `/posts/${p.slug}` : '/posts'}
                       className="underline-thin hover:text-accent"
@@ -129,10 +129,10 @@ function Posts() {
                     </Link>
                   </h2>
                   {p.summary ? (
-                    <p className="text-xs sm:text-sm text-[color:var(--fg,inherit)] opacity-80">{p.summary}</p>
+                    <p className="text-xs sm:text-base text-[color:var(--fg,inherit)] opacity-80">{p.summary}</p>
                   ) : null}
                   {p.tags && p.tags.length > 0 ? (
-                    <div className="flex flex-wrap gap-2 text-[11px] sm:text-xs">
+                    <div className="flex flex-wrap gap-2 text-[11px] sm:text-sm">
                       {p.tags.map((tag) => (
                         <span
                           key={tag}
@@ -154,7 +154,7 @@ function Posts() {
         className="relative z-10 mt-12 flex items-center justify-between border-t border-[color:var(--ui-border)] px-4 py-6 sm:px-6"
         style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
       >
-        <div className="text-xs opacity-70 flex items-center gap-3">
+        <div className="text-xs sm:text-sm opacity-70 flex items-center gap-3">
           <AccessCounter />
           <span>© haroin</span>
         </div>

@@ -123,7 +123,7 @@ function Home() {
                         type="button"
                         onClick={() => setOpenInterests((v) => !v)}
                         aria-expanded={openInterests}
-                        className="reveal group relative inline-flex h-11 min-w-[7.5rem] items-center justify-center overflow-hidden rounded-md border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2 text-base font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] sm:h-12 sm:px-5 sm:text-lg"
+                        className="reveal group relative inline-flex h-11 min-w-[7.5rem] items-center justify-center overflow-hidden rounded-md border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2 text-base font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] sm:h-12 sm:px-5 sm:text-xl"
                         style={{ color: 'var(--fg)' }}
                       >
                         <div className="translate-y-0 opacity-100 transition duration-500 ease-in-out md:group-hover:-translate-y-[150%] md:group-hover:opacity-0">
@@ -151,11 +151,11 @@ function Home() {
                     </div>
                     <div className={`glass-panel collapse ${openInterests ? 'open' : 'closed'}`}>
                       <div className="p-4 sm:p-6">
-                        <ul className="list-disc space-y-4 pl-5 text-base">
+                        <ul className="list-disc space-y-4 pl-5 text-base sm:text-lg">
                           {interests.map((item) => (
                             <li key={item.title}>
-                              <div className="text-lg font-medium">{item.title}</div>
-                              <div className="mt-1 text-sm opacity-90">{item.text}</div>
+                              <div className="text-lg sm:text-xl font-medium">{item.title}</div>
+                              <div className="mt-1 text-sm sm:text-base opacity-90">{item.text}</div>
                             </li>
                           ))}
                         </ul>
@@ -169,18 +169,18 @@ function Home() {
                     <div className="flex items-center">
                       <PrefetchLink
                         to="/posts"
-                        className="reveal relative inline-flex h-11 min-w-[7.5rem] items-center justify-center overflow-hidden rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2.5 text-base font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] sm:h-12 sm:px-5 sm:text-lg"
+                        className="reveal relative inline-flex h-11 min-w-[7.5rem] items-center justify-center overflow-hidden rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2.5 text-base font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] sm:h-12 sm:px-5 sm:text-xl"
                         style={{ color: 'var(--fg)' }}
                       >
                         <span className="relative">Posts (ja)</span>
                       </PrefetchLink>
                     </div>
-                    <div className="reveal px-1 text-base font-medhium text-[color:var(--fg-strong)]">
+                    <div className="reveal px-1 text-base sm:text-lg font-medhium text-[color:var(--fg-strong)]">
                       Latest Posts
                     </div>
                     <div className="reveal glass-panel">
                       <div className="p-4 sm:p-6">
-                        <ul className="list-disc space-y-3 pl-5 text-base font-vdl-logomaru">
+                        <ul className="list-disc space-y-3 pl-5 text-base sm:text-lg font-vdl-logomaru">
                           {latestPosts.map((post, idx) => (
                             <li
                               key={post.slug ?? post.title ?? idx}
@@ -188,7 +188,7 @@ function Home() {
                             >
                               <Link
                                 to={post.slug ? `/posts/${post.slug}` : '/posts'}
-                                className="text-base underline-thin hover:text-accent"
+                                className="text-base sm:text-lg underline-thin hover:text-accent"
                                 style={{ color: 'var(--fg)' }}
                               >
                                 {post.title ?? 'Untitled'}
@@ -206,7 +206,7 @@ function Home() {
                     <div className="flex items-center">
                       <PrefetchLink
                         to="/products"
-                        className="reveal relative inline-flex h-11 min-w-[7.5rem] items-center justify-center overflow-hidden rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2.5 text-base font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] sm:h-12 sm:px-5 sm:text-lg"
+                        className="reveal relative inline-flex h-11 min-w-[7.5rem] items-center justify-center overflow-hidden rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2.5 text-base font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] sm:h-12 sm:px-5 sm:text-xl"
                         style={{ color: 'var(--fg)' }}
                       >
                         <span className="relative">Products</span>
@@ -223,7 +223,7 @@ function Home() {
           className="relative z-10 mt-12 flex items-center justify-between border-t border-[color:var(--ui-border)] px-4 py-6 sm:px-6"
           style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
         >
-          <div className="text-xs opacity-70 flex items-center gap-3">
+          <div className="text-xs sm:text-sm opacity-70 flex items-center gap-3">
             <AccessCounter />
             <span>© haroin</span>
           </div>
