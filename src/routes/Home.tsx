@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import PrefetchLink from '../components/PrefetchLink'
 import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
@@ -34,6 +34,7 @@ function Home() {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
 
+  // 即座にreveal要素を表示（遅延なし）
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
@@ -41,31 +42,16 @@ function Home() {
     const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
     if (targets.length === 0) return
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reducedMotion) {
+    // マイクロタスクで即座に表示
+    queueMicrotask(() => {
       targets.forEach((el) => el.classList.add('is-visible'))
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue
-          ;(entry.target as HTMLElement).classList.add('is-visible')
-          observer.unobserve(entry.target)
-        }
-      },
-      { threshold: 0.01, rootMargin: '0px 0px 50px 0px' }
-    )
-
-    targets.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+    })
   }, [])
 
   return (
-    <div ref={pageRef} className="relative">
+    <div ref={pageRef} className="relative overflow-hidden">
       <main
-        className="relative z-10 min-h-screen flex flex-col"
+        className="relative z-10 min-h-screen flex flex-col page-fade"
         style={{ fontFamily: `"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif`, color: 'var(--fg)' }}
       >
         <button
@@ -175,7 +161,7 @@ function Home() {
                         <span className="relative">Posts (ja)</span>
                       </PrefetchLink>
                     </div>
-                    <div className="reveal px-1 text-base sm:text-lg font-medhium text-[color:var(--fg-strong)]">
+                    <div className="reveal px-1 text-base sm:text-xl font-medium text-[color:var(--fg-strong)]">
                       Latest Posts
                     </div>
                     <div className="reveal glass-panel">
@@ -186,13 +172,13 @@ function Home() {
                               key={post.slug ?? post.title ?? idx}
                               className="reveal"
                             >
-                              <Link
+                              <PrefetchLink
                                 to={post.slug ? `/posts/${post.slug}` : '/posts'}
                                 className="text-base sm:text-lg underline-thin hover:text-accent"
                                 style={{ color: 'var(--fg)' }}
                               >
                                 {post.title ?? 'Untitled'}
-                              </Link>
+                              </PrefetchLink>
                             </li>
                           ))}
                         </ul>
@@ -212,6 +198,9 @@ function Home() {
                         <span className="relative">Products</span>
                       </PrefetchLink>
                     </div>
+                    <p className="reveal text-base sm:text-xl opacity-80 px-1">
+                      Personal projects and open source works.
+                    </p>
                   </section>
                 </li>
               </ul>

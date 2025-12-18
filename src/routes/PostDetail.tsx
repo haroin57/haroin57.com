@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, useCallback, startTransition } fr
 import mermaid from 'mermaid'
 import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
+import PrefetchLink from '../components/PrefetchLink'
 
 // Mermaidの初期化（サイトのglass-panel UIに合わせた黒ベースのテーマ）
 mermaid.initialize({
@@ -149,6 +150,7 @@ function PostDetail() {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
 
+  // 即座にreveal要素を表示（遅延なし）
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
@@ -156,25 +158,10 @@ function PostDetail() {
     const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
     if (targets.length === 0) return
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reducedMotion) {
+    // マイクロタスクで即座に表示
+    queueMicrotask(() => {
       targets.forEach((el) => el.classList.add('is-visible'))
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue
-          ;(entry.target as HTMLElement).classList.add('is-visible')
-          observer.unobserve(entry.target)
-        }
-      },
-      { threshold: 0.01, rootMargin: '0px 0px 50px 0px' }
-    )
-
-    targets.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+    })
   }, [])
 
   const shareUrl = useMemo(() => {
@@ -456,9 +443,9 @@ function PostDetail() {
           className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
           style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
         >
-          <Link to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+          <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
             Home
-          </Link>
+          </PrefetchLink>
         </header>
 
         {!post ? (

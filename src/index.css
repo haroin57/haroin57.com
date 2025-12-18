@@ -85,7 +85,7 @@ body {
 .page-transition-enter {
   opacity: 0;
   transform: translate3d(0, 0, 0);
-  will-change: opacity, transform;
+  will-change: opacity;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
@@ -94,7 +94,7 @@ body {
   opacity: 1;
   transform: translate3d(0, 0, 0);
   transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity, transform;
+  will-change: opacity;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
@@ -105,6 +105,36 @@ body {
 
 .page-transition-exit-active {
   display: none;
+}
+
+/* ページコンテンツのフェードイン */
+.page-fade {
+  animation: pageFadeIn 400ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* 遷移中はスクロールを防止し、重い処理を抑制 */
+html.route-transitioning {
+  overflow: hidden;
+}
+
+html.route-transitioning .reveal {
+  transition: none !important;
+}
+
+/* 遷移中はhome-heroのアニメーションも無効化 */
+html.route-transitioning .home-hero {
+  transition: none !important;
 }
 
 /* Collapse - 滑らかな開閉 */
@@ -132,13 +162,13 @@ body {
     visibility 300ms;
 }
 
-/* Reveal アニメーション - GPU accelerated */
+/* Reveal アニメーション - GPU accelerated, 高速化 */
 .reveal {
   opacity: 0;
-  transform: translate3d(0, 16px, 0);
+  transform: translate3d(0, 8px, 0);
   transition:
-    opacity var(--duration-normal) var(--ease-out-expo),
-    transform var(--duration-normal) var(--ease-out-expo);
+    opacity 200ms var(--ease-out-expo),
+    transform 200ms var(--ease-out-expo);
   will-change: opacity, transform;
   backface-visibility: hidden;
 }
@@ -180,11 +210,13 @@ body {
 
   .reveal,
   .home-hero,
+  .page-fade,
   .page-transition-enter,
   .page-transition-enter-active,
   .page-transition-exit,
   .page-transition-exit-active {
     opacity: 1;
+    animation: none;
     transform: none;
     filter: none;
     transition: none;

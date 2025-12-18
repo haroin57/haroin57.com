@@ -13,6 +13,7 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
 
+  // 即座にreveal要素を表示（遅延なし）
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
@@ -20,31 +21,16 @@ function App() {
     const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
     if (targets.length === 0) return
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reducedMotion) {
+    // マイクロタスクで即座に表示
+    queueMicrotask(() => {
       targets.forEach((el) => el.classList.add('is-visible'))
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue
-          ;(entry.target as HTMLElement).classList.add('is-visible')
-          observer.unobserve(entry.target)
-        }
-      },
-      { threshold: 0.01, rootMargin: '0px 0px 50px 0px' }
-    )
-
-    targets.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+    })
   }, [])
 
   return (
-    <div ref={pageRef} className="relative">
+    <div ref={pageRef} className="relative overflow-hidden">
       <main
-        className="relative z-10 mx-auto h-[100svh] max-w-4xl px-4 sm:px-6"
+        className="relative z-10 mx-auto h-[100svh] max-w-4xl px-4 sm:px-6 page-fade"
         style={{ fontFamily: `"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif`, color: 'var(--fg)' }}
         >
           <section className="home-hero relative flex min-h-[100svh] flex-col items-center justify-center text-center">

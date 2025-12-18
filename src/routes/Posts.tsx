@@ -2,6 +2,7 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useCallback, startTransition } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
+import PrefetchLink from '../components/PrefetchLink'
 
 type Post = { slug?: string; title?: string; html?: string; summary?: string; createdAt?: string; tags?: string[] }
 const posts: Post[] = Array.isArray(postsData) ? (postsData as Post[]) : []
@@ -15,6 +16,7 @@ function Posts() {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
 
+  // 即座にreveal要素を表示（遅延なし）
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
@@ -22,25 +24,10 @@ function Posts() {
     const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
     if (targets.length === 0) return
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reducedMotion) {
+    // マイクロタスクで即座に表示
+    queueMicrotask(() => {
       targets.forEach((el) => el.classList.add('is-visible'))
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue
-          ;(entry.target as HTMLElement).classList.add('is-visible')
-          observer.unobserve(entry.target)
-        }
-      },
-      { threshold: 0.01, rootMargin: '0px 0px 50px 0px' }
-    )
-
-    targets.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+    })
   }, [])
 
   const allTags = useMemo(() => {
@@ -78,9 +65,9 @@ function Posts() {
               className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
               style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
             >
-              <Link to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+              <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
                 Home
-              </Link>
+              </PrefetchLink>
             </header>
             <h1 className="reveal text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
               Posts
@@ -120,13 +107,13 @@ function Posts() {
                 <li key={p.slug ?? p.title ?? idx} className="space-y-2 py-4">
                   <p className="text-xs sm:text-sm text-[color:var(--fg,inherit)] opacity-75">{p.createdAt}</p>
                   <h2 className="text-lg sm:text-2xl text-[color:var(--fg-strong,inherit)]">
-                    <Link
+                    <PrefetchLink
                       to={p.slug ? `/posts/${p.slug}` : '/posts'}
                       className="underline-thin hover:text-accent"
                       style={{ color: 'inherit' }}
                     >
                       {p.title ?? 'Untitled'}
-                    </Link>
+                    </PrefetchLink>
                   </h2>
                   {p.summary ? (
                     <p className="text-xs sm:text-base text-[color:var(--fg,inherit)] opacity-80">{p.summary}</p>

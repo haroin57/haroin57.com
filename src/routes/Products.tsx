@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import productsData from '../data/products.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
+import PrefetchLink from '../components/PrefetchLink'
 
 type Product = {
   slug: string
@@ -31,6 +32,7 @@ function Products() {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
 
+  // 即座にreveal要素を表示（遅延なし）
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
@@ -38,31 +40,16 @@ function Products() {
     const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
     if (targets.length === 0) return
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reducedMotion) {
+    // マイクロタスクで即座に表示
+    queueMicrotask(() => {
       targets.forEach((el) => el.classList.add('is-visible'))
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue
-          ;(entry.target as HTMLElement).classList.add('is-visible')
-          observer.unobserve(entry.target)
-        }
-      },
-      { threshold: 0.01, rootMargin: '0px 0px 50px 0px' }
-    )
-
-    targets.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+    })
   }, [])
 
   return (
-    <div ref={pageRef} className="relative">
+    <div ref={pageRef} className="relative overflow-hidden">
       <main
-        className="relative z-10 min-h-screen flex flex-col"
+        className="relative z-10 min-h-screen flex flex-col page-fade"
         style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
       >
         <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-12">
@@ -71,9 +58,9 @@ function Products() {
               className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
               style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
             >
-              <Link to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+              <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
                 Home
-              </Link>
+              </PrefetchLink>
             </header>
 
             <h1 className="reveal text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
@@ -83,7 +70,7 @@ function Products() {
             <ul className="reveal space-y-4">
               {products.map((product) => (
                 <li key={product.slug}>
-                  <Link
+                  <PrefetchLink
                     to={`/products/${product.slug}`}
                     className="glass-panel block p-4 sm:p-6 transition-colors hover:bg-[color:var(--ui-surface-hover)]"
                   >
@@ -139,7 +126,7 @@ function Products() {
                         <span className="text-xs sm:text-sm underline-thin">{product.demo}</span>
                       </div>
                     )}
-                  </Link>
+                  </PrefetchLink>
                 </li>
               ))}
             </ul>

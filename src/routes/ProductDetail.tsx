@@ -4,6 +4,7 @@ import mermaid from 'mermaid'
 import productsData from '../data/products.json' with { type: 'json' }
 import productPostsData from '../data/product-posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
+import PrefetchLink from '../components/PrefetchLink'
 
 // Mermaidの初期化（サイトのglass-panel UIに合わせた黒ベースのテーマ）
 mermaid.initialize({
@@ -183,6 +184,7 @@ function ProductDetail() {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
 
+  // 即座にreveal要素を表示（遅延なし）
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
@@ -190,25 +192,10 @@ function ProductDetail() {
     const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
     if (targets.length === 0) return
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reducedMotion) {
+    // マイクロタスクで即座に表示
+    queueMicrotask(() => {
       targets.forEach((el) => el.classList.add('is-visible'))
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue
-          ;(entry.target as HTMLElement).classList.add('is-visible')
-          observer.unobserve(entry.target)
-        }
-      },
-      { threshold: 0.01, rootMargin: '0px 0px 50px 0px' }
-    )
-
-    targets.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
+    })
   }, [])
 
   useEffect(() => {
@@ -369,9 +356,9 @@ function ProductDetail() {
   }, [productPost?.html])
 
   return (
-    <div ref={pageRef} className="relative">
+    <div ref={pageRef} className="relative overflow-hidden">
       <main
-        className="relative z-10 min-h-screen flex flex-col"
+        className="relative z-10 min-h-screen flex flex-col page-fade"
         style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
       >
         <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 space-y-6 sm:px-6 sm:py-12">
@@ -379,13 +366,13 @@ function ProductDetail() {
               className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
               style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
             >
-              <Link to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+              <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
                 Home
-              </Link>
+              </PrefetchLink>
               <span className="opacity-50">/</span>
-              <Link to="/products" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+              <PrefetchLink to="/products" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
                 Products
-              </Link>
+              </PrefetchLink>
             </header>
 
             {!product ? (

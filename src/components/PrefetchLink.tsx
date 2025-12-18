@@ -5,6 +5,28 @@ interface PrefetchLinkProps extends LinkProps {
   enablePrefetch?: boolean
 }
 
+const routeChunkPrefetchers: Array<[match: (path: string) => boolean, load: () => Promise<unknown>]> = [
+  [(path) => path === '/', () => import('../App')],
+  [(path) => path === '/home', () => import('../routes/Home')],
+  [(path) => path === '/posts', () => import('../routes/Posts')],
+  [(path) => path.startsWith('/posts/'), () => import('../routes/PostDetail')],
+  [(path) => path === '/products', () => import('../routes/Products')],
+  [(path) => path.startsWith('/products/'), () => import('../routes/ProductDetail')],
+]
+
+function normalizePathname(raw: string) {
+  return raw.split('#')[0]?.split('?')[0] ?? raw
+}
+
+function prefetchRouteChunk(rawPath: string) {
+  const path = normalizePathname(rawPath)
+  for (const [match, load] of routeChunkPrefetchers) {
+    if (!match(path)) continue
+    void load()
+    break
+  }
+}
+
 function PrefetchLink({ enablePrefetch = true, to, children, onMouseEnter, onFocus, ...props }: PrefetchLinkProps) {
   const prefetched = useRef(false)
 
@@ -12,15 +34,9 @@ function PrefetchLink({ enablePrefetch = true, to, children, onMouseEnter, onFoc
     if (!enablePrefetch || prefetched.current) return
     prefetched.current = true
 
-    const path = typeof to === 'string' ? to : to.pathname
-    if (!path) return
-
-    // プリフェッチ用のlinkタグを追加
-    const link = document.createElement('link')
-    link.rel = 'prefetch'
-    link.href = path
-    link.as = 'document'
-    document.head.appendChild(link)
+    const rawPath = typeof to === 'string' ? to : to.pathname
+    if (!rawPath) return
+    prefetchRouteChunk(rawPath)
   }, [enablePrefetch, to])
 
   const handleMouseEnter = useCallback(
