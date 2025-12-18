@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import productsData from '../data/products.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'

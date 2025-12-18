@@ -1,4 +1,4 @@
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useCallback, startTransition } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
