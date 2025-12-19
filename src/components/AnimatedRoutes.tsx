@@ -4,17 +4,24 @@ import { useRef, lazy, Suspense, useEffect, useLayoutEffect, useMemo, createRef 
 import App from '../App'
 
 // 遅延読み込み - 初期ロードを高速化
-const loadHome = () => import('../routes/Home')
-const loadPosts = () => import('../routes/Posts')
-const loadPostDetail = () => import('../routes/PostDetail')
-const loadProducts = () => import('../routes/Products')
-const loadProductDetail = () => import('../routes/ProductDetail')
+// webpackPreloadでブラウザに早期フェッチを指示、webpackChunkNameでキャッシュ効率向上
+const loadHome = () => import(/* webpackPreload: true, webpackChunkName: "home" */ '../routes/Home')
+const loadPosts = () => import(/* webpackPreload: true, webpackChunkName: "posts" */ '../routes/Posts')
+const loadPostDetail = () => import(/* webpackPrefetch: true, webpackChunkName: "post-detail" */ '../routes/PostDetail')
+const loadProducts = () => import(/* webpackPreload: true, webpackChunkName: "products" */ '../routes/Products')
+const loadProductDetail = () => import(/* webpackPrefetch: true, webpackChunkName: "product-detail" */ '../routes/ProductDetail')
+const loadPhotos = () => import(/* webpackPreload: true, webpackChunkName: "photos" */ '../routes/Photos')
+const loadBBSList = () => import(/* webpackPreload: true, webpackChunkName: "bbs-list" */ '../routes/BBSList')
+const loadBBSThread = () => import(/* webpackPrefetch: true, webpackChunkName: "bbs-thread" */ '../routes/BBSThread')
 
 const Home = lazy(loadHome)
 const Posts = lazy(loadPosts)
 const PostDetail = lazy(loadPostDetail)
 const Products = lazy(loadProducts)
 const ProductDetail = lazy(loadProductDetail)
+const Photos = lazy(loadPhotos)
+const BBSList = lazy(loadBBSList)
+const BBSThread = lazy(loadBBSThread)
 
 const TRANSITION_DURATION = 400
 const ROUTE_TRANSITIONING_DURATION = 500
@@ -47,28 +54,39 @@ function AnimatedRoutes() {
     }
   }, [location.pathname])
 
-  // 即座に主要ルートをプリロード（マウント直後）
+  // 即座に全ルートを並列プリロード（マウント直後）
   useEffect(() => {
     const nav = navigator as Navigator & { connection?: { effectiveType?: string; saveData?: boolean } }
     const connection = nav.connection
     const isSlow = connection?.saveData || (connection?.effectiveType?.includes('2g') ?? false)
     if (isSlow) return
 
-    // 主要ルートを即座にプリロード（0ms遅延）
-    queueMicrotask(() => {
-      void loadHome()
-      void loadPosts()
-      void loadProducts()
-    })
+    // 全ルートを並列でプリロード（Promise.allで同時フェッチ）
+    // requestIdleCallbackでメインスレッドをブロックしない
+    const preloadAll = () => {
+      void Promise.all([
+        loadHome(),
+        loadPosts(),
+        loadProducts(),
+        loadPostDetail(),
+        loadProductDetail(),
+        loadPhotos(),
+        loadBBSList(),
+        loadBBSThread(),
+      ])
+    }
 
-    // 詳細ページは50ms後にプリロード
-    const secondaryId = window.setTimeout(() => {
-      void loadPostDetail()
-      void loadProductDetail()
-    }, 50)
+    const hasIdleCallback = typeof window.requestIdleCallback === 'function'
+    const idleId = hasIdleCallback
+      ? window.requestIdleCallback(preloadAll, { timeout: 100 })
+      : setTimeout(preloadAll, 0)
 
     return () => {
-      window.clearTimeout(secondaryId)
+      if (hasIdleCallback) {
+        window.cancelIdleCallback(idleId as number)
+      } else {
+        clearTimeout(idleId)
+      }
     }
   }, [])
 
@@ -110,6 +128,9 @@ function AnimatedRoutes() {
               <Route path="/posts/:slug" element={<PostDetail />} />
               <Route path="/products" element={<Products />} />
               <Route path="/products/:slug" element={<ProductDetail />} />
+              <Route path="/photos" element={<Photos />} />
+              <Route path="/bbs" element={<BBSList />} />
+              <Route path="/bbs/:threadId" element={<BBSThread />} />
             </Routes>
           </Suspense>
         </div>

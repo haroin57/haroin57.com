@@ -6,12 +6,13 @@ interface PrefetchLinkProps extends LinkProps {
 }
 
 const routeChunkPrefetchers: Array<[match: (path: string) => boolean, load: () => Promise<unknown>]> = [
-  [(path) => path === '/', () => import('../App')],
-  [(path) => path === '/home', () => import('../routes/Home')],
-  [(path) => path === '/posts', () => import('../routes/Posts')],
-  [(path) => path.startsWith('/posts/'), () => import('../routes/PostDetail')],
-  [(path) => path === '/products', () => import('../routes/Products')],
-  [(path) => path.startsWith('/products/'), () => import('../routes/ProductDetail')],
+  [(path) => path === '/', () => import(/* webpackChunkName: "app" */ '../App')],
+  [(path) => path === '/home', () => import(/* webpackChunkName: "home" */ '../routes/Home')],
+  [(path) => path === '/posts', () => import(/* webpackChunkName: "posts" */ '../routes/Posts')],
+  [(path) => path.startsWith('/posts/'), () => import(/* webpackChunkName: "post-detail" */ '../routes/PostDetail')],
+  [(path) => path === '/products', () => import(/* webpackChunkName: "products" */ '../routes/Products')],
+  [(path) => path.startsWith('/products/'), () => import(/* webpackChunkName: "product-detail" */ '../routes/ProductDetail')],
+  [(path) => path === '/photos', () => import(/* webpackChunkName: "photos" */ '../routes/Photos')],
 ]
 
 function normalizePathname(raw: string) {

@@ -203,6 +203,40 @@ function Home() {
                     </p>
                   </section>
                 </li>
+
+                <li className="space-y-3 py-6">
+                  <section className="space-y-3">
+                    <div className="flex items-center">
+                      <PrefetchLink
+                        to="/photos"
+                        className="reveal relative inline-flex h-11 min-w-[7.5rem] items-center justify-center overflow-hidden rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2.5 text-base font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] sm:h-12 sm:px-5 sm:text-xl"
+                        style={{ color: 'var(--fg)' }}
+                      >
+                        <span className="relative">Photos</span>
+                      </PrefetchLink>
+                    </div>
+                    <p className="reveal text-base sm:text-xl opacity-80 px-1">
+                      Shots from rides and late walks.
+                    </p>
+                  </section>
+                </li>
+
+                <li className="space-y-3 py-6">
+                  <section className="space-y-3">
+                    <div className="flex items-center">
+                      <PrefetchLink
+                        to="/bbs"
+                        className="reveal relative inline-flex h-11 min-w-[7.5rem] items-center justify-center overflow-hidden rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2.5 text-base font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] sm:h-12 sm:px-5 sm:text-xl"
+                        style={{ color: 'var(--fg)' }}
+                      >
+                        <span className="relative">BBS</span>
+                      </PrefetchLink>
+                    </div>
+                    <p className="reveal text-base sm:text-xl opacity-80 px-1">
+                      自由に書き込める掲示板です。
+                    </p>
+                  </section>
+                </li>
               </ul>
             </div>
           </div>
