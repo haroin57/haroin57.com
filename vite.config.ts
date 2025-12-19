@@ -17,6 +17,16 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      // ローカル開発時にAPIリクエストをCloudflare Workerにプロキシ
+      '/api': {
+        target: 'https://haroin57.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
   build: {
     // チャンク分割の最適化
     rollupOptions: {

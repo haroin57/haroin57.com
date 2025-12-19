@@ -87,15 +87,14 @@ function BBSList() {
           }),
         })
 
-        if (!res.ok) {
-          const data = await res.json() as { error?: string }
+        const data = await res.json() as { thread?: Thread; error?: string }
+
+        if (!res.ok || !data.thread) {
           throw new Error(data.error || 'Failed to create thread')
         }
 
-        const data = await res.json() as { thread: Thread }
-
         // 新スレッドをリストに追加
-        setThreads((prev) => [data.thread, ...prev])
+        setThreads((prev) => [data.thread!, ...prev])
         setTitle('')
         setName('')
         setContent('')
@@ -152,7 +151,7 @@ function BBSList() {
 
           {/* スレッド作成フォーム */}
           {showCreateForm && (
-            <div className="glass-panel rounded-lg p-4">
+            <div className="glass-panel p-4">
               <h2 className="text-lg font-semibold text-[color:var(--fg-strong)] mb-4">新規スレッド作成</h2>
               <form onSubmit={handleCreateThread} className="space-y-4">
                 <div>
@@ -211,7 +210,7 @@ function BBSList() {
           )}
 
           {/* スレッド一覧 */}
-          <div className="glass-panel rounded-lg p-4">
+          <div className="glass-panel p-4">
             {isLoading ? (
               <p className="text-[color:var(--fg)] opacity-70 py-4 text-center">読み込み中...</p>
             ) : error ? (

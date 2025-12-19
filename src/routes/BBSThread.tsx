@@ -216,7 +216,7 @@ function BBSThread() {
             </h1>
 
             {/* スレッド情報 */}
-            <div className="glass-panel rounded-lg p-4 text-sm opacity-80">
+            <div className="glass-panel p-4 text-sm opacity-80">
               <span className="text-[color:var(--fg)]">
                 1-{posts.length} / {posts.length}レス
               </span>
@@ -228,7 +228,7 @@ function BBSThread() {
                 <div
                   key={post.id}
                   id={`post-${post.id}`}
-                  className="bbs-post glass-panel rounded-lg p-4 transition-colors duration-300"
+                  className="bbs-post glass-panel p-4 transition-colors duration-300"
                 >
                   <div className="flex flex-wrap items-baseline gap-x-2 text-sm mb-2">
                     <span className="font-bold text-[color:var(--fg-strong)]">{post.id}</span>
@@ -244,7 +244,7 @@ function BBSThread() {
             </div>
 
             {/* 書き込みフォーム */}
-            <div className="glass-panel rounded-lg p-4 mt-6">
+            <div className="glass-panel p-4 mt-6">
               <h2 className="text-lg font-semibold text-[color:var(--fg-strong)] mb-4">書き込み</h2>
               <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-4">
