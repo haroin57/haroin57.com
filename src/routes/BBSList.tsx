@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
+import { useAdminAuth } from '../contexts/AdminAuthContext'
 
 // スレッド型
 type Thread = {
@@ -24,7 +25,11 @@ function BBSList() {
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loginError, setLoginError] = useState<string | null>(null)
+  const [isLoggingIn, setIsLoggingIn] = useState(false)
+  const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null)
   const pageRef = useRef<HTMLDivElement | null>(null)
+  const { isAdmin, idToken, loginWithGoogle, logout } = useAdminAuth()
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })
@@ -120,6 +125,54 @@ function BBSList() {
     return `${year}/${month}/${day} ${hours}:${minutes}`
   }
 
+  // 管理者ログイン（Google）
+  const handleLogin = useCallback(async () => {
+    if (isLoggingIn) return
+
+    setIsLoggingIn(true)
+    setLoginError(null)
+
+    const success = await loginWithGoogle()
+    if (!success) {
+      setLoginError('管理者アカウントではありません')
+    }
+    setIsLoggingIn(false)
+  }, [isLoggingIn, loginWithGoogle])
+
+  // スレッド削除
+  const handleDeleteThread = useCallback(
+    async (threadId: string, e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+
+      if (!idToken || deletingThreadId) return
+      if (!window.confirm('このスレッドを削除しますか？この操作は取り消せません。')) return
+
+      setDeletingThreadId(threadId)
+      try {
+        const res = await fetch(`${BBS_ENDPOINT}/threads/${threadId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        })
+
+        if (!res.ok) {
+          const data = await res.json() as { error?: string }
+          throw new Error(data.error || 'Failed to delete thread')
+        }
+
+        setThreads((prev) => prev.filter((t) => t.id !== threadId))
+      } catch (err) {
+        console.error('Failed to delete thread:', err)
+        alert(err instanceof Error ? err.message : 'スレッドの削除に失敗しました')
+      } finally {
+        setDeletingThreadId(null)
+      }
+    },
+    [idToken, deletingThreadId]
+  )
+
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
@@ -136,18 +189,45 @@ function BBSList() {
         </header>
 
         <article className="reveal space-y-4 w-full">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
               haroin57 BBSスレッド
             </h1>
-            <button
-              type="button"
-              onClick={() => setShowCreateForm((v) => !v)}
-              className="px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] font-semibold text-sm transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
-            >
-              {showCreateForm ? 'キャンセル' : 'スレッドを立てる'}
-            </button>
+            <div className="flex items-center gap-2">
+              {isAdmin ? (
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="px-3 py-2 rounded border border-red-500/50 bg-red-500/10 text-red-400 font-semibold text-xs transition-colors hover:bg-red-500/20"
+                >
+                  管理者ログアウト
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleLogin}
+                  disabled={isLoggingIn}
+                  className="px-3 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] opacity-60 font-semibold text-xs transition-colors hover:opacity-100 disabled:opacity-50"
+                >
+                  {isLoggingIn ? 'ログイン中...' : '管理者'}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowCreateForm((v) => !v)}
+                className="px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] font-semibold text-sm transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
+              >
+                {showCreateForm ? 'キャンセル' : 'スレッドを立てる'}
+              </button>
+            </div>
           </div>
+
+          {/* ログインエラー表示 */}
+          {loginError && (
+            <div className="glass-panel p-3 border border-red-500/50 bg-red-500/10">
+              <p className="text-red-400 text-sm">{loginError}</p>
+            </div>
+          )}
 
           {/* スレッド作成フォーム */}
           {showCreateForm && (
@@ -222,23 +302,34 @@ function BBSList() {
             ) : (
               <div className="space-y-2">
                 {threads.map((thread, index) => (
-                  <Link
-                    key={thread.id}
-                    to={`/bbs/${thread.id}`}
-                    className="block p-3 rounded border border-transparent hover:border-[color:var(--ui-border)] hover:bg-[color:var(--ui-surface-hover)] transition-colors"
-                  >
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-[color:var(--fg)] opacity-60 text-sm">{index + 1}:</span>
-                      <span className="text-[color:var(--fg-strong)] font-semibold">{thread.title}</span>
-                      <span className="text-[color:var(--fg)] opacity-60 text-sm">({thread.postCount})</span>
-                    </div>
-                    <div className="text-sm text-[color:var(--fg)] opacity-60 mt-1">
-                      作成: {thread.createdBy} - {formatDisplayDate(thread.createdAt)}
-                      {thread.lastPostAt !== thread.createdAt && (
-                        <span className="ml-3">最終投稿: {formatDisplayDate(thread.lastPostAt)}</span>
-                      )}
-                    </div>
-                  </Link>
+                  <div key={thread.id} className="relative group">
+                    <Link
+                      to={`/bbs/${thread.id}`}
+                      className="block p-3 rounded border border-transparent hover:border-[color:var(--ui-border)] hover:bg-[color:var(--ui-surface-hover)] transition-colors"
+                    >
+                      <div className="flex items-baseline gap-2 flex-wrap pr-16">
+                        <span className="text-[color:var(--fg)] opacity-60 text-sm">{index + 1}:</span>
+                        <span className="text-[color:var(--fg-strong)] font-semibold">{thread.title}</span>
+                        <span className="text-[color:var(--fg)] opacity-60 text-sm">({thread.postCount})</span>
+                      </div>
+                      <div className="text-sm text-[color:var(--fg)] opacity-60 mt-1">
+                        作成: {thread.createdBy} - {formatDisplayDate(thread.createdAt)}
+                        {thread.lastPostAt !== thread.createdAt && (
+                          <span className="ml-3">最終投稿: {formatDisplayDate(thread.lastPostAt)}</span>
+                        )}
+                      </div>
+                    </Link>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteThread(thread.id, e)}
+                        disabled={deletingThreadId === thread.id}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded border border-red-500/50 bg-red-500/10 text-red-400 text-xs font-semibold transition-all opacity-0 group-hover:opacity-100 hover:bg-red-500/20 disabled:opacity-50"
+                      >
+                        {deletingThreadId === thread.id ? '削除中...' : '削除'}
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}

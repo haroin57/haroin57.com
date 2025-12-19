@@ -9,6 +9,22 @@ type KVNamespace = {
 type Env = {
   HAROIN_PV: KVNamespace
   ALLOWED_ORIGIN?: string
+  ADMIN_SECRET?: string // 管理者用シークレットキー（フォールバック用）
+  FIREBASE_PROJECT_ID?: string // Firebase プロジェクトID
+  ADMIN_EMAILS?: string // 管理者メールアドレス（カンマ区切り）
+}
+
+// Firebase IDトークンのペイロード型
+type FirebaseTokenPayload = {
+  iss: string
+  aud: string
+  auth_time: number
+  user_id: string
+  sub: string
+  iat: number
+  exp: number
+  email?: string
+  email_verified?: boolean
 }
 
 // BBS型定義
@@ -39,8 +55,8 @@ const THREAD_RATE_LIMIT_TTL = 60
 function buildCorsHeaders(origin: string) {
   return {
     'access-control-allow-origin': origin,
-    'access-control-allow-methods': 'GET, POST, OPTIONS',
-    'access-control-allow-headers': 'Content-Type',
+    'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+    'access-control-allow-headers': 'Content-Type, X-Admin-Secret, Authorization',
   }
 }
 
@@ -390,6 +406,184 @@ async function handleAddPost(
   })
 }
 
+// Base64URLデコード
+function base64UrlDecode(str: string): string {
+  // Base64URL を Base64 に変換
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/')
+  // パディング追加
+  while (base64.length % 4) {
+    base64 += '='
+  }
+  return atob(base64)
+}
+
+// Firebase IDトークンを検証（簡易版）
+async function verifyFirebaseToken(token: string, env: Env): Promise<FirebaseTokenPayload | null> {
+  try {
+    // JWTの構造: header.payload.signature
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+
+    // ペイロードをデコード
+    const payload = JSON.parse(base64UrlDecode(parts[1])) as FirebaseTokenPayload
+
+    // 基本的な検証
+    const now = Math.floor(Date.now() / 1000)
+
+    // 有効期限チェック
+    if (payload.exp < now) {
+      console.log('Token expired')
+      return null
+    }
+
+    // 発行者チェック（Firebase）
+    const expectedIssuer = `https://securetoken.google.com/${env.FIREBASE_PROJECT_ID}`
+    if (payload.iss !== expectedIssuer) {
+      console.log('Invalid issuer:', payload.iss)
+      return null
+    }
+
+    // オーディエンスチェック
+    if (payload.aud !== env.FIREBASE_PROJECT_ID) {
+      console.log('Invalid audience:', payload.aud)
+      return null
+    }
+
+    // メール検証済みチェック
+    if (!payload.email_verified) {
+      console.log('Email not verified')
+      return null
+    }
+
+    return payload
+  } catch (error) {
+    console.error('Token verification failed:', error)
+    return null
+  }
+}
+
+// BBS: 管理者認証チェック（Firebase対応）
+async function checkAdminAuth(req: Request, env: Env): Promise<boolean> {
+  // まずBearerトークン（Firebase）をチェック
+  const authHeader = req.headers.get('Authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7)
+    const payload = await verifyFirebaseToken(token, env)
+
+    if (payload?.email) {
+      // 管理者メールリストをチェック
+      const adminEmails = (env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase())
+      if (adminEmails.includes(payload.email.toLowerCase())) {
+        console.log('Admin authenticated via Firebase:', payload.email)
+        return true
+      }
+      console.log('Email not in admin list:', payload.email)
+    }
+    return false
+  }
+
+  // フォールバック: X-Admin-Secret ヘッダー（後方互換性）
+  const secret = req.headers.get('X-Admin-Secret')
+  if (env.ADMIN_SECRET && secret === env.ADMIN_SECRET) {
+    console.log('Admin authenticated via secret')
+    return true
+  }
+
+  return false
+}
+
+// BBS: スレッド削除（管理者用）
+async function handleDeleteThread(
+  threadId: string,
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  // スレッド存在確認
+  const metaJson = await env.HAROIN_PV.get(`bbs:thread:${threadId}:meta`)
+  if (!metaJson) {
+    return new Response(JSON.stringify({ error: 'thread not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  // スレッド一覧から削除
+  const threadsJson = await env.HAROIN_PV.get('bbs:threads:list')
+  const threads: Thread[] = threadsJson ? JSON.parse(threadsJson) : []
+  const newThreads = threads.filter((t) => t.id !== threadId)
+  await env.HAROIN_PV.put('bbs:threads:list', JSON.stringify(newThreads))
+
+  // スレッドデータ削除
+  await env.HAROIN_PV.delete(`bbs:thread:${threadId}:meta`)
+  await env.HAROIN_PV.delete(`bbs:thread:${threadId}:posts`)
+
+  console.log('bbs thread deleted', { threadId })
+
+  return new Response(JSON.stringify({ success: true, threadId }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// BBS: 投稿削除（管理者用）
+async function handleDeletePost(
+  threadId: string,
+  postId: number,
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  // スレッド存在確認
+  const metaJson = await env.HAROIN_PV.get(`bbs:thread:${threadId}:meta`)
+  if (!metaJson) {
+    return new Response(JSON.stringify({ error: 'thread not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const postsJson = await env.HAROIN_PV.get(`bbs:thread:${threadId}:posts`)
+  const posts: Post[] = postsJson ? JSON.parse(postsJson) : []
+
+  const postIndex = posts.findIndex((p) => p.id === postId)
+  if (postIndex === -1) {
+    return new Response(JSON.stringify({ error: 'post not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  // 投稿を削除（内容を削除済みに置換）
+  posts[postIndex] = {
+    ...posts[postIndex],
+    name: '削除済み',
+    content: 'この投稿は削除されました',
+  }
+
+  // 保存
+  await env.HAROIN_PV.put(`bbs:thread:${threadId}:posts`, JSON.stringify(posts))
+
+  console.log('bbs post deleted', { threadId, postId })
+
+  return new Response(JSON.stringify({ success: true, threadId, postId }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
 // BBS ルーティング
 async function handleBbs(
   req: Request,
@@ -398,6 +592,19 @@ async function handleBbs(
   pathname: string
 ): Promise<Response> {
   const pathParts = pathname.replace('/api/bbs', '').split('/').filter(Boolean)
+
+  // POST /api/bbs/admin/verify - 管理者認証確認
+  if (req.method === 'POST' && pathParts[0] === 'admin' && pathParts[1] === 'verify') {
+    if (await checkAdminAuth(req, env)) {
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'content-type': 'application/json' },
+      })
+    }
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
 
   // GET /api/bbs/threads - スレッド一覧
   if (req.method === 'GET' && pathParts[0] === 'threads' && pathParts.length === 1) {
@@ -417,6 +624,23 @@ async function handleBbs(
   // POST /api/bbs/threads/:id/posts - 投稿追加
   if (req.method === 'POST' && pathParts[0] === 'threads' && pathParts[2] === 'posts') {
     return handleAddPost(pathParts[1], req, env, corsHeaders)
+  }
+
+  // DELETE /api/bbs/threads/:id - スレッド削除（管理者用）
+  if (req.method === 'DELETE' && pathParts[0] === 'threads' && pathParts.length === 2) {
+    return handleDeleteThread(pathParts[1], req, env, corsHeaders)
+  }
+
+  // DELETE /api/bbs/threads/:id/posts/:postId - 投稿削除（管理者用）
+  if (req.method === 'DELETE' && pathParts[0] === 'threads' && pathParts[2] === 'posts' && pathParts[3]) {
+    const postId = parseInt(pathParts[3], 10)
+    if (isNaN(postId)) {
+      return new Response(JSON.stringify({ error: 'invalid post id' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'content-type': 'application/json' },
+      })
+    }
+    return handleDeletePost(pathParts[1], postId, req, env, corsHeaders)
   }
 
   return new Response(JSON.stringify({ error: 'not found' }), {
@@ -457,9 +681,9 @@ export default {
       return new Response('forbidden', { status: 403, headers: corsHeaders })
     }
 
-    // BBS は GET も許可
+    // BBS は GET, POST, DELETE を許可
     if (isBbs) {
-      if (req.method !== 'GET' && req.method !== 'POST') {
+      if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'DELETE') {
         return new Response('Method not allowed', { status: 405, headers: corsHeaders })
       }
       return handleBbs(req, env, corsHeaders, url.pathname)

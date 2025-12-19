@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
+import { useAdminAuth } from '../contexts/AdminAuthContext'
 
 // スレッド型
 type Thread = {
@@ -69,8 +70,10 @@ function BBSThread() {
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [deletingPostId, setDeletingPostId] = useState<number | null>(null)
   const pageRef = useRef<HTMLDivElement | null>(null)
   const formRef = useRef<HTMLFormElement | null>(null)
+  const { isAdmin, idToken } = useAdminAuth()
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })
@@ -147,21 +150,20 @@ function BBSThread() {
           }),
         })
 
-        if (!res.ok) {
-          const data = (await res.json()) as { error?: string }
+        const data = (await res.json()) as { post?: Post; thread?: Thread; error?: string }
+
+        if (!res.ok || !data.post || !data.thread) {
           throw new Error(data.error || 'Failed to add post')
         }
 
-        const data = (await res.json()) as { post: Post; thread: Thread }
-
         // 新しい投稿を追加
-        setPosts((prev) => [...prev, data.post])
-        setThread(data.thread)
+        setPosts((prev) => [...prev, data.post!])
+        setThread(data.thread!)
         setContent('')
 
         // 投稿後、新しい投稿までスクロール
         setTimeout(() => {
-          const newPostElement = document.getElementById(`post-${data.post.id}`)
+          const newPostElement = document.getElementById(`post-${data.post!.id}`)
           if (newPostElement) {
             newPostElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
           }
@@ -174,6 +176,44 @@ function BBSThread() {
       }
     },
     [content, isSubmitting, name, threadId]
+  )
+
+  // 投稿削除（管理者用）
+  const handleDeletePost = useCallback(
+    async (postId: number) => {
+      if (!idToken || !threadId || deletingPostId) return
+      if (!window.confirm(`レス${postId}を削除しますか？`)) return
+
+      setDeletingPostId(postId)
+      try {
+        const res = await fetch(`${BBS_ENDPOINT}/threads/${threadId}/posts/${postId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        })
+
+        if (!res.ok) {
+          const data = await res.json() as { error?: string }
+          throw new Error(data.error || 'Failed to delete post')
+        }
+
+        // 削除された投稿を「削除済み」表示に更新
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId
+              ? { ...p, name: '削除済み', content: 'この投稿は削除されました' }
+              : p
+          )
+        )
+      } catch (err) {
+        console.error('Failed to delete post:', err)
+        alert(err instanceof Error ? err.message : '投稿の削除に失敗しました')
+      } finally {
+        setDeletingPostId(null)
+      }
+    },
+    [idToken, threadId, deletingPostId]
   )
 
   return (
@@ -228,13 +268,23 @@ function BBSThread() {
                 <div
                   key={post.id}
                   id={`post-${post.id}`}
-                  className="bbs-post glass-panel p-4 transition-colors duration-300"
+                  className="bbs-post glass-panel p-4 transition-colors duration-300 group relative"
                 >
                   <div className="flex flex-wrap items-baseline gap-x-2 text-sm mb-2">
                     <span className="font-bold text-[color:var(--fg-strong)]">{post.id}</span>
                     <span className="text-green-400 font-semibold">{post.name}</span>
                     <span className="text-[color:var(--fg)] opacity-70">{post.date}</span>
                     <span className="text-red-400 opacity-80">ID:{post.userId}</span>
+                    {isAdmin && post.name !== '削除済み' && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePost(post.id)}
+                        disabled={deletingPostId === post.id}
+                        className="ml-auto px-2 py-0.5 rounded border border-red-500/50 bg-red-500/10 text-red-400 text-xs font-semibold transition-all opacity-0 group-hover:opacity-100 hover:bg-red-500/20 disabled:opacity-50"
+                      >
+                        {deletingPostId === post.id ? '削除中...' : '削除'}
+                      </button>
+                    )}
                   </div>
                   <div className="text-sm sm:text-base text-[color:var(--fg)] whitespace-pre-wrap break-words pl-4">
                     {parseContent(post.content)}
