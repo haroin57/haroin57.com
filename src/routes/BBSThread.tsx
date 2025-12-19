@@ -76,7 +76,7 @@ function BBSThread() {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
 
-  // reveal要素を即座に表示
+  // reveal要素を即座に表示（データ取得後も再実行）
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
@@ -87,7 +87,7 @@ function BBSThread() {
     queueMicrotask(() => {
       targets.forEach((el) => el.classList.add('is-visible'))
     })
-  }, [])
+  }, [isLoading, thread])
 
   // スレッド取得
   const fetchThread = useCallback(async () => {
