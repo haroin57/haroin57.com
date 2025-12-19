@@ -26,7 +26,8 @@
       "Bash(wrangler secret put:*)",
       "Bash(npx tsx:*)",
       "Bash(wrangler kv:*)",
-      "Bash(wrangler pages project list:*)"
+      "Bash(wrangler pages project list:*)",
+      "Bash(wrangler pages deploy:*)"
     ]
   }
 }
