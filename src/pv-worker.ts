@@ -100,10 +100,9 @@ function buildCorsHeaders(origin: string) {
   }
 }
 
-// ユーザーIDを生成（IPベース、日替わり）
+// ユーザーIDを生成（IPベースで固定）
 function generateUserId(ip: string): string {
-  const today = new Date().toISOString().slice(0, 10)
-  const hash = simpleHash(`${ip}:${today}`)
+  const hash = simpleHash(ip)
   return hash.slice(0, 9)
 }
 
@@ -125,18 +124,20 @@ function simpleHash(str: string): string {
   return result
 }
 
-// 日時フォーマット（2ch形式）
+// 日時フォーマット（2ch形式、日本時間 JST）
 function formatDate(): string {
+  // UTC から JST（UTC+9）に変換
   const now = new Date()
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
   const days = ['日', '月', '火', '水', '木', '金', '土']
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const dayOfWeek = days[now.getDay()]
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  const seconds = String(now.getSeconds()).padStart(2, '0')
-  const ms = String(now.getMilliseconds()).slice(0, 2).padStart(2, '0')
+  const year = jst.getUTCFullYear()
+  const month = String(jst.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(jst.getUTCDate()).padStart(2, '0')
+  const dayOfWeek = days[jst.getUTCDay()]
+  const hours = String(jst.getUTCHours()).padStart(2, '0')
+  const minutes = String(jst.getUTCMinutes()).padStart(2, '0')
+  const seconds = String(jst.getUTCSeconds()).padStart(2, '0')
+  const ms = String(jst.getUTCMilliseconds()).slice(0, 2).padStart(2, '0')
   return `${year}/${month}/${day}(${dayOfWeek}) ${hours}:${minutes}:${seconds}.${ms}`
 }
 
