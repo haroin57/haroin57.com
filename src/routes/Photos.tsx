@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import PageLayout from '../components/PageLayout'
+import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import AccessCounter from '../components/AccessCounter'
+import PrefetchLink from '../components/PrefetchLink'
 import Lightbox from '../components/Lightbox'
 import { photos, shotTags, type Photo, type PhotoRatio } from '../data/photos'
 
@@ -89,43 +91,104 @@ function Tag({ children }: { children: React.ReactNode }) {
 // Main component
 function Photos() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
+  const pageRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [])
+
+  useEffect(() => {
+    const root = pageRef.current
+    if (!root) return
+
+    const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
+    if (targets.length === 0) return
+
+    queueMicrotask(() => {
+      targets.forEach((el) => el.classList.add('is-visible'))
+    })
+  }, [])
 
   return (
-    <PageLayout>
-      {/* Header */}
-      <header className="space-y-4 mb-8">
-        <h1 className="reveal text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
-          Photos
-        </h1>
-        {shotTags.length > 0 && (
-          <div className="reveal flex flex-wrap gap-2">
-            {shotTags.map((tag) => (
-              <Tag key={tag}>{tag}</Tag>
-            ))}
-          </div>
-        )}
-      </header>
+    <div ref={pageRef} className="relative overflow-hidden">
+      <main
+        className="relative z-10 mx-auto min-h-screen max-w-4xl px-4 py-10 space-y-6 page-fade sm:px-6 sm:py-12"
+        style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
+      >
+        <header
+          className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
+          style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
+        >
+          <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+            Home
+          </PrefetchLink>
+        </header>
 
-      {/* Photo grid */}
-      <div className="reveal glass-panel">
-        <div className="p-4 sm:p-6">
-          {photos.length === 0 ? (
-            <p className="text-center text-[color:var(--fg)] opacity-70 py-8">
-              写真はまだありません
-            </p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {photos.map((photo) => (
-                <PhotoCard
-                  key={`${photo.title}-${photo.date}`}
-                  photo={photo}
-                  onClick={() => setSelectedPhoto(photo)}
-                />
-              ))}
+        <article className="reveal space-y-4 w-full">
+          <div className="space-y-4 mb-8">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
+              Photos
+            </h1>
+            {shotTags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {shotTags.map((tag) => (
+                  <Tag key={tag}>{tag}</Tag>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Photo grid */}
+          <div className="glass-panel">
+            <div className="p-4 sm:p-6">
+              {photos.length === 0 ? (
+                <p className="text-center text-[color:var(--fg)] opacity-70 py-8">
+                  写真はまだありません
+                </p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {photos.map((photo) => (
+                    <PhotoCard
+                      key={`${photo.title}-${photo.date}`}
+                      photo={photo}
+                      onClick={() => setSelectedPhoto(photo)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* 戻るリンク */}
+          <section className="mt-6 flex justify-start">
+            <Link
+              to="/home"
+              className="font-morisawa-dragothic underline-thin hover:text-accent text-base sm:text-lg"
+              style={{ color: 'var(--fg)' }}
+            >
+              ← Homeへ
+            </Link>
+          </section>
+        </article>
+      </main>
+
+      <footer
+        className="relative z-10 mt-12 flex items-center justify-between border-t border-[color:var(--ui-border)] px-4 py-6 sm:px-6"
+        style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
+      >
+        <div className="text-xs sm:text-sm opacity-70 flex items-center gap-3">
+          <AccessCounter />
+          <span>© haroin</span>
         </div>
-      </div>
+        <div className="flex items-center gap-4">
+          <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
+            <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
+          </a>
+          <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
+            <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
+          </a>
+        </div>
+      </footer>
 
       {/* Lightbox */}
       <Lightbox
@@ -136,7 +199,7 @@ function Photos() {
       >
         {selectedPhoto && <PhotoDetails photo={selectedPhoto} />}
       </Lightbox>
-    </PageLayout>
+    </div>
   )
 }
 
