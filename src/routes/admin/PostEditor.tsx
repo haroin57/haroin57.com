@@ -7,6 +7,7 @@ import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
 import remarkRehype from 'remark-rehype'
 import rehypeStringify from 'rehype-stringify'
+import { saveDraft, loadDraft, deleteDraft, formatDraftDate, type PostDraft } from '../../lib/draftStorage'
 
 const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
 
@@ -35,7 +36,7 @@ async function markdownToHtml(markdown: string): Promise<string> {
 export default function PostEditor() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
-  const { isAdmin, idToken, loginWithGoogle, isLoading: authLoading } = useAdminAuth()
+  const { isAdmin, idToken, loginWithGoogle, isLoading: authLoading, registerBeforeLogout } = useAdminAuth()
   const pageRef = useRef<HTMLDivElement>(null)
 
   const isNewPost = !slug || slug === 'new'
@@ -50,12 +51,54 @@ export default function PostEditor() {
   const [isLoading, setIsLoading] = useState(!isNewPost)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [draftInfo, setDraftInfo] = useState<{ savedAt: number } | null>(null)
+  const [showDraftNotice, setShowDraftNotice] = useState(false)
 
-  // 既存記事の読み込み
+  // 現在のデータを下書きとして保存
+  const saveCurrentDraft = useCallback(() => {
+    if (!formData.slug && !formData.title && !markdown) return // 空の場合は保存しない
+
+    saveDraft<PostDraft>('post', slug || 'new', {
+      slug: formData.slug,
+      title: formData.title,
+      summary: formData.summary,
+      tags: formData.tags,
+      markdown,
+    })
+    setDraftInfo({ savedAt: Date.now() })
+  }, [formData, markdown, slug])
+
+  // ログアウト前に下書きを保存
   useEffect(() => {
-    if (isNewPost || !slug) return
+    const unregister = registerBeforeLogout(() => {
+      saveCurrentDraft()
+    })
+    return unregister
+  }, [registerBeforeLogout, saveCurrentDraft])
 
-    const fetchPost = async () => {
+  // 既存記事の読み込み + 下書きチェック
+  useEffect(() => {
+    const fetchAndCheckDraft = async () => {
+      // 下書きをチェック
+      const draft = loadDraft<PostDraft>('post', slug || 'new')
+
+      if (isNewPost) {
+        // 新規作成の場合、下書きがあれば復元
+        if (draft) {
+          setFormData({
+            slug: draft.slug,
+            title: draft.title,
+            summary: draft.summary,
+            tags: draft.tags,
+          })
+          setMarkdown(draft.markdown)
+          setDraftInfo({ savedAt: draft.savedAt })
+          setShowDraftNotice(true)
+        }
+        return
+      }
+
+      // 既存記事の読み込み
       try {
         setIsLoading(true)
         const res = await fetch(`${CMS_ENDPOINT}/posts/${slug}`)
@@ -67,13 +110,27 @@ export default function PostEditor() {
           throw new Error('Failed to fetch post')
         }
         const data = await res.json() as { post: PostData }
-        setFormData({
-          slug: data.post.slug,
-          title: data.post.title,
-          summary: data.post.summary,
-          tags: data.post.tags.join(', '),
-        })
-        setMarkdown(data.post.markdown)
+
+        // 下書きがあり、サーバーより新しい場合は復元確認
+        if (draft && draft.savedAt > new Date(data.post.updatedAt).getTime()) {
+          setFormData({
+            slug: draft.slug,
+            title: draft.title,
+            summary: draft.summary,
+            tags: draft.tags,
+          })
+          setMarkdown(draft.markdown)
+          setDraftInfo({ savedAt: draft.savedAt })
+          setShowDraftNotice(true)
+        } else {
+          setFormData({
+            slug: data.post.slug,
+            title: data.post.title,
+            summary: data.post.summary,
+            tags: data.post.tags.join(', '),
+          })
+          setMarkdown(data.post.markdown)
+        }
       } catch (err) {
         console.error('Failed to fetch post:', err)
         setError('記事の取得に失敗しました')
@@ -82,7 +139,7 @@ export default function PostEditor() {
       }
     }
 
-    fetchPost()
+    fetchAndCheckDraft()
   }, [slug, isNewPost])
 
   // ページタイトル
@@ -137,6 +194,11 @@ export default function PostEditor() {
         throw new Error(data.error || 'Failed to save post')
       }
 
+      // 保存成功したら下書きを削除
+      deleteDraft('post', slug || 'new')
+      setDraftInfo(null)
+      setShowDraftNotice(false)
+
       alert('保存しました')
 
       if (isNewPost && data.post) {
@@ -149,6 +211,15 @@ export default function PostEditor() {
       setIsSaving(false)
     }
   }, [idToken, formData, markdown, isNewPost, slug, navigate])
+
+  // 下書きを破棄
+  const discardDraft = useCallback(() => {
+    deleteDraft('post', slug || 'new')
+    setDraftInfo(null)
+    setShowDraftNotice(false)
+    // ページをリロードして元のデータを読み込む
+    window.location.reload()
+  }, [slug])
 
   // 削除処理
   const handleDelete = useCallback(async () => {
@@ -226,6 +297,27 @@ export default function PostEditor() {
           <span>{isNewPost ? '新規作成' : '編集'}</span>
         </header>
 
+        {/* 下書き復元通知 */}
+        {showDraftNotice && draftInfo && (
+          <div className="glass-panel p-4 border-l-4 border-yellow-500/50 bg-yellow-500/5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-sm">
+                <span className="text-yellow-400 font-semibold">下書きから復元しました</span>
+                <span className="opacity-70 ml-2">
+                  ({formatDraftDate(draftInfo.savedAt)})
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={discardDraft}
+                className="text-xs px-3 py-1 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] hover:border-[color:var(--ui-border-strong)]"
+              >
+                下書きを破棄
+              </button>
+            </div>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="py-8 text-center opacity-70">読み込み中...</div>
         ) : error ? (
@@ -299,7 +391,7 @@ export default function PostEditor() {
 
             {/* アクションボタン */}
             <div className="flex items-center justify-between gap-4">
-              <div>
+              <div className="flex items-center gap-2">
                 {!isNewPost && (
                   <button
                     type="button"
@@ -309,6 +401,18 @@ export default function PostEditor() {
                   >
                     削除
                   </button>
+                )}
+                <button
+                  type="button"
+                  onClick={saveCurrentDraft}
+                  className="px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] text-sm transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
+                >
+                  下書き保存
+                </button>
+                {draftInfo && !showDraftNotice && (
+                  <span className="text-xs opacity-50">
+                    保存済み: {formatDraftDate(draftInfo.savedAt)}
+                  </span>
                 )}
               </div>
               <div className="flex items-center gap-4">

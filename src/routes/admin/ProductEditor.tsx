@@ -7,6 +7,7 @@ import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
 import remarkRehype from 'remark-rehype'
 import rehypeStringify from 'rehype-stringify'
+import { saveDraft, loadDraft, deleteDraft, formatDraftDate, type ProductDraft } from '../../lib/draftStorage'
 
 const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
 
@@ -38,7 +39,7 @@ async function markdownToHtml(markdown: string): Promise<string> {
 export default function ProductEditor() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
-  const { isAdmin, idToken, loginWithGoogle, isLoading: authLoading } = useAdminAuth()
+  const { isAdmin, idToken, loginWithGoogle, isLoading: authLoading, registerBeforeLogout } = useAdminAuth()
   const pageRef = useRef<HTMLDivElement>(null)
 
   const isNewProduct = !slug || slug === 'new'
@@ -56,12 +57,60 @@ export default function ProductEditor() {
   const [isLoading, setIsLoading] = useState(!isNewProduct)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [draftInfo, setDraftInfo] = useState<{ savedAt: number } | null>(null)
+  const [showDraftNotice, setShowDraftNotice] = useState(false)
 
-  // 既存プロダクトの読み込み
+  // 現在のデータを下書きとして保存
+  const saveCurrentDraft = useCallback(() => {
+    if (!formData.slug && !formData.name && !markdown) return // 空の場合は保存しない
+
+    saveDraft<ProductDraft>('product', slug || 'new', {
+      slug: formData.slug,
+      name: formData.name,
+      description: formData.description,
+      language: formData.language,
+      tags: formData.tags,
+      url: formData.url,
+      demo: formData.demo,
+      markdown,
+    })
+    setDraftInfo({ savedAt: Date.now() })
+  }, [formData, markdown, slug])
+
+  // ログアウト前に下書きを保存
   useEffect(() => {
-    if (isNewProduct || !slug) return
+    const unregister = registerBeforeLogout(() => {
+      saveCurrentDraft()
+    })
+    return unregister
+  }, [registerBeforeLogout, saveCurrentDraft])
 
-    const fetchProduct = async () => {
+  // 既存プロダクトの読み込み + 下書きチェック
+  useEffect(() => {
+    const fetchAndCheckDraft = async () => {
+      // 下書きをチェック
+      const draft = loadDraft<ProductDraft>('product', slug || 'new')
+
+      if (isNewProduct) {
+        // 新規作成の場合、下書きがあれば復元
+        if (draft) {
+          setFormData({
+            slug: draft.slug,
+            name: draft.name,
+            description: draft.description,
+            language: draft.language,
+            tags: draft.tags,
+            url: draft.url,
+            demo: draft.demo,
+          })
+          setMarkdown(draft.markdown)
+          setDraftInfo({ savedAt: draft.savedAt })
+          setShowDraftNotice(true)
+        }
+        return
+      }
+
+      // 既存プロダクトの読み込み
       try {
         setIsLoading(true)
         const res = await fetch(`${CMS_ENDPOINT}/products/${slug}`)
@@ -73,16 +122,33 @@ export default function ProductEditor() {
           throw new Error('Failed to fetch product')
         }
         const data = await res.json() as { product: ProductData }
-        setFormData({
-          slug: data.product.slug,
-          name: data.product.name,
-          description: data.product.description,
-          language: data.product.language,
-          tags: data.product.tags.join(', '),
-          url: data.product.url,
-          demo: data.product.demo || '',
-        })
-        setMarkdown(data.product.markdown || '')
+
+        // 下書きがあり、サーバーより新しい場合は復元確認
+        if (draft && draft.savedAt > new Date(data.product.updatedAt).getTime()) {
+          setFormData({
+            slug: draft.slug,
+            name: draft.name,
+            description: draft.description,
+            language: draft.language,
+            tags: draft.tags,
+            url: draft.url,
+            demo: draft.demo,
+          })
+          setMarkdown(draft.markdown)
+          setDraftInfo({ savedAt: draft.savedAt })
+          setShowDraftNotice(true)
+        } else {
+          setFormData({
+            slug: data.product.slug,
+            name: data.product.name,
+            description: data.product.description,
+            language: data.product.language,
+            tags: data.product.tags.join(', '),
+            url: data.product.url,
+            demo: data.product.demo || '',
+          })
+          setMarkdown(data.product.markdown || '')
+        }
       } catch (err) {
         console.error('Failed to fetch product:', err)
         setError('プロダクトの取得に失敗しました')
@@ -91,7 +157,7 @@ export default function ProductEditor() {
       }
     }
 
-    fetchProduct()
+    fetchAndCheckDraft()
   }, [slug, isNewProduct])
 
   // ページタイトル
@@ -151,6 +217,11 @@ export default function ProductEditor() {
         throw new Error(data.error || 'Failed to save product')
       }
 
+      // 保存成功したら下書きを削除
+      deleteDraft('product', slug || 'new')
+      setDraftInfo(null)
+      setShowDraftNotice(false)
+
       alert('保存しました')
 
       if (isNewProduct && data.product) {
@@ -163,6 +234,15 @@ export default function ProductEditor() {
       setIsSaving(false)
     }
   }, [idToken, formData, markdown, isNewProduct, slug, navigate])
+
+  // 下書きを破棄
+  const discardDraft = useCallback(() => {
+    deleteDraft('product', slug || 'new')
+    setDraftInfo(null)
+    setShowDraftNotice(false)
+    // ページをリロードして元のデータを読み込む
+    window.location.reload()
+  }, [slug])
 
   // 削除処理
   const handleDelete = useCallback(async () => {
@@ -239,6 +319,27 @@ export default function ProductEditor() {
           <span className="opacity-50">/</span>
           <span>{isNewProduct ? '新規作成' : '編集'}</span>
         </header>
+
+        {/* 下書き復元通知 */}
+        {showDraftNotice && draftInfo && (
+          <div className="glass-panel p-4 border-l-4 border-yellow-500/50 bg-yellow-500/5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-sm">
+                <span className="text-yellow-400 font-semibold">下書きから復元しました</span>
+                <span className="opacity-70 ml-2">
+                  ({formatDraftDate(draftInfo.savedAt)})
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={discardDraft}
+                className="text-xs px-3 py-1 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] hover:border-[color:var(--ui-border-strong)]"
+              >
+                下書きを破棄
+              </button>
+            </div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="py-8 text-center opacity-70">読み込み中...</div>
@@ -356,7 +457,7 @@ export default function ProductEditor() {
 
             {/* アクションボタン */}
             <div className="flex items-center justify-between gap-4">
-              <div>
+              <div className="flex items-center gap-2">
                 {!isNewProduct && (
                   <button
                     type="button"
@@ -366,6 +467,18 @@ export default function ProductEditor() {
                   >
                     削除
                   </button>
+                )}
+                <button
+                  type="button"
+                  onClick={saveCurrentDraft}
+                  className="px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] text-sm transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
+                >
+                  下書き保存
+                </button>
+                {draftInfo && !showDraftNotice && (
+                  <span className="text-xs opacity-50">
+                    保存済み: {formatDraftDate(draftInfo.savedAt)}
+                  </span>
                 )}
               </div>
               <div className="flex items-center gap-4">
