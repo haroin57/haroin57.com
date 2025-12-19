@@ -1,35 +1,14 @@
 import { useState } from 'react'
 import PageLayout from '../components/PageLayout'
 import Lightbox from '../components/Lightbox'
-import photosData from '../data/photos.json' with { type: 'json' }
-
-// Types
-type PhotoRatio = 'portrait' | 'landscape' | 'square'
-
-type Photo = {
-  src: string
-  title: string
-  location: string
-  date: string
-  camera: string
-  lens: string
-  exposure: string
-  note: string
-  ratio: PhotoRatio
-  tone: string
-}
+import { photos, shotTags, type Photo, type PhotoRatio } from '../data/photos'
 
 // Constants
-const SHOT_TAGS: string[] = []
-
 const RATIO_CLASS_MAP: Record<PhotoRatio, string> = {
   portrait: 'aspect-[4/5]',
   landscape: 'aspect-[4/3]',
   square: 'aspect-square',
 }
-
-// Data
-const photos: Photo[] = photosData as Photo[]
 
 // Components
 function PhotoCard({ photo, onClick }: { photo: Photo; onClick: () => void }) {
@@ -118,9 +97,9 @@ function Photos() {
         <h1 className="reveal text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
           Photos
         </h1>
-                {SHOT_TAGS.length > 0 && (
+        {shotTags.length > 0 && (
           <div className="reveal flex flex-wrap gap-2">
-            {SHOT_TAGS.map((tag) => (
+            {shotTags.map((tag) => (
               <Tag key={tag}>{tag}</Tag>
             ))}
           </div>

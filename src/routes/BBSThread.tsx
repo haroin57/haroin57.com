@@ -372,11 +372,8 @@ function BBSThread() {
       </footer>
 
       <style>{`
-        .bbs-post {
-          border-left: 3px solid transparent;
-        }
         .bbs-highlight {
-          border-left-color: var(--ui-border-strong) !important;
+          box-shadow: inset 3px 0 0 var(--ui-border-strong);
           background-color: rgba(255, 255, 255, 0.08) !important;
         }
       `}</style>

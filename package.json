@@ -12,6 +12,7 @@
     "products:gen": "node --experimental-strip-types scripts/gen-product-posts.ts"
   },
   "dependencies": {
+    "@uiw/react-md-editor": "^4.0.11",
     "better-sqlite3": "^12.4.6",
     "claude": "^0.1.1",
     "fast-glob": "^3.3.3",

@@ -13,6 +13,8 @@ const loadProductDetail = () => import(/* webpackPrefetch: true, webpackChunkNam
 const loadPhotos = () => import(/* webpackPreload: true, webpackChunkName: "photos" */ '../routes/Photos')
 const loadBBSList = () => import(/* webpackPreload: true, webpackChunkName: "bbs-list" */ '../routes/BBSList')
 const loadBBSThread = () => import(/* webpackPrefetch: true, webpackChunkName: "bbs-thread" */ '../routes/BBSThread')
+const loadPostEditor = () => import(/* webpackPrefetch: true, webpackChunkName: "post-editor" */ '../routes/admin/PostEditor')
+const loadProductEditor = () => import(/* webpackPrefetch: true, webpackChunkName: "product-editor" */ '../routes/admin/ProductEditor')
 
 const Home = lazy(loadHome)
 const Posts = lazy(loadPosts)
@@ -22,6 +24,8 @@ const ProductDetail = lazy(loadProductDetail)
 const Photos = lazy(loadPhotos)
 const BBSList = lazy(loadBBSList)
 const BBSThread = lazy(loadBBSThread)
+const PostEditor = lazy(loadPostEditor)
+const ProductEditor = lazy(loadProductEditor)
 
 const TRANSITION_DURATION = 400
 const ROUTE_TRANSITIONING_DURATION = 500
@@ -131,6 +135,11 @@ function AnimatedRoutes() {
               <Route path="/photos" element={<Photos />} />
               <Route path="/bbs" element={<BBSList />} />
               <Route path="/bbs/:threadId" element={<BBSThread />} />
+              {/* 管理者ルート */}
+              <Route path="/admin/posts/new" element={<PostEditor />} />
+              <Route path="/admin/posts/:slug/edit" element={<PostEditor />} />
+              <Route path="/admin/products/new" element={<ProductEditor />} />
+              <Route path="/admin/products/:slug/edit" element={<ProductEditor />} />
             </Routes>
           </Suspense>
         </div>

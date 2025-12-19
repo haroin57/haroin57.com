@@ -1,4 +1,4 @@
-// PVカウンター + Goodボタン + BBS用の Worker。/api/pv, /api/good, /api/bbs を扱う。
+// PVカウンター + Goodボタン + BBS + CMS用の Worker。/api/pv, /api/good, /api/bbs, /api/cms を扱う。
 
 type KVNamespace = {
   get: (key: string) => Promise<string | null>
@@ -6,12 +6,20 @@ type KVNamespace = {
   delete: (key: string) => Promise<void>
 }
 
+type R2Bucket = {
+  put: (key: string, value: ArrayBuffer | ReadableStream, options?: { httpMetadata?: { contentType?: string } }) => Promise<void>
+  get: (key: string) => Promise<{ body: ReadableStream; httpMetadata?: { contentType?: string } } | null>
+  delete: (key: string) => Promise<void>
+}
+
 type Env = {
   HAROIN_PV: KVNamespace
+  CMS_IMAGES?: R2Bucket // R2バケット（画像アップロード用）
   ALLOWED_ORIGIN?: string
   ADMIN_SECRET?: string // 管理者用シークレットキー（フォールバック用）
   FIREBASE_PROJECT_ID?: string // Firebase プロジェクトID
   ADMIN_EMAILS?: string // 管理者メールアドレス（カンマ区切り）
+  R2_PUBLIC_URL?: string // R2の公開URL
 }
 
 // Firebase IDトークンのペイロード型
@@ -45,17 +53,49 @@ type Post = {
   content: string
 }
 
+// CMS型定義
+type CMSPostMeta = {
+  slug: string
+  title: string
+  summary: string
+  createdAt: string
+  updatedAt: string
+  tags: string[]
+}
+
+type CMSPost = CMSPostMeta & {
+  markdown: string
+  html: string
+}
+
+type CMSProductMeta = {
+  slug: string
+  name: string
+  description: string
+  language: string
+  tags: string[]
+  url: string
+  demo?: string
+  createdAt: string
+  updatedAt: string
+}
+
+type CMSProduct = CMSProductMeta & {
+  markdown?: string
+  html?: string
+}
+
 const DEFAULT_ORIGIN = 'https://haroin57.com'
 const RL_TTL_SECONDS = 60
 const MAX_THREADS = 100
 const MAX_POSTS_PER_THREAD = 1000
-const POST_RATE_LIMIT_TTL = 30
+const POST_RATE_LIMIT_TTL = 60
 const THREAD_RATE_LIMIT_TTL = 60
 
 function buildCorsHeaders(origin: string) {
   return {
     'access-control-allow-origin': origin,
-    'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+    'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'access-control-allow-headers': 'Content-Type, X-Admin-Secret, Authorization',
   }
 }
@@ -649,6 +689,574 @@ async function handleBbs(
   })
 }
 
+// ============================================
+// CMS: Posts/Products管理
+// ============================================
+
+// CMS: 記事一覧取得
+async function handleGetCMSPosts(env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  const listJson = await env.HAROIN_PV.get('cms:posts:list')
+  const posts: CMSPostMeta[] = listJson ? JSON.parse(listJson) : []
+  // 作成日時の新しい順にソート
+  posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  return new Response(JSON.stringify({ posts }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: 記事詳細取得
+async function handleGetCMSPost(slug: string, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  const postJson = await env.HAROIN_PV.get(`cms:post:${slug}`)
+  if (!postJson) {
+    return new Response(JSON.stringify({ error: 'post not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+  const post: CMSPost = JSON.parse(postJson)
+  return new Response(JSON.stringify({ post }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: 記事作成
+async function handleCreateCMSPost(
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  let payload: Partial<CMSPost> = {}
+  try {
+    payload = await req.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'bad request' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const { slug, title, summary, markdown, html, tags } = payload
+  if (!slug || !title || !markdown || !html) {
+    return new Response(JSON.stringify({ error: 'slug, title, markdown, and html are required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  // 重複チェック
+  const existingPost = await env.HAROIN_PV.get(`cms:post:${slug}`)
+  if (existingPost) {
+    return new Response(JSON.stringify({ error: 'post with this slug already exists' }), {
+      status: 409,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const now = new Date().toISOString()
+  const post: CMSPost = {
+    slug,
+    title,
+    summary: summary || '',
+    markdown,
+    html,
+    tags: tags || [],
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  // 記事データ保存
+  await env.HAROIN_PV.put(`cms:post:${slug}`, JSON.stringify(post))
+
+  // 一覧にメタデータ追加
+  const listJson = await env.HAROIN_PV.get('cms:posts:list')
+  const posts: CMSPostMeta[] = listJson ? JSON.parse(listJson) : []
+  const meta: CMSPostMeta = { slug, title, summary: summary || '', tags: tags || [], createdAt: now, updatedAt: now }
+  posts.unshift(meta)
+  await env.HAROIN_PV.put('cms:posts:list', JSON.stringify(posts))
+
+  console.log('cms post created', { slug, title })
+
+  return new Response(JSON.stringify({ post }), {
+    status: 201,
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: 記事更新
+async function handleUpdateCMSPost(
+  slug: string,
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const existingJson = await env.HAROIN_PV.get(`cms:post:${slug}`)
+  if (!existingJson) {
+    return new Response(JSON.stringify({ error: 'post not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  let payload: Partial<CMSPost> = {}
+  try {
+    payload = await req.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'bad request' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const existing: CMSPost = JSON.parse(existingJson)
+  const now = new Date().toISOString()
+  const updated: CMSPost = {
+    ...existing,
+    title: payload.title ?? existing.title,
+    summary: payload.summary ?? existing.summary,
+    markdown: payload.markdown ?? existing.markdown,
+    html: payload.html ?? existing.html,
+    tags: payload.tags ?? existing.tags,
+    updatedAt: now,
+  }
+
+  await env.HAROIN_PV.put(`cms:post:${slug}`, JSON.stringify(updated))
+
+  // 一覧のメタデータも更新
+  const listJson = await env.HAROIN_PV.get('cms:posts:list')
+  const posts: CMSPostMeta[] = listJson ? JSON.parse(listJson) : []
+  const idx = posts.findIndex((p) => p.slug === slug)
+  if (idx !== -1) {
+    posts[idx] = {
+      slug,
+      title: updated.title,
+      summary: updated.summary,
+      tags: updated.tags,
+      createdAt: updated.createdAt,
+      updatedAt: now,
+    }
+    await env.HAROIN_PV.put('cms:posts:list', JSON.stringify(posts))
+  }
+
+  console.log('cms post updated', { slug })
+
+  return new Response(JSON.stringify({ post: updated }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: 記事削除
+async function handleDeleteCMSPost(
+  slug: string,
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const existingJson = await env.HAROIN_PV.get(`cms:post:${slug}`)
+  if (!existingJson) {
+    return new Response(JSON.stringify({ error: 'post not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  await env.HAROIN_PV.delete(`cms:post:${slug}`)
+
+  // 一覧から削除
+  const listJson = await env.HAROIN_PV.get('cms:posts:list')
+  const posts: CMSPostMeta[] = listJson ? JSON.parse(listJson) : []
+  const filtered = posts.filter((p) => p.slug !== slug)
+  await env.HAROIN_PV.put('cms:posts:list', JSON.stringify(filtered))
+
+  console.log('cms post deleted', { slug })
+
+  return new Response(JSON.stringify({ success: true, slug }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: プロダクト一覧取得
+async function handleGetCMSProducts(env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  const listJson = await env.HAROIN_PV.get('cms:products:list')
+  const products: CMSProductMeta[] = listJson ? JSON.parse(listJson) : []
+  return new Response(JSON.stringify({ products }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: プロダクト詳細取得
+async function handleGetCMSProduct(slug: string, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+  const productJson = await env.HAROIN_PV.get(`cms:product:${slug}`)
+  if (!productJson) {
+    return new Response(JSON.stringify({ error: 'product not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+  const product: CMSProduct = JSON.parse(productJson)
+  return new Response(JSON.stringify({ product }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: プロダクト作成
+async function handleCreateCMSProduct(
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  let payload: Partial<CMSProduct> = {}
+  try {
+    payload = await req.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'bad request' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const { slug, name, description, language, url } = payload
+  if (!slug || !name || !description || !language || !url) {
+    return new Response(JSON.stringify({ error: 'slug, name, description, language, and url are required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  // 重複チェック
+  const existing = await env.HAROIN_PV.get(`cms:product:${slug}`)
+  if (existing) {
+    return new Response(JSON.stringify({ error: 'product with this slug already exists' }), {
+      status: 409,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const now = new Date().toISOString()
+  const product: CMSProduct = {
+    slug,
+    name,
+    description,
+    language,
+    tags: payload.tags || [],
+    url,
+    demo: payload.demo,
+    markdown: payload.markdown,
+    html: payload.html,
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  await env.HAROIN_PV.put(`cms:product:${slug}`, JSON.stringify(product))
+
+  // 一覧にメタデータ追加
+  const listJson = await env.HAROIN_PV.get('cms:products:list')
+  const products: CMSProductMeta[] = listJson ? JSON.parse(listJson) : []
+  const meta: CMSProductMeta = {
+    slug, name, description, language, tags: payload.tags || [], url, demo: payload.demo, createdAt: now, updatedAt: now
+  }
+  products.unshift(meta)
+  await env.HAROIN_PV.put('cms:products:list', JSON.stringify(products))
+
+  console.log('cms product created', { slug, name })
+
+  return new Response(JSON.stringify({ product }), {
+    status: 201,
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: プロダクト更新
+async function handleUpdateCMSProduct(
+  slug: string,
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const existingJson = await env.HAROIN_PV.get(`cms:product:${slug}`)
+  if (!existingJson) {
+    return new Response(JSON.stringify({ error: 'product not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  let payload: Partial<CMSProduct> = {}
+  try {
+    payload = await req.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'bad request' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const existing: CMSProduct = JSON.parse(existingJson)
+  const now = new Date().toISOString()
+  const updated: CMSProduct = {
+    ...existing,
+    name: payload.name ?? existing.name,
+    description: payload.description ?? existing.description,
+    language: payload.language ?? existing.language,
+    tags: payload.tags ?? existing.tags,
+    url: payload.url ?? existing.url,
+    demo: payload.demo ?? existing.demo,
+    markdown: payload.markdown ?? existing.markdown,
+    html: payload.html ?? existing.html,
+    updatedAt: now,
+  }
+
+  await env.HAROIN_PV.put(`cms:product:${slug}`, JSON.stringify(updated))
+
+  // 一覧のメタデータも更新
+  const listJson = await env.HAROIN_PV.get('cms:products:list')
+  const products: CMSProductMeta[] = listJson ? JSON.parse(listJson) : []
+  const idx = products.findIndex((p) => p.slug === slug)
+  if (idx !== -1) {
+    products[idx] = {
+      slug,
+      name: updated.name,
+      description: updated.description,
+      language: updated.language,
+      tags: updated.tags,
+      url: updated.url,
+      demo: updated.demo,
+      createdAt: updated.createdAt,
+      updatedAt: now,
+    }
+    await env.HAROIN_PV.put('cms:products:list', JSON.stringify(products))
+  }
+
+  console.log('cms product updated', { slug })
+
+  return new Response(JSON.stringify({ product: updated }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: プロダクト削除
+async function handleDeleteCMSProduct(
+  slug: string,
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const existingJson = await env.HAROIN_PV.get(`cms:product:${slug}`)
+  if (!existingJson) {
+    return new Response(JSON.stringify({ error: 'product not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  await env.HAROIN_PV.delete(`cms:product:${slug}`)
+
+  // 一覧から削除
+  const listJson = await env.HAROIN_PV.get('cms:products:list')
+  const products: CMSProductMeta[] = listJson ? JSON.parse(listJson) : []
+  const filtered = products.filter((p) => p.slug !== slug)
+  await env.HAROIN_PV.put('cms:products:list', JSON.stringify(filtered))
+
+  console.log('cms product deleted', { slug })
+
+  return new Response(JSON.stringify({ success: true, slug }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: 画像アップロード
+async function handleUploadImage(
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  if (!env.CMS_IMAGES) {
+    return new Response(JSON.stringify({ error: 'R2 bucket not configured' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const contentType = req.headers.get('content-type') || ''
+  if (!contentType.startsWith('image/')) {
+    return new Response(JSON.stringify({ error: 'content-type must be an image type' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  // ファイル名を生成
+  const ext = contentType.split('/')[1] || 'png'
+  const key = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+
+  const body = await req.arrayBuffer()
+  await env.CMS_IMAGES.put(key, body, {
+    httpMetadata: { contentType },
+  })
+
+  const publicUrl = env.R2_PUBLIC_URL ? `${env.R2_PUBLIC_URL}/${key}` : key
+
+  console.log('cms image uploaded', { key, contentType, size: body.byteLength })
+
+  return new Response(JSON.stringify({ key, url: publicUrl }), {
+    status: 201,
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: 画像削除
+async function handleDeleteImage(
+  key: string,
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  if (!env.CMS_IMAGES) {
+    return new Response(JSON.stringify({ error: 'R2 bucket not configured' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  await env.CMS_IMAGES.delete(key)
+
+  console.log('cms image deleted', { key })
+
+  return new Response(JSON.stringify({ success: true, key }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS ルーティング
+async function handleCms(
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>,
+  pathname: string
+): Promise<Response> {
+  const pathParts = pathname.replace('/api/cms', '').split('/').filter(Boolean)
+
+  // Posts
+  if (pathParts[0] === 'posts') {
+    // GET /api/cms/posts - 記事一覧
+    if (req.method === 'GET' && pathParts.length === 1) {
+      return handleGetCMSPosts(env, corsHeaders)
+    }
+    // POST /api/cms/posts - 記事作成
+    if (req.method === 'POST' && pathParts.length === 1) {
+      return handleCreateCMSPost(req, env, corsHeaders)
+    }
+    // GET /api/cms/posts/:slug - 記事詳細
+    if (req.method === 'GET' && pathParts.length === 2) {
+      return handleGetCMSPost(pathParts[1], env, corsHeaders)
+    }
+    // PUT /api/cms/posts/:slug - 記事更新
+    if (req.method === 'PUT' && pathParts.length === 2) {
+      return handleUpdateCMSPost(pathParts[1], req, env, corsHeaders)
+    }
+    // DELETE /api/cms/posts/:slug - 記事削除
+    if (req.method === 'DELETE' && pathParts.length === 2) {
+      return handleDeleteCMSPost(pathParts[1], req, env, corsHeaders)
+    }
+  }
+
+  // Products
+  if (pathParts[0] === 'products') {
+    // GET /api/cms/products - プロダクト一覧
+    if (req.method === 'GET' && pathParts.length === 1) {
+      return handleGetCMSProducts(env, corsHeaders)
+    }
+    // POST /api/cms/products - プロダクト作成
+    if (req.method === 'POST' && pathParts.length === 1) {
+      return handleCreateCMSProduct(req, env, corsHeaders)
+    }
+    // GET /api/cms/products/:slug - プロダクト詳細
+    if (req.method === 'GET' && pathParts.length === 2) {
+      return handleGetCMSProduct(pathParts[1], env, corsHeaders)
+    }
+    // PUT /api/cms/products/:slug - プロダクト更新
+    if (req.method === 'PUT' && pathParts.length === 2) {
+      return handleUpdateCMSProduct(pathParts[1], req, env, corsHeaders)
+    }
+    // DELETE /api/cms/products/:slug - プロダクト削除
+    if (req.method === 'DELETE' && pathParts.length === 2) {
+      return handleDeleteCMSProduct(pathParts[1], req, env, corsHeaders)
+    }
+  }
+
+  // Upload
+  if (pathParts[0] === 'upload') {
+    // POST /api/cms/upload - 画像アップロード
+    if (req.method === 'POST' && pathParts.length === 1) {
+      return handleUploadImage(req, env, corsHeaders)
+    }
+    // DELETE /api/cms/upload/:key - 画像削除
+    if (req.method === 'DELETE' && pathParts.length === 2) {
+      return handleDeleteImage(pathParts[1], req, env, corsHeaders)
+    }
+  }
+
+  return new Response(JSON.stringify({ error: 'not found' }), {
+    status: 404,
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url)
@@ -657,8 +1265,9 @@ export default {
     const isPv = url.pathname.startsWith('/api/pv')
     const isGood = url.pathname.startsWith('/api/good')
     const isBbs = url.pathname.startsWith('/api/bbs')
+    const isCms = url.pathname.startsWith('/api/cms')
 
-    if (!isPv && !isGood && !isBbs) {
+    if (!isPv && !isGood && !isBbs && !isCms) {
       return new Response('not found', { status: 404 })
     }
 
@@ -687,6 +1296,14 @@ export default {
         return new Response('Method not allowed', { status: 405, headers: corsHeaders })
       }
       return handleBbs(req, env, corsHeaders, url.pathname)
+    }
+
+    // CMS は GET, POST, PUT, DELETE を許可
+    if (isCms) {
+      if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'DELETE') {
+        return new Response('Method not allowed', { status: 405, headers: corsHeaders })
+      }
+      return handleCms(req, env, corsHeaders, url.pathname)
     }
 
     // PV, Good は POST のみ

@@ -5,5 +5,11 @@
   "compatibility_date": "2025-12-02",
   "kv_namespaces": [
     { "binding": "HAROIN_PV", "id": "186445ba0495498facbca1e8c5c67bcc", "preview_id": "e16a6f8f2e954f4cacf9a50c275e0169" }
-  ]
+  ],
+  "r2_buckets": [
+    { "binding": "CMS_IMAGES", "bucket_name": "haroin-cms-images" }
+  ],
+  "vars": {
+    "R2_PUBLIC_URL": "https://images.haroin57.com"
+  }
 }

@@ -20,7 +20,13 @@
       "Bash(npm uninstall:*)",
       "Bash(node:*)",
       "Bash(cat:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(wrangler secret list:*)",
+      "Bash(wrangler deploy:*)",
+      "Bash(wrangler secret put:*)",
+      "Bash(npx tsx:*)",
+      "Bash(wrangler kv:*)",
+      "Bash(wrangler pages project list:*)"
     ]
   }
 }
