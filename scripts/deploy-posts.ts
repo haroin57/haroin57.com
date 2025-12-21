@@ -639,10 +639,12 @@ async function deployPost(post: PostData, options: DeployOptions): Promise<{ suc
     }
   }
 
-  if (!options.token || !options.adminSecret) {
+  // CI/CDモード: ADMIN_SECRETのみで認証可能
+  // ローカル開発: FIREBASE_ID_TOKEN + ADMIN_SECRET で認証
+  if (!options.adminSecret) {
     return {
       success: false,
-      message: 'Both FIREBASE_ID_TOKEN and ADMIN_SECRET are required. Please set both environment variables.',
+      message: 'ADMIN_SECRET is required. Please set the environment variable.',
     }
   }
 
@@ -651,9 +653,8 @@ async function deployPost(post: PostData, options: DeployOptions): Promise<{ suc
   if (options.token) {
     authHeaders['Authorization'] = `Bearer ${options.token}`
   }
-  if (options.adminSecret) {
-    authHeaders['X-Admin-Secret'] = options.adminSecret
-  }
+  // ADMIN_SECRETは常に必須
+  authHeaders['X-Admin-Secret'] = options.adminSecret
 
   const url = `${options.endpoint}/posts/${post.slug}`
 
