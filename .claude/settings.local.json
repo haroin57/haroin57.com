@@ -32,7 +32,14 @@
       "Bash(npx wrangler pages project list:*)",
       "Bash(wrangler whoami:*)",
       "Bash(wrangler workers list:*)",
-      "Bash(wrangler deployments list:*)"
+      "Bash(wrangler deployments list:*)",
+      "Bash(git -C c:/Users/harut/haroin57-web for-each-ref --format=\"%\\(refname\\)\" refs/original/)",
+      "Bash(while read ref)",
+      "Bash(do git -C c:/Users/harut/haroin57-web update-ref -d \"$ref\")",
+      "Bash(done)",
+      "Bash(git -C c:/Users/harut/haroin57-web reflog expire --expire=now --all)",
+      "Bash(git -C c:/Users/harut/haroin57-web gc --prune=now --aggressive)",
+      "Bash(git -C c:/Users/harut/haroin57-web push --force --all)"
     ]
   }
 }
