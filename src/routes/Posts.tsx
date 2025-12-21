@@ -5,6 +5,7 @@ import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
 import { formatDraftDate } from '../lib/draftStorage'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
 
@@ -33,6 +34,14 @@ function Posts() {
   // 下書き一覧（管理者のみ・サーバーから取得）
   const [drafts, setDrafts] = useState<Post[]>([])
   const [showDrafts, setShowDrafts] = useState(false)
+
+  // Postsページのメタタグ
+  usePageMeta({
+    title: 'Posts | haroin57 web',
+    description: 'haroinのブログ記事一覧',
+    ogTitle: 'Posts | haroin57 web',
+    ogDescription: 'haroinのブログ記事一覧',
+  })
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })
@@ -161,9 +170,14 @@ function Posts() {
         <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
           <div className="mx-auto w-full max-w-2xl space-y-6 text-left">
             <header
-              className="reveal flex items-center justify-end gap-4"
+              className="reveal flex items-center justify-between gap-4"
               style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
             >
+              <div className="flex items-center gap-4 text-lg sm:text-xl font-semibold">
+                <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+                  Home
+                </PrefetchLink>
+              </div>
               {/* 管理者UI */}
               <div className="flex items-center gap-2">
                 {authLoading ? null : isAdmin ? (

@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState, useCallback, startTransition } fr
 import mermaid from 'mermaid'
 import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
+import PrefetchLink from '../components/PrefetchLink'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 // Mermaidの初期化（サイトのglass-panel UIに合わせた黒ベースのテーマ）
 mermaid.initialize({
@@ -203,36 +205,29 @@ function PostDetail() {
     return `${window.location.origin}${location.pathname}`
   }, [location.pathname])
 
-  useEffect(() => {
-    if (!post) return
-    const title = `${post.title ?? 'Post'} | haroin57`
-    document.title = title
-
-    const ensureMeta = (key: 'name' | 'property', value: string) => {
-      let el = document.querySelector(`meta[${key}="${value}"]`) as HTMLMetaElement | null
-      if (!el) {
-        el = document.createElement('meta')
-        el.setAttribute(key, value)
-        document.head.appendChild(el)
-      }
-      return el
-    }
-
-    const descSource = post.summary
+  // 記事のメタタグを動的に設定
+  const descSource = useMemo(() => {
+    if (!post) return ''
+    return post.summary
       ? post.summary
       : post.html
         ? post.html.replace(/<[^>]+>/g, '').slice(0, 120) || 'haroin57 web'
         : 'haroin57 web'
+  }, [post])
 
-    ensureMeta('name', 'description').setAttribute('content', descSource)
-    ensureMeta('property', 'og:title').setAttribute('content', post.title ?? 'haroin57 web')
-    ensureMeta('property', 'og:description').setAttribute('content', descSource)
-    ensureMeta('property', 'og:url').setAttribute('content', shareUrl)
-    ensureMeta('name', 'twitter:title').setAttribute('content', post.title ?? 'haroin57 web')
-    ensureMeta('name', 'twitter:description').setAttribute('content', descSource)
-    ensureMeta('name', 'twitter:card').setAttribute('content', 'summary_large_image')
-    ensureMeta('name', 'twitter:url').setAttribute('content', shareUrl)
-  }, [post, shareUrl])
+  usePageMeta(
+    post
+      ? {
+          title: `${post.title ?? 'Post'} | haroin57 web`,
+          description: descSource,
+          ogTitle: post.title ?? 'haroin57 web',
+          ogDescription: descSource,
+          ogUrl: shareUrl,
+          twitterTitle: post.title ?? 'haroin57 web',
+          twitterDescription: descSource,
+        }
+      : {}
+  )
 
   useEffect(() => {
     if (!slug) return
@@ -473,6 +468,18 @@ function PostDetail() {
         className="relative z-10 mx-auto min-h-screen max-w-4xl px-4 pt-16 pb-10 space-y-6 page-fade sm:px-6 sm:pt-20 sm:pb-12"
         style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
       >
+        <header
+          className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
+          style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
+        >
+          <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+            Home
+          </PrefetchLink>
+          <span className="opacity-50">/</span>
+          <PrefetchLink to="/posts" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+            Posts
+          </PrefetchLink>
+        </header>
 
         {isLoading ? (
           <p className="text-[color:var(--fg,inherit)]">Loading...</p>

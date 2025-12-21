@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 // スレッド型
 type Thread = {
@@ -30,6 +31,14 @@ function BBSList() {
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null)
   const pageRef = useRef<HTMLDivElement | null>(null)
   const { isAdmin, idToken, loginWithGoogle, logout } = useAdminAuth()
+
+  // BBSページのメタタグ
+  usePageMeta({
+    title: 'BBS | haroin57 web',
+    description: '自由に書き込める掲示板',
+    ogTitle: 'BBS | haroin57 web',
+    ogDescription: '自由に書き込める掲示板',
+  })
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })

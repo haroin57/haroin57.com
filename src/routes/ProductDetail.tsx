@@ -5,6 +5,7 @@ import productsData from '../data/products.json' with { type: 'json' }
 import productPostsData from '../data/product-posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 // Mermaidの初期化（サイトのglass-panel UIに合わせた黒ベースのテーマ）
 mermaid.initialize({
@@ -198,10 +199,17 @@ function ProductDetail() {
     })
   }, [])
 
-  useEffect(() => {
-    if (!product) return
-    document.title = `${product.name} | Products | haroin57`
-  }, [product])
+  // プロダクト詳細ページのメタタグ
+  usePageMeta(
+    product
+      ? {
+          title: `${product.name} | Products | haroin57 web`,
+          description: product.description,
+          ogTitle: `${product.name} | Products | haroin57 web`,
+          ogDescription: product.description,
+        }
+      : {}
+  )
 
   // スクロール時の背景ぼかしエフェクト
   useEffect(() => {

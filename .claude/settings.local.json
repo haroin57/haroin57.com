@@ -39,7 +39,8 @@
       "Bash(done)",
       "Bash(git -C c:/Users/harut/haroin57-web reflog expire --expire=now --all)",
       "Bash(git -C c:/Users/harut/haroin57-web gc --prune=now --aggressive)",
-      "Bash(git -C c:/Users/harut/haroin57-web push --force --all)"
+      "Bash(git -C c:/Users/harut/haroin57-web push --force --all)",
+      "Bash(git checkout:*)"
     ]
   }
 }

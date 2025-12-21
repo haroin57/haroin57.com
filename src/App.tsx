@@ -1,9 +1,13 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePageMeta } from './hooks/usePageMeta'
 
 function App() {
   const navigate = useNavigate()
   const pageRef = useRef<HTMLDivElement | null>(null)
+
+  // ランディングページはデフォルトのメタタグを使用
+  usePageMeta()
 
   const handleNavigate = useCallback(() => {
     navigate('/home')

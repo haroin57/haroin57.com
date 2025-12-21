@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import AnimatedRoutes from './components/AnimatedRoutes'
 import GlobalBackground from './components/GlobalBackground'
 import ScrollTopHomeSwitch from './components/ScrollTopHomeSwitch'
-import TabNavigation from './components/TabNavigation'
 import { AdminAuthProvider } from './contexts/AdminAuthContext'
 import './index.css'
 
@@ -12,7 +11,6 @@ createRoot(document.getElementById('root')!).render(
     <AdminAuthProvider>
       <GlobalBackground />
       <ScrollTopHomeSwitch />
-      <TabNavigation />
       <AnimatedRoutes />
     </AdminAuthProvider>
   </BrowserRouter>

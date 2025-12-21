@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 // スレッド型
 type Thread = {
@@ -74,6 +75,23 @@ function BBSThread() {
   const pageRef = useRef<HTMLDivElement | null>(null)
   const formRef = useRef<HTMLFormElement | null>(null)
   const { isAdmin, idToken } = useAdminAuth()
+
+  // スレッドページのメタタグ
+  usePageMeta(
+    thread
+      ? {
+          title: `${thread.title} | BBS | haroin57 web`,
+          description: `${thread.title} - 掲示板スレッド`,
+          ogTitle: `${thread.title} | BBS | haroin57 web`,
+          ogDescription: `${thread.title} - 掲示板スレッド`,
+        }
+      : {
+          title: 'BBS | haroin57 web',
+          description: '掲示板スレッド',
+          ogTitle: 'BBS | haroin57 web',
+          ogDescription: '掲示板スレッド',
+        }
+  )
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })

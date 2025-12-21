@@ -4,6 +4,7 @@ import productsData from '../data/products.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
 
@@ -31,6 +32,14 @@ const languageColors: Record<string, string> = {
 function Products() {
   const pageRef = useRef<HTMLDivElement | null>(null)
   const { isAdmin, loginWithGoogle, logout, isLoading: authLoading } = useAdminAuth()
+
+  // Productsページのメタタグ
+  usePageMeta({
+    title: 'Products | haroin57 web',
+    description: 'haroinの個人プロジェクトとオープンソース作品',
+    ogTitle: 'Products | haroin57 web',
+    ogDescription: 'haroinの個人プロジェクトとオープンソース作品',
+  })
 
   // 動的に取得したプロダクト一覧
   const [products, setProducts] = useState<Product[]>(staticProducts)
@@ -82,9 +91,14 @@ function Products() {
         <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
           <div className="mx-auto w-full max-w-2xl space-y-6 text-left">
             <header
-              className="reveal flex items-center justify-end gap-4"
+              className="reveal flex items-center justify-between gap-4"
               style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
             >
+              <div className="flex items-center gap-4 text-lg sm:text-xl font-semibold">
+                <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+                  Home
+                </PrefetchLink>
+              </div>
               {/* 管理者UI */}
               <div className="flex items-center gap-2">
                 {authLoading ? null : isAdmin ? (

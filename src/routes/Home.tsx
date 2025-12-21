@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import PrefetchLink from '../components/PrefetchLink'
 import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
 
@@ -27,6 +28,9 @@ function Home() {
   const [openInterests, setOpenInterests] = useState(false)
   const [latestPosts, setLatestPosts] = useState<PostMeta[]>(initialLatestPosts)
   const pageRef = useRef<HTMLDivElement | null>(null)
+
+  // ホームページはデフォルトのメタタグを使用
+  usePageMeta()
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })
