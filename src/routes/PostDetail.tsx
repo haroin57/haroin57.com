@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState, useCallback, startTransition } fr
 import mermaid from 'mermaid'
 import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
-import PrefetchLink from '../components/PrefetchLink'
 
 // Mermaidの初期化（サイトのglass-panel UIに合わせた黒ベースのテーマ）
 mermaid.initialize({
@@ -471,17 +470,9 @@ function PostDetail() {
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
-        className="relative z-10 mx-auto min-h-screen max-w-4xl px-4 py-10 space-y-6 page-fade sm:px-6 sm:py-12"
+        className="relative z-10 mx-auto min-h-screen max-w-4xl px-4 pt-16 pb-10 space-y-6 page-fade sm:px-6 sm:pt-20 sm:pb-12"
         style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
       >
-        <header
-          className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
-          style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
-        >
-          <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
-            Home
-          </PrefetchLink>
-        </header>
 
         {isLoading ? (
           <p className="text-[color:var(--fg,inherit)]">Loading...</p>

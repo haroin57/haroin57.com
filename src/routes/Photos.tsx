@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import AccessCounter from '../components/AccessCounter'
-import PrefetchLink from '../components/PrefetchLink'
 import Lightbox from '../components/Lightbox'
 import { photos, shotTags, type Photo, type PhotoRatio } from '../data/photos'
 
@@ -112,18 +110,9 @@ function Photos() {
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
-        className="relative z-10 mx-auto min-h-screen max-w-4xl px-4 py-10 space-y-6 page-fade sm:px-6 sm:py-12"
+        className="relative z-10 mx-auto min-h-screen max-w-4xl px-4 pt-16 pb-10 space-y-6 page-fade sm:px-6 sm:pt-20 sm:pb-12"
         style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
       >
-        <header
-          className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
-          style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
-        >
-          <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
-            Home
-          </PrefetchLink>
-        </header>
-
         <article className="reveal space-y-4 w-full">
           <div className="space-y-4 mb-8">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
@@ -159,16 +148,6 @@ function Photos() {
             </div>
           </div>
 
-          {/* 戻るリンク */}
-          <section className="mt-6 flex justify-start">
-            <Link
-              to="/home"
-              className="font-morisawa-dragothic underline-thin hover:text-accent text-base sm:text-lg"
-              style={{ color: 'var(--fg)' }}
-            >
-              ← Homeへ
-            </Link>
-          </section>
         </article>
       </main>
 
