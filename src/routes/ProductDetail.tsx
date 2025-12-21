@@ -3,9 +3,12 @@ import { useParams, Link } from 'react-router-dom'
 import mermaid from 'mermaid'
 import productsData from '../data/products.json' with { type: 'json' }
 import productPostsData from '../data/product-posts.json' with { type: 'json' }
-import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 
 // Mermaidの初期化（サイトのglass-panel UIに合わせた黒ベースのテーマ）
 mermaid.initialize({
@@ -181,23 +184,10 @@ function ProductDetail() {
   const pageRef = useRef<HTMLDivElement | null>(null)
   const proseRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' })
-  }, [])
+  useScrollToTop()
 
   // 即座にreveal要素を表示（遅延なし）
-  useEffect(() => {
-    const root = pageRef.current
-    if (!root) return
-
-    const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
-    if (targets.length === 0) return
-
-    // マイクロタスクで即座に表示
-    queueMicrotask(() => {
-      targets.forEach((el) => el.classList.add('is-visible'))
-    })
-  }, [])
+  useReveal(pageRef)
 
   // プロダクト詳細ページのメタタグ
   usePageMeta(
@@ -367,12 +357,12 @@ function ProductDetail() {
     <div ref={pageRef} className="relative overflow-hidden">
       <main
         className="relative z-10 min-h-screen flex flex-col page-fade"
-        style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
+        style={MAIN_TEXT_STYLE}
       >
         <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 space-y-6 sm:px-6 sm:pt-20 sm:pb-12">
             <header
               className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
-              style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
+              style={MAIN_FONT_STYLE}
             >
               <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
                 Home
@@ -543,23 +533,7 @@ function ProductDetail() {
             )}
         </div>
 
-        <footer
-          className="relative z-10 mt-12 flex items-center justify-between border-t border-[color:var(--ui-border)] px-4 py-6 sm:px-6"
-          style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
-        >
-          <div className="text-xs sm:text-sm opacity-70 flex items-center gap-3">
-            <AccessCounter />
-            <span>© haroin</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-              <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
-            </a>
-            <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-              <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
-            </a>
-          </div>
-        </footer>
+        <SiteFooter />
       </main>
     </div>
   )

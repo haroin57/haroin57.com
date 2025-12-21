@@ -1,13 +1,15 @@
 import { useSearchParams, Link } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useCallback, startTransition, useState } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
-import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
 import { formatDraftDate } from '../lib/draftStorage'
+import { CMS_ENDPOINT } from '../lib/endpoints'
 import { usePageMeta } from '../hooks/usePageMeta'
-
-const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 
 type Post = {
   slug?: string
@@ -43,9 +45,7 @@ function Posts() {
     ogDescription: 'haroinのブログ記事一覧',
   })
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' })
-  }, [])
+  useScrollToTop()
 
   // CMS APIから記事一覧を取得（失敗時は静的データにフォールバック）
   useEffect(() => {
@@ -92,17 +92,7 @@ function Posts() {
 
   // reveal要素を表示
   // posts, drafts, showDraftsが変更されたときにも再実行
-  useEffect(() => {
-    const root = pageRef.current
-    if (!root) return
-
-    const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
-    if (targets.length === 0) return
-
-    queueMicrotask(() => {
-      targets.forEach((el) => el.classList.add('is-visible'))
-    })
-  }, [isLoading, posts, drafts, showDrafts])
+  useReveal(pageRef, [isLoading, posts, drafts, showDrafts])
 
   const allTags = useMemo(() => {
     const set = new Set<string>()
@@ -165,13 +155,13 @@ function Posts() {
     <div ref={pageRef} className="relative overflow-hidden">
       <main
         className="relative z-10 min-h-screen flex flex-col page-fade"
-        style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
+        style={MAIN_TEXT_STYLE}
       >
         <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
           <div className="mx-auto w-full max-w-2xl space-y-6 text-left">
             <header
               className="reveal flex items-center justify-between gap-4"
-              style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
+              style={MAIN_FONT_STYLE}
             >
               <div className="flex items-center gap-4 text-lg sm:text-xl font-semibold">
                 <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
@@ -344,23 +334,7 @@ function Posts() {
         </div>
       </main>
 
-      <footer
-        className="relative z-10 mt-12 flex items-center justify-between border-t border-[color:var(--ui-border)] px-4 py-6 sm:px-6"
-        style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
-      >
-        <div className="text-xs sm:text-sm opacity-70 flex items-center gap-3">
-          <AccessCounter />
-          <span>© haroin</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
-          </a>
-          <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
-          </a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

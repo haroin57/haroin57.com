@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import productsData from '../data/products.json' with { type: 'json' }
-import AccessCounter from '../components/AccessCounter'
+import ArrowRightIcon from '../components/icons/ArrowRightIcon'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
 import { usePageMeta } from '../hooks/usePageMeta'
-
-const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { CMS_ENDPOINT } from '../lib/endpoints'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 
 type Product = {
   slug: string
@@ -41,13 +44,11 @@ function Products() {
     ogDescription: 'haroinの個人プロジェクトとオープンソース作品',
   })
 
+  useScrollToTop()
+
   // 動的に取得したプロダクト一覧
   const [products, setProducts] = useState<Product[]>(staticProducts)
   const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' })
-  }, [])
 
   // CMS APIからプロダクト一覧を取得（失敗時は静的データにフォールバック）
   useEffect(() => {
@@ -70,29 +71,19 @@ function Products() {
   }, [])
 
   // reveal要素を表示
-  useEffect(() => {
-    const root = pageRef.current
-    if (!root) return
-
-    const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
-    if (targets.length === 0) return
-
-    queueMicrotask(() => {
-      targets.forEach((el) => el.classList.add('is-visible'))
-    })
-  }, [isLoading])
+  useReveal(pageRef, [isLoading])
 
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
         className="relative z-10 min-h-screen flex flex-col page-fade"
-        style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
+        style={MAIN_TEXT_STYLE}
       >
         <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
           <div className="mx-auto w-full max-w-2xl space-y-6 text-left">
             <header
               className="reveal flex items-center justify-between gap-4"
-              style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
+              style={MAIN_FONT_STYLE}
             >
               <div className="flex items-center gap-4 text-lg sm:text-xl font-semibold">
                 <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
@@ -149,21 +140,7 @@ function Products() {
                             <h2 className="text-lg sm:text-2xl font-semibold text-[color:var(--fg-strong)]">
                               {product.name}
                             </h2>
-                            <svg
-                              width="15"
-                              height="15"
-                              viewBox="0 0 15 15"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 opacity-60"
-                            >
-                              <path
-                                d="M8.14645 3.14645C8.34171 2.95118 8.65829 2.95118 8.85355 3.14645L12.8536 7.14645C13.0488 7.34171 13.0488 7.65829 12.8536 7.85355L8.85355 11.8536C8.65829 12.0488 8.34171 12.0488 8.14645 11.8536C7.95118 11.6583 7.95118 11.3417 8.14645 11.1464L11.2929 8H2.5C2.22386 8 2 7.77614 2 7.5C2 7.22386 2.22386 7 2.5 7H11.2929L8.14645 3.85355C7.95118 3.65829 7.95118 3.34171 8.14645 3.14645Z"
-                                fill="currentColor"
-                                fillRule="evenodd"
-                                clipRule="evenodd"
-                              />
-                            </svg>
+                            <ArrowRightIcon className="h-4 w-4 opacity-60" />
                           </div>
                           <p className="text-sm sm:text-base opacity-80">{product.description}</p>
                           <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -213,23 +190,7 @@ function Products() {
           </div>
         </div>
 
-        <footer
-          className="relative z-10 mt-12 flex items-center justify-between border-t border-[color:var(--ui-border)] px-4 py-6 sm:px-6"
-          style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
-        >
-          <div className="text-xs sm:text-sm opacity-70 flex items-center gap-3">
-            <AccessCounter />
-            <span>© haroin</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-              <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
-            </a>
-            <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-              <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
-            </a>
-          </div>
-        </footer>
+        <SiteFooter />
       </main>
     </div>
   )

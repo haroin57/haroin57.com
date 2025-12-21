@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
 import postsData from '../data/posts.json' with { type: 'json' }
-import AccessCounter from '../components/AccessCounter'
 import { usePageMeta } from '../hooks/usePageMeta'
-
-const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { CMS_ENDPOINT } from '../lib/endpoints'
+import { MAIN_TEXT_STYLE } from '../styles/typography'
 
 type Interest = { title: string; text: string }
 type PostMeta = { slug?: string; title?: string; createdAt?: string }
@@ -32,9 +34,7 @@ function Home() {
   // ホームページはデフォルトのメタタグを使用
   usePageMeta()
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' })
-  }, [])
+  useScrollToTop()
 
   // CMS APIから最新記事を取得（下書きに戻した記事は除外される）
   useEffect(() => {
@@ -59,24 +59,13 @@ function Home() {
 
   // 即座にreveal要素を表示（遅延なし）
   // latestPostsが変更されたときにも再実行
-  useEffect(() => {
-    const root = pageRef.current
-    if (!root) return
-
-    const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
-    if (targets.length === 0) return
-
-    // マイクロタスクで即座に表示
-    queueMicrotask(() => {
-      targets.forEach((el) => el.classList.add('is-visible'))
-    })
-  }, [latestPosts])
+  useReveal(pageRef, [latestPosts])
 
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
         className="relative z-10 min-h-screen flex flex-col page-fade"
-        style={{ fontFamily: `"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif`, color: 'var(--fg)' }}
+        style={MAIN_TEXT_STYLE}
       >
         <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
           <div className="flex flex-1 flex-col justify-center py-10">
@@ -226,23 +215,7 @@ function Home() {
           </div>
         </div>
 
-        <footer
-          className="relative z-10 mt-12 flex items-center justify-between border-t border-[color:var(--ui-border)] px-4 py-6 sm:px-6"
-          style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
-        >
-          <div className="text-xs sm:text-sm opacity-70 flex items-center gap-3">
-            <AccessCounter />
-            <span>© haroin</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-              <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
-            </a>
-            <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-              <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
-            </a>
-          </div>
-        </footer>
+        <SiteFooter />
       </main>
     </div>
   )

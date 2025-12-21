@@ -1,9 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
-import AccessCounter from '../components/AccessCounter'
+import { useState, useRef } from 'react'
 import Lightbox from '../components/Lightbox'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
 import { photos, shotTags, type Photo, type PhotoRatio } from '../data/photos'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 
 // Constants
 const RATIO_CLASS_MAP: Record<PhotoRatio, string> = {
@@ -101,31 +104,18 @@ function Photos() {
     ogDescription: 'ライドや散歩で撮った写真',
   })
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' })
-  }, [])
-
-  useEffect(() => {
-    const root = pageRef.current
-    if (!root) return
-
-    const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
-    if (targets.length === 0) return
-
-    queueMicrotask(() => {
-      targets.forEach((el) => el.classList.add('is-visible'))
-    })
-  }, [])
+  useScrollToTop()
+  useReveal(pageRef)
 
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
         className="relative z-10 mx-auto min-h-screen max-w-4xl px-4 pt-16 pb-10 space-y-6 page-fade sm:px-6 sm:pt-20 sm:pb-12"
-        style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
+        style={MAIN_TEXT_STYLE}
       >
         <header
           className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
-          style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
+          style={MAIN_FONT_STYLE}
         >
           <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
             Home
@@ -170,23 +160,7 @@ function Photos() {
         </article>
       </main>
 
-      <footer
-        className="relative z-10 mt-12 flex items-center justify-between border-t border-[color:var(--ui-border)] px-4 py-6 sm:px-6"
-        style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
-      >
-        <div className="text-xs sm:text-sm opacity-70 flex items-center gap-3">
-          <AccessCounter />
-          <span>© haroin</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
-          </a>
-          <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
-          </a>
-        </div>
-      </footer>
+      <SiteFooter />
 
       {/* Lightbox */}
       <Lightbox

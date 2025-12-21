@@ -5,8 +5,7 @@ import rehypeKatex from 'rehype-katex'
 import remarkMath from 'remark-math'
 import mermaid from 'mermaid'
 import 'katex/dist/katex.min.css'
-
-const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
+import { CMS_ENDPOINT } from '../../lib/endpoints'
 
 // Frontmatterをパースする関数
 type FrontmatterData = {

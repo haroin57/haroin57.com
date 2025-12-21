@@ -2,9 +2,13 @@ import { useLocation, useParams, Link } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState, useCallback, startTransition } from 'react'
 import mermaid from 'mermaid'
 import postsData from '../data/posts.json' with { type: 'json' }
-import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { CMS_ENDPOINT, GOOD_ENDPOINT } from '../lib/endpoints'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 
 // Mermaidの初期化（サイトのglass-panel UIに合わせた黒ベースのテーマ）
 mermaid.initialize({
@@ -100,8 +104,6 @@ type Post = { slug?: string; title?: string; summary?: string; html?: string; cr
 type TaggedPost = Post & { tags?: string[] }
 
 const staticPosts: TaggedPost[] = Array.isArray(postsData) ? (postsData as TaggedPost[]) : []
-const GOOD_ENDPOINT = import.meta.env.VITE_GOOD_ENDPOINT || '/api/good'
-const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
 const SERVER_APPLY_DELAY_MS = 350
 
 function extractCodeText(codeElement: HTMLElement): string {
@@ -181,24 +183,11 @@ function PostDetail() {
     }
   }, [slug])
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' })
-  }, [])
+  useScrollToTop()
 
   // 即座にreveal要素を表示（遅延なし）
   // postが変更されたときにも再実行
-  useEffect(() => {
-    const root = pageRef.current
-    if (!root) return
-
-    const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
-    if (targets.length === 0) return
-
-    // マイクロタスクで即座に表示
-    queueMicrotask(() => {
-      targets.forEach((el) => el.classList.add('is-visible'))
-    })
-  }, [post])
+  useReveal(pageRef, [post])
 
   const shareUrl = useMemo(() => {
     if (typeof window === 'undefined') return ''
@@ -466,11 +455,11 @@ function PostDetail() {
     <div ref={pageRef} className="relative overflow-hidden">
       <main
         className="relative z-10 mx-auto min-h-screen max-w-4xl px-4 pt-16 pb-10 space-y-6 page-fade sm:px-6 sm:pt-20 sm:pb-12"
-        style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
+        style={MAIN_TEXT_STYLE}
       >
         <header
           className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
-          style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
+          style={MAIN_FONT_STYLE}
         >
           <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
             Home
@@ -564,23 +553,7 @@ function PostDetail() {
         )}
       </main>
 
-      <footer
-        className="relative z-10 mt-12 flex items-center justify-between border-t border-[color:var(--ui-border)] px-4 py-6 sm:px-6"
-        style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
-      >
-        <div className="text-xs sm:text-sm opacity-70 flex items-center gap-3">
-          <AccessCounter />
-          <span>© haroin</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
-          </a>
-          <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-            <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
-          </a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

@@ -1,6 +1,9 @@
-import { useEffect, useRef, type ReactNode } from 'react'
-import AccessCounter from './AccessCounter'
+import { useRef, type ReactNode } from 'react'
 import BackButton from './BackButton'
+import SiteFooter from './SiteFooter'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { MAIN_TEXT_STYLE } from '../styles/typography'
 
 type PageLayoutProps = {
   children: ReactNode
@@ -11,27 +14,14 @@ type PageLayoutProps = {
 function PageLayout({ children, showBackButton = true, backTo = '/home' }: PageLayoutProps) {
   const pageRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' })
-  }, [])
-
-  useEffect(() => {
-    const root = pageRef.current
-    if (!root) return
-
-    const targets = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
-    if (targets.length === 0) return
-
-    queueMicrotask(() => {
-      targets.forEach((el) => el.classList.add('is-visible'))
-    })
-  }, [])
+  useScrollToTop()
+  useReveal(pageRef)
 
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
         className="relative z-10 min-h-screen flex flex-col page-fade"
-        style={{ fontFamily: `"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif`, color: 'var(--fg)' }}
+        style={MAIN_TEXT_STYLE}
       >
         {showBackButton && <BackButton to={backTo} />}
 
@@ -43,23 +33,7 @@ function PageLayout({ children, showBackButton = true, backTo = '/home' }: PageL
           </div>
         </div>
 
-        <footer
-          className="relative z-10 mt-12 flex items-center justify-between border-t border-[color:var(--ui-border)] px-4 py-6 sm:px-6"
-          style={{ color: 'var(--fg)', fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif' }}
-        >
-          <div className="text-xs sm:text-sm opacity-70 flex items-center gap-3">
-            <AccessCounter />
-            <span>© haroin</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-              <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
-            </a>
-            <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-              <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
-            </a>
-          </div>
-        </footer>
+        <SiteFooter />
       </main>
     </div>
   )

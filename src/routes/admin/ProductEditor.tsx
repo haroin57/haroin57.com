@@ -8,8 +8,8 @@ import remarkGfm from 'remark-gfm'
 import remarkRehype from 'remark-rehype'
 import rehypeStringify from 'rehype-stringify'
 import { saveDraft, loadDraft, deleteDraft, formatDraftDate, type ProductDraft } from '../../lib/draftStorage'
-
-const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
+import { CMS_ENDPOINT } from '../../lib/endpoints'
+import { MAIN_TEXT_STYLE } from '../../styles/typography'
 
 type ProductData = {
   slug: string
@@ -309,7 +309,7 @@ export default function ProductEditor() {
     <div ref={pageRef} className="relative overflow-hidden">
       <main
         className="relative z-10 mx-auto min-h-screen max-w-5xl px-4 py-10 space-y-6 page-fade sm:px-6 sm:py-12"
-        style={{ fontFamily: '"bc-barell","Space Grotesk",system-ui,-apple-system,sans-serif', color: 'var(--fg)' }}
+        style={MAIN_TEXT_STYLE}
       >
         {/* ヘッダー */}
         <header className="flex items-center gap-4 text-lg sm:text-xl font-semibold">
