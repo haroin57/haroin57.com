@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAdminAuth } from '../../contexts/AdminAuthContext'
 import MarkdownEditor from '../../components/admin/MarkdownEditor'
 import { unified } from 'unified'
@@ -7,7 +7,7 @@ import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
 import remarkRehype from 'remark-rehype'
 import rehypeStringify from 'rehype-stringify'
-import { saveDraft, loadDraft, deleteDraft, formatDraftDate, type PostDraft } from '../../lib/draftStorage'
+import { saveDraft, loadDraft, deleteDraft, formatDraftDate, revertPostToDraft, type PostDraft } from '../../lib/draftStorage'
 
 const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
 
@@ -35,6 +35,8 @@ async function markdownToHtml(markdown: string): Promise<string> {
 
 export default function PostEditor() {
   const { slug } = useParams<{ slug: string }>()
+  const [searchParams] = useSearchParams()
+  const draftKey = searchParams.get('draft') // URLから下書きキーを取得
   const navigate = useNavigate()
   const { isAdmin, idToken, loginWithGoogle, isLoading: authLoading, registerBeforeLogout } = useAdminAuth()
   const pageRef = useRef<HTMLDivElement>(null)
@@ -58,7 +60,8 @@ export default function PostEditor() {
   const saveCurrentDraft = useCallback(() => {
     if (!formData.slug && !formData.title && !markdown) return // 空の場合は保存しない
 
-    saveDraft<PostDraft>('post', slug || 'new', {
+    const targetKey = draftKey || slug || 'new'
+    saveDraft<PostDraft>('post', targetKey, {
       slug: formData.slug,
       title: formData.title,
       summary: formData.summary,
@@ -66,7 +69,7 @@ export default function PostEditor() {
       markdown,
     })
     setDraftInfo({ savedAt: Date.now() })
-  }, [formData, markdown, slug])
+  }, [formData, markdown, slug, draftKey])
 
   // ログアウト前に下書きを保存
   useEffect(() => {
@@ -79,8 +82,9 @@ export default function PostEditor() {
   // 既存記事の読み込み + 下書きチェック
   useEffect(() => {
     const fetchAndCheckDraft = async () => {
-      // 下書きをチェック
-      const draft = loadDraft<PostDraft>('post', slug || 'new')
+      // URLパラメータから下書きキーが指定されている場合は優先的に読み込む
+      const targetDraftKey = draftKey || (slug || 'new')
+      const draft = loadDraft<PostDraft>('post', targetDraftKey)
 
       if (isNewPost) {
         // 新規作成の場合、下書きがあれば復元
@@ -140,7 +144,7 @@ export default function PostEditor() {
     }
 
     fetchAndCheckDraft()
-  }, [slug, isNewPost])
+  }, [slug, isNewPost, draftKey])
 
   // ページタイトル
   useEffect(() => {
@@ -195,7 +199,8 @@ export default function PostEditor() {
       }
 
       // 保存成功したら下書きを削除
-      deleteDraft('post', slug || 'new')
+      const targetKey = draftKey || slug || 'new'
+      deleteDraft('post', targetKey)
       setDraftInfo(null)
       setShowDraftNotice(false)
 
@@ -210,16 +215,17 @@ export default function PostEditor() {
     } finally {
       setIsSaving(false)
     }
-  }, [idToken, formData, markdown, isNewPost, slug, navigate])
+  }, [idToken, formData, markdown, isNewPost, slug, navigate, draftKey])
 
   // 下書きを破棄
   const discardDraft = useCallback(() => {
-    deleteDraft('post', slug || 'new')
+    const targetKey = draftKey || slug || 'new'
+    deleteDraft('post', targetKey)
     setDraftInfo(null)
     setShowDraftNotice(false)
     // ページをリロードして元のデータを読み込む
     window.location.reload()
-  }, [slug])
+  }, [slug, draftKey])
 
   // 削除処理
   const handleDelete = useCallback(async () => {
@@ -249,6 +255,47 @@ export default function PostEditor() {
       setIsSaving(false)
     }
   }, [idToken, isNewPost, slug, navigate])
+
+  // 下書きに戻す処理（公開済み記事をローカル下書きとして保存し、サーバーから削除）
+  const handleRevertToDraft = useCallback(async () => {
+    if (!idToken || isNewPost) return
+    if (!window.confirm('この記事を下書きに戻しますか？\n公開されている記事は削除され、ローカルの下書きとして保存されます。')) return
+
+    setIsSaving(true)
+    try {
+      // まず現在のデータを下書きとして保存
+      const tags = formData.tags.split(',').map(t => t.trim()).filter(Boolean)
+      revertPostToDraft({
+        slug: formData.slug,
+        title: formData.title,
+        summary: formData.summary,
+        tags,
+        markdown,
+        createdAt: new Date().toISOString().split('T')[0], // 現在の日付
+      })
+
+      // サーバーから削除
+      const res = await fetch(`${CMS_ENDPOINT}/posts/${slug}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      })
+
+      if (!res.ok) {
+        const data = await res.json() as { error?: string }
+        throw new Error(data.error || 'Failed to delete post from server')
+      }
+
+      alert('下書きに戻しました。投稿一覧の下書きセクションから再編集・再投稿できます。')
+      navigate('/posts')
+    } catch (err) {
+      console.error('Failed to revert to draft:', err)
+      alert(err instanceof Error ? err.message : '下書きへの変換に失敗しました')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [idToken, isNewPost, slug, formData, markdown, navigate])
 
   // 認証待ち
   if (authLoading) {
@@ -393,14 +440,24 @@ export default function PostEditor() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 {!isNewPost && (
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isSaving}
-                    className="px-4 py-2 rounded border border-red-500/50 bg-red-500/10 text-red-400 font-semibold transition-colors hover:bg-red-500/20 disabled:opacity-50"
-                  >
-                    削除
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={isSaving}
+                      className="px-4 py-2 rounded border border-red-500/50 bg-red-500/10 text-red-400 font-semibold transition-colors hover:bg-red-500/20 disabled:opacity-50"
+                    >
+                      削除
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRevertToDraft}
+                      disabled={isSaving}
+                      className="px-4 py-2 rounded border border-yellow-500/50 bg-yellow-500/10 text-yellow-400 font-semibold transition-colors hover:bg-yellow-500/20 disabled:opacity-50"
+                    >
+                      下書きに戻す
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"

@@ -9,6 +9,8 @@ export type PostDraft = {
   tags: string
   markdown: string
   savedAt: number
+  createdAt?: string // 元記事の作成日（公開済みから下書きに戻した場合）
+  isRevertedFromPublished?: boolean // 公開済みから戻された下書きかどうか
 }
 
 export type ProductDraft = {
@@ -118,4 +120,60 @@ export function formatDraftDate(savedAt: number): string {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+// 公開済み記事を下書きに戻す（削除せずにローカルに保存）
+export function revertPostToDraft(post: {
+  slug: string
+  title: string
+  summary: string
+  tags: string[]
+  markdown: string
+  createdAt: string
+}): void {
+  saveDraft<PostDraft>('post', `reverted_${post.slug}`, {
+    slug: post.slug,
+    title: post.title,
+    summary: post.summary,
+    tags: post.tags.join(', '),
+    markdown: post.markdown,
+    createdAt: post.createdAt,
+    isRevertedFromPublished: true,
+  })
+}
+
+// 下書き一覧を取得（詳細情報付き）
+export function getPostDrafts(): PostDraft[] {
+  const drafts: PostDraft[] = []
+
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (!key?.startsWith(DRAFT_PREFIX) || !key.includes('_post_')) continue
+
+      const data = localStorage.getItem(key)
+      if (!data) continue
+
+      try {
+        const parsed = JSON.parse(data) as PostDraft
+        drafts.push(parsed)
+      } catch {
+        // ignore invalid JSON
+      }
+    }
+  } catch (error) {
+    console.error('Failed to get post drafts:', error)
+  }
+
+  // 保存日時の新しい順にソート
+  return drafts.sort((a, b) => b.savedAt - a.savedAt)
+}
+
+// 下書きキーからslug部分を抽出
+export function getDraftSlugFromKey(_type: 'post' | 'product', draft: PostDraft | ProductDraft): string {
+  // revertedの場合は reverted_xxx 形式
+  if ('isRevertedFromPublished' in draft && draft.isRevertedFromPublished) {
+    return `reverted_${draft.slug}`
+  }
+  return draft.slug || 'new'
 }

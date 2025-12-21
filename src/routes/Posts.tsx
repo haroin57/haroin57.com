@@ -4,6 +4,7 @@ import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { getPostDrafts, deleteDraft, getDraftSlugFromKey, formatDraftDate, type PostDraft } from '../lib/draftStorage'
 
 const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
 
@@ -19,6 +20,9 @@ function Posts() {
   // 動的に取得した記事一覧
   const [posts, setPosts] = useState<Post[]>(staticPosts)
   const [isLoading, setIsLoading] = useState(true)
+  // 下書き一覧（管理者のみ表示）
+  const [drafts, setDrafts] = useState<PostDraft[]>([])
+  const [showDrafts, setShowDrafts] = useState(false)
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })
@@ -44,6 +48,13 @@ function Posts() {
     fetchPosts()
   }, [])
 
+  // 管理者の場合、下書き一覧を読み込む
+  useEffect(() => {
+    if (isAdmin) {
+      setDrafts(getPostDrafts())
+    }
+  }, [isAdmin])
+
   // reveal要素を表示
   useEffect(() => {
     const root = pageRef.current
@@ -63,10 +74,19 @@ function Posts() {
     return Array.from(set)
   }, [posts])
 
+  // 日付でソートされた投稿一覧
+  const sortedPosts = useMemo(() => {
+    return [...posts].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+      return dateB - dateA // 新しい順
+    })
+  }, [posts])
+
   const filtered = useMemo(() => {
-    if (selectedTag === 'all') return posts
-    return posts.filter((p) => (p.tags || []).includes(selectedTag))
-  }, [selectedTag, posts])
+    if (selectedTag === 'all') return sortedPosts
+    return sortedPosts.filter((p) => (p.tags || []).includes(selectedTag))
+  }, [selectedTag, sortedPosts])
 
   const handleTagSelect = useCallback(
     (tag: string) => {
@@ -82,6 +102,14 @@ function Posts() {
     },
     [searchParams, setSearchParams]
   )
+
+  // 下書きを削除
+  const handleDeleteDraft = useCallback((draft: PostDraft) => {
+    if (!window.confirm(`下書き「${draft.title || '無題'}」を削除しますか？`)) return
+    const key = getDraftSlugFromKey('post', draft)
+    deleteDraft('post', key)
+    setDrafts(getPostDrafts())
+  }, [])
 
   return (
     <div ref={pageRef} className="relative overflow-hidden">
@@ -161,6 +189,61 @@ function Posts() {
                 ))}
               </div>
             ) : null}
+
+            {/* 下書き一覧（管理者のみ表示） */}
+            {isAdmin && drafts.length > 0 && (
+              <div className="reveal">
+                <button
+                  type="button"
+                  onClick={() => setShowDrafts(!showDrafts)}
+                  className="flex items-center gap-2 text-sm font-semibold text-yellow-400 hover:text-yellow-300 transition-colors"
+                >
+                  <span className="transform transition-transform" style={{ transform: showDrafts ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                    ▶
+                  </span>
+                  下書き ({drafts.length}件)
+                </button>
+                {showDrafts && (
+                  <ul className="mt-3 space-y-2 border-l-2 border-yellow-500/30 pl-4">
+                    {drafts.map((draft, idx) => (
+                      <li key={draft.slug || idx} className="flex items-center justify-between gap-2 py-2 group">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400">
+                              {draft.isRevertedFromPublished ? '戻し下書き' : '下書き'}
+                            </span>
+                            <span className="text-xs opacity-50">
+                              {formatDraftDate(draft.savedAt)}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm sm:text-base font-medium truncate">
+                            {draft.title || '無題'}
+                          </p>
+                          {draft.summary && (
+                            <p className="text-xs opacity-60 truncate">{draft.summary}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Link
+                            to={draft.isRevertedFromPublished ? `/admin/posts/new?draft=reverted_${draft.slug}` : `/admin/posts/new?draft=${draft.slug || 'new'}`}
+                            className="px-2 py-1 rounded border border-green-500/50 bg-green-500/10 text-green-400 text-xs font-semibold hover:bg-green-500/20"
+                          >
+                            編集・投稿
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDraft(draft)}
+                            className="px-2 py-1 rounded border border-red-500/50 bg-red-500/10 text-red-400 text-xs font-semibold hover:bg-red-500/20"
+                          >
+                            削除
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
             {isLoading ? (
               <div className="reveal py-8 text-center opacity-70">読み込み中...</div>
