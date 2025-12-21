@@ -4,24 +4,34 @@ import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
-import { getPostDrafts, deleteDraft, getDraftSlugFromKey, formatDraftDate, type PostDraft } from '../lib/draftStorage'
+import { formatDraftDate } from '../lib/draftStorage'
 
 const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
 
-type Post = { slug?: string; title?: string; html?: string; summary?: string; createdAt?: string; tags?: string[] }
+type Post = {
+  slug?: string
+  title?: string
+  html?: string
+  summary?: string
+  createdAt?: string
+  updatedAt?: string
+  tags?: string[]
+  status?: 'draft' | 'published'
+}
+
 const staticPosts: Post[] = Array.isArray(postsData) ? (postsData as Post[]) : []
 
 function Posts() {
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedTag = searchParams.get('tag') || 'all'
   const pageRef = useRef<HTMLDivElement | null>(null)
-  const { isAdmin, loginWithGoogle, logout, isLoading: authLoading } = useAdminAuth()
+  const { isAdmin, idToken, loginWithGoogle, logout, isLoading: authLoading } = useAdminAuth()
 
   // 動的に取得した記事一覧
   const [posts, setPosts] = useState<Post[]>(staticPosts)
   const [isLoading, setIsLoading] = useState(true)
-  // 下書き一覧（管理者のみ表示）
-  const [drafts, setDrafts] = useState<PostDraft[]>([])
+  // 下書き一覧（管理者のみ・サーバーから取得）
+  const [drafts, setDrafts] = useState<Post[]>([])
   const [showDrafts, setShowDrafts] = useState(false)
 
   useEffect(() => {
@@ -48,14 +58,31 @@ function Posts() {
     fetchPosts()
   }, [])
 
-  // 管理者の場合、下書き一覧を読み込む
+  // 管理者の場合、サーバーから下書き一覧を取得
   useEffect(() => {
-    if (isAdmin) {
-      setDrafts(getPostDrafts())
+    if (!isAdmin || !idToken) return
+
+    const fetchDrafts = async () => {
+      try {
+        const res = await fetch(`${CMS_ENDPOINT}/posts/drafts`, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        })
+        if (res.ok) {
+          const data = (await res.json()) as { drafts: Post[] }
+          setDrafts(data.drafts || [])
+        }
+      } catch {
+        // 下書き取得失敗時は空配列
+        setDrafts([])
+      }
     }
-  }, [isAdmin])
+    fetchDrafts()
+  }, [isAdmin, idToken])
 
   // reveal要素を表示
+  // posts, drafts, showDraftsが変更されたときにも再実行
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
@@ -66,7 +93,7 @@ function Posts() {
     queueMicrotask(() => {
       targets.forEach((el) => el.classList.add('is-visible'))
     })
-  }, [isLoading])
+  }, [isLoading, posts, drafts, showDrafts])
 
   const allTags = useMemo(() => {
     const set = new Set<string>()
@@ -103,13 +130,27 @@ function Posts() {
     [searchParams, setSearchParams]
   )
 
-  // 下書きを削除
-  const handleDeleteDraft = useCallback((draft: PostDraft) => {
+  // サーバーから下書きを削除
+  const handleDeleteDraft = useCallback(async (draft: Post) => {
+    if (!idToken) return
     if (!window.confirm(`下書き「${draft.title || '無題'}」を削除しますか？`)) return
-    const key = getDraftSlugFromKey('post', draft)
-    deleteDraft('post', key)
-    setDrafts(getPostDrafts())
-  }, [])
+
+    try {
+      const res = await fetch(`${CMS_ENDPOINT}/posts/${draft.slug}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      })
+      if (res.ok) {
+        setDrafts((prev) => prev.filter((d) => d.slug !== draft.slug))
+      } else {
+        alert('削除に失敗しました')
+      }
+    } catch {
+      alert('削除に失敗しました')
+    }
+  }, [idToken])
 
   return (
     <div ref={pageRef} className="relative overflow-hidden">
@@ -210,10 +251,10 @@ function Posts() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400">
-                              {draft.isRevertedFromPublished ? '戻し下書き' : '下書き'}
+                              下書き
                             </span>
                             <span className="text-xs opacity-50">
-                              {formatDraftDate(draft.savedAt)}
+                              {draft.updatedAt ? formatDraftDate(draft.updatedAt) : ''}
                             </span>
                           </div>
                           <p className="mt-1 text-sm sm:text-base font-medium truncate">
@@ -225,7 +266,7 @@ function Posts() {
                         </div>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Link
-                            to={draft.isRevertedFromPublished ? `/admin/posts/new?draft=reverted_${draft.slug}` : `/admin/posts/new?draft=${draft.slug || 'new'}`}
+                            to={`/admin/posts/${draft.slug}/edit`}
                             className="px-2 py-1 rounded border border-green-500/50 bg-green-500/10 text-green-400 text-xs font-semibold hover:bg-green-500/20"
                           >
                             編集・投稿
@@ -252,7 +293,7 @@ function Posts() {
                 {filtered.map((p, idx) => (
                   <li key={p.slug ?? p.title ?? idx} className="space-y-2 py-4 group">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs sm:text-sm text-[color:var(--fg,inherit)] opacity-75">{p.createdAt}</p>
+                      <p className="text-xs sm:text-sm text-[color:var(--fg,inherit)] opacity-75">{p.createdAt?.split('T')[0]}</p>
                       {isAdmin && p.slug && (
                         <Link
                           to={`/admin/posts/${p.slug}/edit`}

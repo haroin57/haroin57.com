@@ -27,7 +27,12 @@
       "Bash(npx tsx:*)",
       "Bash(wrangler kv:*)",
       "Bash(wrangler pages project list:*)",
-      "Bash(wrangler pages deploy:*)"
+      "Bash(wrangler pages deploy:*)",
+      "Bash(npx wrangler pages deploy:*)",
+      "Bash(npx wrangler pages project list:*)",
+      "Bash(wrangler whoami:*)",
+      "Bash(wrangler workers list:*)",
+      "Bash(wrangler deployments list:*)"
     ]
   }
 }

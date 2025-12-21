@@ -98,8 +98,9 @@ type Post = { slug?: string; title?: string; summary?: string; html?: string; cr
 // tagsはgen-postsで配列化される前提
 type TaggedPost = Post & { tags?: string[] }
 
-const posts: TaggedPost[] = Array.isArray(postsData) ? (postsData as TaggedPost[]) : []
+const staticPosts: TaggedPost[] = Array.isArray(postsData) ? (postsData as TaggedPost[]) : []
 const GOOD_ENDPOINT = import.meta.env.VITE_GOOD_ENDPOINT || '/api/good'
+const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
 const SERVER_APPLY_DELAY_MS = 350
 
 function extractCodeText(codeElement: HTMLElement): string {
@@ -138,7 +139,10 @@ async function writeToClipboard(text: string): Promise<boolean> {
 
 function PostDetail() {
   const { slug } = useParams<{ slug: string }>()
-  const post = posts.find((p) => p.slug === slug)
+  // 静的データから初期値を取得（フォールバック用）
+  const staticPost = staticPosts.find((p) => p.slug === slug)
+  const [post, setPost] = useState<TaggedPost | null>(staticPost ?? null)
+  const [isLoading, setIsLoading] = useState(!staticPost)
   const location = useLocation()
   const [goodCount, setGoodCount] = useState<number>(0)
   const [hasVoted, setHasVoted] = useState<boolean>(false)
@@ -146,11 +150,42 @@ function PostDetail() {
   const proseRef = useRef<HTMLDivElement | null>(null)
   const pageRef = useRef<HTMLDivElement | null>(null)
 
+  // CMS APIから記事データを取得
+  useEffect(() => {
+    if (!slug) return
+    let mounted = true
+
+    const fetchPost = async () => {
+      try {
+        const res = await fetch(`${CMS_ENDPOINT}/posts/${slug}`)
+        if (!res.ok) {
+          if (mounted) setIsLoading(false)
+          return
+        }
+        const data = (await res.json()) as { post?: TaggedPost }
+        if (!mounted) return
+        if (data.post) {
+          setPost(data.post)
+        }
+      } catch {
+        // API失敗時は静的データを使用
+      } finally {
+        if (mounted) setIsLoading(false)
+      }
+    }
+
+    fetchPost()
+    return () => {
+      mounted = false
+    }
+  }, [slug])
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
 
   // 即座にreveal要素を表示（遅延なし）
+  // postが変更されたときにも再実行
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
@@ -162,7 +197,7 @@ function PostDetail() {
     queueMicrotask(() => {
       targets.forEach((el) => el.classList.add('is-visible'))
     })
-  }, [])
+  }, [post])
 
   const shareUrl = useMemo(() => {
     if (typeof window === 'undefined') return ''
@@ -448,7 +483,9 @@ function PostDetail() {
           </PrefetchLink>
         </header>
 
-        {!post ? (
+        {isLoading ? (
+          <p className="text-[color:var(--fg,inherit)]">Loading...</p>
+        ) : !post ? (
           <p className="text-[color:var(--fg,inherit)]">Post not found.</p>
         ) : (
           <>
@@ -457,7 +494,9 @@ function PostDetail() {
                 {post.title}
               </h1>
               {post.createdAt ? (
-                <p className="text-sm sm:text-base text-[color:var(--fg,inherit)] opacity-80">{post.createdAt}</p>
+                <p className="text-sm sm:text-base text-[color:var(--fg,inherit)] opacity-80">
+                  {post.createdAt.split('T')[0]}
+                </p>
               ) : null}
               <div className="flex flex-wrap items-center gap-3">
                 {post.tags && post.tags.length > 0 ? (

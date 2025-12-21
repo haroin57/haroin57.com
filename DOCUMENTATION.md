@@ -15,6 +15,8 @@
 7. [ライブラリ・ユーティリティ](#ライブラリユーティリティ)
 8. [データファイル](#データファイル)
 9. [依存関係一覧](#依存関係一覧)
+10. [セキュリティ実装](#セキュリティ実装)
+11. [ローカル記事のデプロイ](#ローカル記事のデプロイ)
 
 ---
 
@@ -4146,3 +4148,832 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 3. ホバー/フォーカス時のルートプリフェッチ
 4. 背景画像のsrcset対応
 5. nodeRefキャッシュによるCSSTransition最適化
+
+---
+
+## セキュリティ実装
+
+このセクションでは、haroin57-webで実装しているセキュリティ対策を初学者向けに詳しく解説します。
+
+### 1. なぜセキュリティが必要なのか
+
+Webアプリケーションでは、「誰がリクエストを送っているか」を確認することが非常に重要です。例えば：
+
+- 記事の編集・削除は管理者だけができるべき
+- 下書き記事は一般ユーザーには見せたくない
+- 不正なリクエストからAPIを保護したい
+
+これらを実現するために、**認証（Authentication）**と**認可（Authorization）**という仕組みを使います。
+
+| 用語 | 意味 | 例 |
+|------|------|-----|
+| 認証 | 「あなたは誰？」を確認する | ログインして本人確認 |
+| 認可 | 「あなたはこれをしていい？」を確認する | 管理者だけが編集可能 |
+
+---
+
+### 2. JWT（JSON Web Token）とは
+
+#### 2.1 JWTの基本概念
+
+JWTは、ユーザー情報を安全にやり取りするための「デジタル身分証明書」のようなものです。
+
+```
+eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.POstGetfAytaZS82wHcjoTyoqhMyxXiWdR7Nn7A29DNSl0EiXLdwJ6xC6AfgZWF1bOsS_TuYI3OG85AmiExREkrS6tDfTQ2B3WXlrr-wp5AokiRbz3_oB4OxG-W9KcEEbDRcZc0nH3L7LzYptiy1PtAylQGxHTWZXtGz4ht0bAecBgmpdgXMguEIcoqPJ1n3pIWk_dUZegpqx0Lka21H6XxUTxiy8OcaarA8zdnPUnV6AmNP3ecFawIFYdvJB_cm-GvpCSbr8G8y_Mllj8f4x9nBH8pQux89_6gUY618iYv7tuPWBFfEbLxtF2pZS6YC1aSfLQxeNe8djT9YjpvRZA
+```
+
+一見すると意味不明な文字列ですが、実は3つの部分からできています：
+
+```
+[ヘッダー].[ペイロード].[署名]
+```
+
+それぞれ**Base64URL**という形式でエンコード（変換）されています。
+
+#### 2.2 JWTの3つの構成要素
+
+**① ヘッダー（Header）**
+
+「このトークンは何の方式で署名されているか」を示します。
+
+```json
+{
+  "alg": "RS256",    // 署名アルゴリズム（RSA + SHA-256）
+  "kid": "abc123",   // 公開鍵のID（Key ID）
+  "typ": "JWT"       // トークンの種類
+}
+```
+
+**② ペイロード（Payload）**
+
+ユーザー情報や有効期限などの「中身」が入っています。
+
+```json
+{
+  "iss": "https://securetoken.google.com/my-project",  // 発行者
+  "aud": "my-project",                                  // 対象者（誰向けか）
+  "sub": "user123",                                     // ユーザーID
+  "email": "user@example.com",                          // メールアドレス
+  "email_verified": true,                               // メール確認済みか
+  "iat": 1700000000,                                    // 発行時刻
+  "exp": 1700003600,                                    // 有効期限
+  "auth_time": 1699999000                               // 認証した時刻
+}
+```
+
+**③ 署名（Signature）**
+
+「このトークンが本物であること」を証明する電子署名です。
+
+```
+署名 = RSA暗号化(ヘッダー + "." + ペイロード, 秘密鍵)
+```
+
+#### 2.3 なぜ署名が必要なのか
+
+署名がなければ、悪意のあるユーザーが自分でトークンを作れてしまいます：
+
+```json
+// 悪意のあるユーザーが作った偽のペイロード
+{
+  "email": "admin@example.com",  // 管理者になりすまし！
+  "email_verified": true
+}
+```
+
+しかし、署名があれば：
+
+1. トークンは**秘密鍵**で署名される（Firebaseだけが持っている）
+2. サーバーは**公開鍵**で署名を検証できる
+3. 署名が合わなければ偽物と判断できる
+
+これを**公開鍵暗号方式**と呼びます。
+
+---
+
+### 3. Firebase認証の仕組み
+
+#### 3.1 認証フロー全体像
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         認証フロー                                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│  ① ユーザーがGoogleログイン                                               │
+│     ┌────────┐         ┌─────────────┐        ┌──────────────────┐      │
+│     │ ブラウザ │ ──────▶ │   Firebase   │ ◀────▶ │   Google OAuth   │      │
+│     └────────┘         └─────────────┘        └──────────────────┘      │
+│                               │                                          │
+│  ② FirebaseがIDトークン（JWT）を発行                                      │
+│                               ▼                                          │
+│     ┌────────┐         ┌─────────────┐                                  │
+│     │ ブラウザ │ ◀────── │  IDトークン   │                                  │
+│     └────────┘         └─────────────┘                                  │
+│           │                                                              │
+│  ③ ブラウザがAPIリクエスト時にトークンを添付                               │
+│           │                                                              │
+│           ▼                                                              │
+│     ┌─────────────────────────────────────────────────────────────┐     │
+│     │  Authorization: Bearer eyJhbGciOiJSUzI1NiIs...              │     │
+│     └─────────────────────────────────────────────────────────────┘     │
+│           │                                                              │
+│  ④ Cloudflare Workerがトークンを検証                                     │
+│           ▼                                                              │
+│     ┌──────────────────┐      ┌───────────────────────────────────┐     │
+│     │ Cloudflare Worker │ ◀─── │ Google公開鍵                       │     │
+│     └──────────────────┘      │ (googleapis.com から取得)          │     │
+│                                └───────────────────────────────────┘     │
+│                                                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 3.2 フロントエンド側の実装
+
+**`src/contexts/AdminAuthContext.tsx`** で認証状態を管理しています：
+
+```typescript
+// Googleログイン処理
+const loginWithGoogle = async () => {
+  const provider = new GoogleAuthProvider()
+  const result = await signInWithPopup(auth, provider)
+
+  // FirebaseからIDトークンを取得
+  const token = await result.user.getIdToken()
+  setIdToken(token)
+}
+```
+
+**APIリクエスト時のトークン送信：**
+
+```typescript
+// 管理者APIを呼び出す例
+const response = await fetch('/api/cms/posts/drafts', {
+  headers: {
+    'Authorization': `Bearer ${idToken}`  // ここでトークンを送る
+  }
+})
+```
+
+`Bearer` は「持参人」という意味で、「このトークンを持っている人を認証してください」という意味になります。
+
+---
+
+### 4. サーバー側のトークン検証（詳細解説）
+
+`src/pv-worker.ts` で実装している検証処理を詳しく見ていきます。
+
+#### 4.1 検証の全体像
+
+```typescript
+async function verifyFirebaseToken(token: string, env: Env): Promise<FirebaseTokenPayload | null> {
+  // 1. トークンを3つの部分に分割
+  const parts = token.split('.')
+  if (parts.length !== 3) return null  // JWTは必ず3部構成
+
+  // 2. ヘッダーの検証
+  // 3. ペイロードの検証（各クレーム）
+  // 4. 署名の検証
+
+  return payload  // 全て通過したら成功
+}
+```
+
+#### 4.2 各検証項目の詳細
+
+**① アルゴリズムの検証（alg）**
+
+```typescript
+const header = JSON.parse(base64UrlDecode(parts[0]))
+
+// RS256以外は拒否（ダウングレード攻撃防止）
+if (header.alg !== 'RS256') {
+  console.log('Invalid algorithm:', header.alg)
+  return null
+}
+```
+
+なぜこれが必要？
+→ 攻撃者が `alg: "none"` を指定して「署名なしでOK」と偽装する攻撃を防ぐため。
+
+**② 有効期限の検証（exp）**
+
+```typescript
+const now = Math.floor(Date.now() / 1000)  // 現在時刻（UNIX時間）
+
+if (!payload.exp || payload.exp < now) {
+  console.log('Token expired')
+  return null
+}
+```
+
+`exp`（expiration）は「このトークンはいつまで有効か」を示します。期限切れトークンは無効です。
+
+**③ 発行時刻の検証（iat）**
+
+```typescript
+if (!payload.iat || payload.iat > now) {
+  console.log('Invalid iat:', payload.iat)
+  return null
+}
+```
+
+`iat`（issued at）は「トークンがいつ発行されたか」。未来の時刻で発行されたトークンは不正です。
+
+**④ 認証時刻の検証（auth_time）**
+
+```typescript
+if (!payload.auth_time || payload.auth_time > now) {
+  console.log('Invalid auth_time:', payload.auth_time)
+  return null
+}
+```
+
+ユーザーが実際にログインした時刻も過去である必要があります。
+
+**⑤ 発行者の検証（iss）**
+
+```typescript
+const expectedIssuer = `https://securetoken.google.com/${env.FIREBASE_PROJECT_ID}`
+if (payload.iss !== expectedIssuer) {
+  console.log('Invalid issuer:', payload.iss)
+  return null
+}
+```
+
+`iss`（issuer）は「誰がこのトークンを発行したか」。Firebase以外が発行したトークンは拒否します。
+
+**⑥ 対象者の検証（aud）**
+
+```typescript
+if (payload.aud !== env.FIREBASE_PROJECT_ID) {
+  console.log('Invalid audience:', payload.aud)
+  return null
+}
+```
+
+`aud`（audience）は「このトークンは誰向けか」。自分のプロジェクト向けでないトークンは拒否します。
+
+**⑦ ユーザーIDの検証（sub）**
+
+```typescript
+if (!payload.sub || typeof payload.sub !== 'string') {
+  console.log('Invalid sub')
+  return null
+}
+```
+
+`sub`（subject）はユーザーの一意識別子。必ず存在する必要があります。
+
+**⑧ メール確認済みの検証（email_verified）**
+
+```typescript
+if (!payload.email_verified) {
+  console.log('Email not verified')
+  return null
+}
+```
+
+メールアドレスが確認されていないユーザーは管理者として認めません。
+
+---
+
+### 5. RS256署名検証の仕組み
+
+#### 5.1 公開鍵暗号方式とは
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    公開鍵暗号方式の仕組み                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│   【署名の作成】Firebase側（秘密鍵を持っている）                           │
+│                                                                           │
+│   ┌────────────────┐    ┌─────────┐    ┌──────────────┐                 │
+│   │ ヘッダー.ペイロード │ ─▶ │ RSA暗号 │ ─▶ │    署名      │                 │
+│   └────────────────┘    └─────────┘    └──────────────┘                 │
+│                              ▲                                            │
+│                              │                                            │
+│                         ┌─────────┐                                      │
+│                         │ 秘密鍵  │ ← Firebaseだけが持っている             │
+│                         └─────────┘                                      │
+│                                                                           │
+│   【署名の検証】Worker側（公開鍵で検証）                                    │
+│                                                                           │
+│   ┌────────────────┐    ┌─────────┐    ┌──────────────┐                 │
+│   │ ヘッダー.ペイロード │ ─▶ │ RSA検証 │ ◀─ │    署名      │                 │
+│   └────────────────┘    └─────────┘    └──────────────┘                 │
+│                              ▲              結果: ✓ 一致 / ✗ 不一致       │
+│                              │                                            │
+│                         ┌─────────┐                                      │
+│                         │ 公開鍵  │ ← Googleから誰でも取得可能             │
+│                         └─────────┘                                      │
+│                                                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 5.2 Google公開鍵の取得
+
+```typescript
+const GOOGLE_CERTS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com'
+
+async function getGooglePublicKeys(): Promise<Record<string, CryptoKey>> {
+  // キャッシュが有効ならそれを使う
+  if (publicKeyCache && publicKeyCache.expiresAt > Date.now()) {
+    return publicKeyCache.keys
+  }
+
+  // Googleから証明書を取得
+  const response = await fetch(GOOGLE_CERTS_URL)
+  const certs = await response.json()
+
+  // Cache-Controlヘッダーからキャッシュ期間を取得
+  const cacheControl = response.headers.get('Cache-Control')
+  const maxAge = /* max-ageの値を抽出 */
+
+  // 証明書をCryptoKeyオブジェクトに変換
+  for (const [kid, pem] of Object.entries(certs)) {
+    keys[kid] = await importPublicKeyFromCert(pem)
+  }
+
+  // キャッシュを更新
+  publicKeyCache = { keys, expiresAt: Date.now() + maxAge * 1000 }
+
+  return keys
+}
+```
+
+**なぜキャッシュが必要？**
+
+- 毎回Googleにアクセスするとレスポンスが遅くなる
+- Googleの公開鍵は頻繁には変わらない（数時間〜数日）
+- `Cache-Control`ヘッダーの`max-age`に従ってキャッシュ
+
+#### 5.3 署名検証の実装
+
+```typescript
+// 署名検証（RS256）
+const publicKeys = await getGooglePublicKeys()
+const publicKey = publicKeys[header.kid]  // kidで公開鍵を特定
+
+if (!publicKey) {
+  console.log('Public key not found for kid:', header.kid)
+  return null
+}
+
+// 署名対象データ: ヘッダー.ペイロード
+const signedData = new TextEncoder().encode(`${parts[0]}.${parts[1]}`)
+
+// 署名をBase64URLからバイナリに変換
+const signature = base64UrlToArrayBuffer(parts[2])
+
+// WebCrypto APIで検証
+const isValid = await crypto.subtle.verify(
+  { name: 'RSASSA-PKCS1-v1_5' },
+  publicKey,
+  signature,
+  signedData
+)
+
+if (!isValid) {
+  console.log('Invalid signature')
+  return null
+}
+```
+
+**WebCrypto API** はブラウザやCloudflare Workersで使える標準的な暗号化API。外部ライブラリ不要で署名検証ができます。
+
+---
+
+### 6. X.509証明書の解析
+
+Googleから取得する公開鍵はPEM形式のX.509証明書として提供されます。
+
+#### 6.1 証明書の形式
+
+```
+-----BEGIN CERTIFICATE-----
+MIIDJjCCAg6gAwIBAgIIYS...（Base64エンコードされたバイナリ）
+-----END CERTIFICATE-----
+```
+
+#### 6.2 証明書からの公開鍵抽出
+
+```typescript
+async function importPublicKeyFromCert(pem: string): Promise<CryptoKey> {
+  // 1. PEMヘッダー/フッターを削除
+  const pemContents = pem
+    .replace(/-----BEGIN CERTIFICATE-----/g, '')
+    .replace(/-----END CERTIFICATE-----/g, '')
+    .replace(/\s/g, '')
+
+  // 2. Base64デコードしてバイナリに変換
+  const binaryDer = atob(pemContents)
+  const bytes = new Uint8Array(binaryDer.length)
+  for (let i = 0; i < binaryDer.length; i++) {
+    bytes[i] = binaryDer.charCodeAt(i)
+  }
+
+  // 3. ASN.1 DER形式の証明書から公開鍵部分（SPKI）を抽出
+  const spki = extractSpkiFromCertificate(bytes)
+
+  // 4. WebCrypto APIでCryptoKeyオブジェクトに変換
+  return await crypto.subtle.importKey(
+    'spki',                                    // 形式
+    spki,                                      // 公開鍵データ
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },  // アルゴリズム
+    false,                                     // エクスポート不可
+    ['verify']                                 // 検証用途
+  )
+}
+```
+
+#### 6.3 ASN.1とは
+
+ASN.1（Abstract Syntax Notation One）は、データ構造を定義するための標準規格です。X.509証明書はASN.1のDER（Distinguished Encoding Rules）形式でエンコードされています。
+
+```
+証明書の構造（簡略化）:
+SEQUENCE {
+  tbsCertificate: SEQUENCE {
+    version [0]: INTEGER
+    serialNumber: INTEGER
+    signature: AlgorithmIdentifier
+    issuer: Name
+    validity: Validity
+    subject: Name
+    subjectPublicKeyInfo: SEQUENCE {  ← これを抽出
+      algorithm: AlgorithmIdentifier
+      subjectPublicKey: BIT STRING
+    }
+  }
+  signatureAlgorithm: AlgorithmIdentifier
+  signatureValue: BIT STRING
+}
+```
+
+---
+
+### 7. 管理者認可の仕組み
+
+トークンが有効でも、そのユーザーが「管理者かどうか」の確認が別途必要です。
+
+```typescript
+async function checkAdminAuth(req: Request, env: Env): Promise<boolean> {
+  const authHeader = req.headers.get('Authorization')
+
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7)  // "Bearer "を除去
+    const payload = await verifyFirebaseToken(token, env)
+
+    if (payload?.email) {
+      // 環境変数で設定した管理者メールリストと照合
+      const adminEmails = (env.ADMIN_EMAILS || '')
+        .split(',')
+        .map(e => e.trim().toLowerCase())
+
+      if (adminEmails.includes(payload.email.toLowerCase())) {
+        return true  // 管理者として認証成功
+      }
+    }
+  }
+
+  return false  // 管理者ではない
+}
+```
+
+**環境変数の設定例（Cloudflare Dashboard）:**
+
+```
+ADMIN_EMAILS = "admin1@example.com,admin2@example.com"
+FIREBASE_PROJECT_ID = "my-firebase-project"
+```
+
+---
+
+### 8. セキュリティのベストプラクティス
+
+#### 8.1 実装されている対策一覧
+
+| 対策 | 目的 | 実装箇所 |
+|------|------|----------|
+| RS256署名検証 | トークン偽造防止 | `verifyFirebaseToken()` |
+| アルゴリズム固定（RS256） | ダウングレード攻撃防止 | ヘッダー検証 |
+| 有効期限チェック（exp） | 期限切れトークン拒否 | ペイロード検証 |
+| 発行者検証（iss） | 不正発行元トークン拒否 | ペイロード検証 |
+| 対象者検証（aud） | 他プロジェクト向けトークン拒否 | ペイロード検証 |
+| 公開鍵キャッシュ | パフォーマンス最適化 | `getGooglePublicKeys()` |
+| CORS設定 | クロスサイトリクエスト制御 | `corsHeaders` |
+| 管理者メールリスト | 認可制御 | `checkAdminAuth()` |
+
+#### 8.2 やってはいけないこと
+
+```typescript
+// ❌ 署名を検証せずにペイロードを信用する
+const payload = JSON.parse(atob(token.split('.')[1]))
+if (payload.email === 'admin@example.com') {
+  // 危険！誰でもこのペイロードを作れる
+}
+
+// ❌ アルゴリズムを動的に決める
+const alg = header.alg  // 攻撃者が "none" を指定できてしまう
+
+// ❌ 有効期限をチェックしない
+// 一度発行されたトークンが永久に有効になってしまう
+```
+
+#### 8.3 本番環境でのチェックリスト
+
+- [ ] `FIREBASE_PROJECT_ID` が正しく設定されているか
+- [ ] `ADMIN_EMAILS` に管理者のメールのみが含まれているか
+- [ ] HTTPS経由でのみAPIにアクセスできるか
+- [ ] 本番環境の秘密情報がログに出力されていないか
+- [ ] 公開鍵のキャッシュが正しく動作しているか
+
+---
+
+### 9. トラブルシューティング
+
+#### 9.1 よくあるエラーと対処法
+
+| エラーメッセージ | 原因 | 対処法 |
+|-----------------|------|--------|
+| `Token expired` | トークンの有効期限切れ | フロントエンドで`getIdToken(true)`を呼んで再取得 |
+| `Invalid issuer` | `FIREBASE_PROJECT_ID`の設定ミス | 環境変数を確認 |
+| `Invalid audience` | 別プロジェクトのトークン | FirebaseプロジェクトIDを確認 |
+| `Public key not found` | Google公開鍵の取得失敗 | ネットワーク接続を確認、キャッシュをクリア |
+| `Invalid signature` | トークンが改ざんされている | 正規のログインフローを使用しているか確認 |
+
+#### 9.2 デバッグ方法
+
+```typescript
+// トークンの中身を確認（開発時のみ）
+const parts = token.split('.')
+console.log('Header:', JSON.parse(atob(parts[0])))
+console.log('Payload:', JSON.parse(atob(parts[1])))
+```
+
+**注意:** 本番環境ではトークンをログに出力しないでください。
+
+---
+
+### 10. 参考リンク
+
+- [Firebase公式: IDトークンの検証](https://firebase.google.com/docs/auth/admin/verify-id-tokens)
+- [JWT.io: JWTのデバッグツール](https://jwt.io/)
+- [MDN: Web Crypto API](https://developer.mozilla.org/ja/docs/Web/API/Web_Crypto_API)
+- [RFC 7519: JSON Web Token (JWT)](https://datatracker.ietf.org/doc/html/rfc7519)
+
+---
+
+## ローカル記事のデプロイ
+
+ローカル環境で作成したMarkdownファイルをCloudflare KVのCMSにデプロイするための機能について解説します。
+
+### 1. 概要
+
+Web上のエディタだけでなく、VSCodeなどのローカルエディタで記事を書き、それをコマンド一つでCMSにデプロイできます。これにより：
+
+- 使い慣れたエディタで執筆可能
+- Gitでの記事バージョン管理
+- 複数記事の一括デプロイ
+- CI/CDパイプラインとの連携
+
+### 2. Markdownファイルの形式
+
+記事は`content/posts/`ディレクトリにMarkdownファイルとして配置します。
+
+#### 2.1 ディレクトリ構造
+
+```
+content/
+└── posts/
+    ├── my-first-article.md
+    ├── react-tutorial.md
+    └── typescript-tips.md
+```
+
+ファイル名（拡張子を除く）が記事のslug（URL識別子）になります。
+
+#### 2.2 frontmatter（メタデータ）
+
+各Markdownファイルの先頭にYAML形式でメタデータを記述します：
+
+```yaml
+---
+title: "記事タイトル"
+summary: "記事の概要（一覧ページで表示される説明文）"
+date: "2025-01-15"
+tags:
+  - React
+  - TypeScript
+  - Tutorial
+status: published  # オプション: published または draft
+---
+
+本文をここに書きます...
+```
+
+| フィールド | 必須 | 説明 |
+|-----------|------|------|
+| `title` | ◯ | 記事のタイトル |
+| `summary` | △ | 記事の概要（省略可） |
+| `date` | △ | 作成日（YYYY-MM-DD形式） |
+| `tags` | △ | タグの配列 |
+| `status` | △ | `published`（公開）または `draft`（下書き） |
+
+### 3. デプロイスクリプトの使い方
+
+#### 3.1 Firebase IDトークンの取得
+
+デプロイには管理者認証が必要です。ブラウザの開発者ツールで以下を実行してトークンを取得します：
+
+```javascript
+// Firebaseにログイン済みの状態で実行
+const user = firebase.auth().currentUser;
+const token = await user.getIdToken();
+console.log(token);
+```
+
+または、Webサイトにログイン後、コンソールで：
+
+```javascript
+// AdminAuthContextを使用している場合
+const { idToken } = useAdminAuth();
+console.log(idToken);
+```
+
+#### 3.2 基本的な使い方
+
+```bash
+# 環境変数にトークンを設定
+export FIREBASE_ID_TOKEN="取得したトークン"
+
+# content/posts/ 配下のすべての記事をデプロイ
+npx tsx scripts/deploy-posts.ts
+
+# 特定のファイルのみデプロイ
+npx tsx scripts/deploy-posts.ts --file content/posts/my-article.md
+
+# 下書きとしてデプロイ
+npx tsx scripts/deploy-posts.ts --draft
+
+# ドライラン（実際にはデプロイせず確認のみ）
+npx tsx scripts/deploy-posts.ts --dry-run
+```
+
+#### 3.3 コマンドラインオプション
+
+| オプション | 説明 | 例 |
+|-----------|------|-----|
+| `--file <path>` | 指定したファイルのみをデプロイ | `--file content/posts/article.md` |
+| `--draft` | 下書きとしてデプロイ（frontmatterのstatusを上書き） | `--draft` |
+| `--dry-run` | 実際にはデプロイせず、処理内容を表示 | `--dry-run` |
+| `--endpoint <url>` | CMS APIのエンドポイント | `--endpoint http://localhost:8787/api/cms` |
+| `--token <token>` | Firebase IDトークン（環境変数の代わりに指定） | `--token eyJhbGci...` |
+
+#### 3.4 環境変数
+
+| 変数名 | 説明 |
+|--------|------|
+| `FIREBASE_ID_TOKEN` | Firebase IDトークン（認証用） |
+| `CMS_ENDPOINT` | CMS APIのエンドポイント（デフォルト: https://haroin57.com/api/cms） |
+
+### 4. 使用例
+
+#### 4.1 新しい記事を書いて公開する
+
+```bash
+# 1. 記事ファイルを作成
+cat > content/posts/new-article.md << 'EOF'
+---
+title: "新しい記事"
+summary: "この記事では..."
+date: "2025-01-15"
+tags:
+  - Tech
+---
+
+## はじめに
+
+記事の本文をここに書きます。
+EOF
+
+# 2. デプロイ
+export FIREBASE_ID_TOKEN="your-token"
+npx tsx scripts/deploy-posts.ts --file content/posts/new-article.md
+```
+
+#### 4.2 下書きとして保存し、後で公開する
+
+```bash
+# 下書きとしてデプロイ
+npx tsx scripts/deploy-posts.ts --file content/posts/draft-article.md --draft
+
+# 後で公開する場合は、frontmatterのstatusをpublishedに変更して再デプロイ
+# または、Webの管理画面からステータスを変更
+```
+
+#### 4.3 すべての記事を一括更新
+
+```bash
+# 既存の記事も含めてすべてデプロイ
+npx tsx scripts/deploy-posts.ts
+
+# まずドライランで確認
+npx tsx scripts/deploy-posts.ts --dry-run
+```
+
+### 5. Markdownの記法
+
+デプロイスクリプトは、Webエディタと同じMarkdown変換処理を使用しています。
+
+#### 5.1 サポートされる構文
+
+- **GitHub Flavored Markdown (GFM)**: テーブル、取り消し線、タスクリストなど
+- **目次の自動生成**: `## 目次` という見出しの後に自動的に目次が挿入されます
+- **コードハイライト**: シンタックスハイライト付きコードブロック
+- **数式 (KaTeX)**: `$inline$` や `$$display$$` 形式の数式
+- **Mermaidダイアグラム**: `mermaid` コードブロック
+- **アドモニション**: `[!NOTE]`、`[!WARNING]`、`[!CALLOUT]`
+
+#### 5.2 アドモニションの例
+
+```markdown
+> [!NOTE]
+> これはメモです。重要な情報を強調したいときに使用します。
+
+> [!WARNING]
+> これは警告です。注意が必要な内容を示します。
+
+> [!CALLOUT] タイトル
+> これはコールアウトです。特に目立たせたい内容に使用します。
+```
+
+### 6. トラブルシューティング
+
+#### 6.1 認証エラー
+
+```
+Error: unauthorized
+```
+
+**原因**: トークンが無効または期限切れ
+
+**対処法**:
+1. 新しいトークンを取得する
+2. トークンが正しく設定されているか確認
+3. 管理者メールリストに登録されているか確認
+
+#### 6.2 記事が見つからない
+
+```
+Error: post not found
+```
+
+**原因**: 更新しようとした記事が存在しない
+
+**対処法**: スクリプトは自動的に新規作成か更新かを判定するため、通常は発生しません。APIエンドポイントを確認してください。
+
+#### 6.3 frontmatterのパースエラー
+
+**原因**: YAMLの形式が正しくない
+
+**対処法**:
+- インデントが正しいか確認（スペース2つ）
+- 特殊文字を含むタイトルは引用符で囲む
+- 日付は `"YYYY-MM-DD"` 形式で記述
+
+### 7. CI/CDとの連携
+
+GitHub Actionsでの自動デプロイ例：
+
+```yaml
+name: Deploy Posts
+
+on:
+  push:
+    paths:
+      - 'content/posts/**'
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm ci
+
+      - name: Deploy posts
+        env:
+          FIREBASE_ID_TOKEN: ${{ secrets.FIREBASE_ID_TOKEN }}
+        run: npx tsx scripts/deploy-posts.ts
+```
+
+**注意**: CI/CDでのトークン管理には注意が必要です。長期間有効なサービスアカウントトークンの使用を検討してください。

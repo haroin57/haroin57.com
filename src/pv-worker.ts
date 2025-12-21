@@ -22,6 +22,13 @@ type Env = {
   R2_PUBLIC_URL?: string // R2の公開URL
 }
 
+// Firebase IDトークンのヘッダー型
+type FirebaseTokenHeader = {
+  alg: string
+  kid: string
+  typ: string
+}
+
 // Firebase IDトークンのペイロード型
 type FirebaseTokenPayload = {
   iss: string
@@ -34,6 +41,15 @@ type FirebaseTokenPayload = {
   email?: string
   email_verified?: boolean
 }
+
+// Google公開鍵のキャッシュ
+type PublicKeyCache = {
+  keys: Record<string, CryptoKey>
+  expiresAt: number
+}
+
+let publicKeyCache: PublicKeyCache | null = null
+const GOOGLE_CERTS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com'
 
 // BBS型定義
 type Thread = {
@@ -61,6 +77,7 @@ type CMSPostMeta = {
   createdAt: string
   updatedAt: string
   tags: string[]
+  status: 'draft' | 'published'
 }
 
 type CMSPost = CMSPostMeta & {
@@ -95,7 +112,7 @@ const THREAD_RATE_LIMIT_TTL = 60
 function buildCorsHeaders(origin: string) {
   return {
     'access-control-allow-origin': origin,
-    'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'access-control-allow-methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'access-control-allow-headers': 'Content-Type, X-Admin-Secret, Authorization',
   }
 }
@@ -447,52 +464,262 @@ async function handleAddPost(
   })
 }
 
-// Base64URLデコード
+// Base64URLデコード（文字列として）
 function base64UrlDecode(str: string): string {
-  // Base64URL を Base64 に変換
   let base64 = str.replace(/-/g, '+').replace(/_/g, '/')
-  // パディング追加
   while (base64.length % 4) {
     base64 += '='
   }
   return atob(base64)
 }
 
-// Firebase IDトークンを検証（簡易版）
+// Base64URLデコード（バイナリとして）
+function base64UrlToArrayBuffer(str: string): ArrayBuffer {
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/')
+  while (base64.length % 4) {
+    base64 += '='
+  }
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return bytes.buffer
+}
+
+// PEM形式の証明書からCryptoKeyを生成
+async function importPublicKeyFromCert(pem: string): Promise<CryptoKey> {
+  // PEMヘッダー/フッターを削除してBase64デコード
+  const pemContents = pem
+    .replace(/-----BEGIN CERTIFICATE-----/g, '')
+    .replace(/-----END CERTIFICATE-----/g, '')
+    .replace(/\s/g, '')
+
+  const binaryDer = atob(pemContents)
+  const bytes = new Uint8Array(binaryDer.length)
+  for (let i = 0; i < binaryDer.length; i++) {
+    bytes[i] = binaryDer.charCodeAt(i)
+  }
+
+  // X.509証明書からSPKI形式の公開鍵を抽出
+  // 証明書のTBSCertificate内のsubjectPublicKeyInfoを探す
+  const spki = extractSpkiFromCertificate(bytes)
+
+  return await crypto.subtle.importKey(
+    'spki',
+    spki,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['verify']
+  )
+}
+
+// X.509証明書からSPKI（公開鍵情報）を抽出
+function extractSpkiFromCertificate(certBytes: Uint8Array): ArrayBuffer {
+  // ASN.1 DER形式のX.509証明書をパース
+  // 証明書構造: SEQUENCE { tbsCertificate, signatureAlgorithm, signatureValue }
+  // tbsCertificate内のsubjectPublicKeyInfo（7番目のフィールド）を抽出
+
+  let offset = 0
+
+  // 外側のSEQUENCE
+  if (certBytes[offset] !== 0x30) throw new Error('Invalid certificate: expected SEQUENCE')
+  offset++
+  const [, outerLen] = readAsn1Length(certBytes, offset)
+  offset += outerLen
+
+  // tbsCertificate SEQUENCE
+  if (certBytes[offset] !== 0x30) throw new Error('Invalid tbsCertificate: expected SEQUENCE')
+  offset++
+  const [, tbsLenBytes] = readAsn1Length(certBytes, offset)
+  offset += tbsLenBytes
+
+  // version [0] (optional)
+  if (certBytes[offset] === 0xa0) {
+    offset++
+    const [vLen, vLenBytes] = readAsn1Length(certBytes, offset)
+    offset += vLenBytes + vLen
+  }
+
+  // serialNumber INTEGER
+  offset = skipAsn1Element(certBytes, offset)
+
+  // signature AlgorithmIdentifier
+  offset = skipAsn1Element(certBytes, offset)
+
+  // issuer Name
+  offset = skipAsn1Element(certBytes, offset)
+
+  // validity Validity
+  offset = skipAsn1Element(certBytes, offset)
+
+  // subject Name
+  offset = skipAsn1Element(certBytes, offset)
+
+  // subjectPublicKeyInfo - これが欲しい
+  if (certBytes[offset] !== 0x30) throw new Error('Invalid subjectPublicKeyInfo')
+  const spkiStart = offset
+  offset = skipAsn1Element(certBytes, offset)
+  const spkiEnd = offset
+
+  return certBytes.slice(spkiStart, spkiEnd).buffer
+}
+
+// ASN.1長さフィールドを読み取り
+function readAsn1Length(bytes: Uint8Array, offset: number): [number, number] {
+  const first = bytes[offset]
+  if (first < 0x80) {
+    return [first, 1]
+  }
+  const numBytes = first & 0x7f
+  let length = 0
+  for (let i = 0; i < numBytes; i++) {
+    length = (length << 8) | bytes[offset + 1 + i]
+  }
+  return [length, 1 + numBytes]
+}
+
+// ASN.1要素をスキップ
+function skipAsn1Element(bytes: Uint8Array, offset: number): number {
+  offset++ // タグをスキップ
+  const [len, lenBytes] = readAsn1Length(bytes, offset)
+  return offset + lenBytes + len
+}
+
+// Google公開鍵を取得（キャッシュ付き）
+async function getGooglePublicKeys(): Promise<Record<string, CryptoKey>> {
+  const now = Date.now()
+
+  // キャッシュが有効な場合はそれを返す
+  if (publicKeyCache && publicKeyCache.expiresAt > now) {
+    return publicKeyCache.keys
+  }
+
+  // Googleから証明書を取得
+  const response = await fetch(GOOGLE_CERTS_URL)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Google public keys: ${response.status}`)
+  }
+
+  // Cache-Controlヘッダーからmax-ageを取得
+  const cacheControl = response.headers.get('Cache-Control') || ''
+  const maxAgeMatch = cacheControl.match(/max-age=(\d+)/)
+  const maxAge = maxAgeMatch ? parseInt(maxAgeMatch[1], 10) : 3600
+
+  const certs = (await response.json()) as Record<string, string>
+  const keys: Record<string, CryptoKey> = {}
+
+  // 各証明書をCryptoKeyに変換
+  for (const [kid, pem] of Object.entries(certs)) {
+    try {
+      keys[kid] = await importPublicKeyFromCert(pem)
+    } catch (e) {
+      console.error(`Failed to import key ${kid}:`, e)
+    }
+  }
+
+  // キャッシュを更新
+  publicKeyCache = {
+    keys,
+    expiresAt: now + maxAge * 1000,
+  }
+
+  return keys
+}
+
+// Firebase IDトークンを検証（RS256署名検証付き）
 async function verifyFirebaseToken(token: string, env: Env): Promise<FirebaseTokenPayload | null> {
   try {
     // JWTの構造: header.payload.signature
     const parts = token.split('.')
-    if (parts.length !== 3) return null
+    if (parts.length !== 3) {
+      console.log('Invalid token format')
+      return null
+    }
+
+    // ヘッダーをデコード
+    const header = JSON.parse(base64UrlDecode(parts[0])) as FirebaseTokenHeader
+
+    // アルゴリズムチェック（RS256のみ許可）
+    if (header.alg !== 'RS256') {
+      console.log('Invalid algorithm:', header.alg)
+      return null
+    }
+
+    // kidチェック
+    if (!header.kid) {
+      console.log('Missing kid in header')
+      return null
+    }
 
     // ペイロードをデコード
     const payload = JSON.parse(base64UrlDecode(parts[1])) as FirebaseTokenPayload
-
-    // 基本的な検証
     const now = Math.floor(Date.now() / 1000)
 
-    // 有効期限チェック
-    if (payload.exp < now) {
+    // 1. 有効期限チェック (exp)
+    if (!payload.exp || payload.exp < now) {
       console.log('Token expired')
       return null
     }
 
-    // 発行者チェック（Firebase）
+    // 2. 発行時刻チェック (iat) - 過去である必要がある
+    if (!payload.iat || payload.iat > now) {
+      console.log('Invalid iat:', payload.iat)
+      return null
+    }
+
+    // 3. 認証時刻チェック (auth_time) - 過去である必要がある
+    if (!payload.auth_time || payload.auth_time > now) {
+      console.log('Invalid auth_time:', payload.auth_time)
+      return null
+    }
+
+    // 4. 発行者チェック (iss)
     const expectedIssuer = `https://securetoken.google.com/${env.FIREBASE_PROJECT_ID}`
     if (payload.iss !== expectedIssuer) {
       console.log('Invalid issuer:', payload.iss)
       return null
     }
 
-    // オーディエンスチェック
+    // 5. オーディエンスチェック (aud)
     if (payload.aud !== env.FIREBASE_PROJECT_ID) {
       console.log('Invalid audience:', payload.aud)
       return null
     }
 
-    // メール検証済みチェック
+    // 6. subチェック - 非空の文字列である必要がある
+    if (!payload.sub || typeof payload.sub !== 'string') {
+      console.log('Invalid sub')
+      return null
+    }
+
+    // 7. メール検証済みチェック
     if (!payload.email_verified) {
       console.log('Email not verified')
+      return null
+    }
+
+    // 8. 署名検証（RS256）
+    const publicKeys = await getGooglePublicKeys()
+    const publicKey = publicKeys[header.kid]
+    if (!publicKey) {
+      console.log('Public key not found for kid:', header.kid)
+      return null
+    }
+
+    // 署名対象データ: header.payload
+    const signedData = new TextEncoder().encode(`${parts[0]}.${parts[1]}`)
+    const signature = base64UrlToArrayBuffer(parts[2])
+
+    const isValid = await crypto.subtle.verify(
+      { name: 'RSASSA-PKCS1-v1_5' },
+      publicKey,
+      signature,
+      signedData
+    )
+
+    if (!isValid) {
+      console.log('Invalid signature')
       return null
     }
 
@@ -694,10 +921,12 @@ async function handleBbs(
 // CMS: Posts/Products管理
 // ============================================
 
-// CMS: 記事一覧取得
+// CMS: 記事一覧取得（公開済みのみ）
 async function handleGetCMSPosts(env: Env, corsHeaders: Record<string, string>): Promise<Response> {
   const listJson = await env.HAROIN_PV.get('cms:posts:list')
-  const posts: CMSPostMeta[] = listJson ? JSON.parse(listJson) : []
+  const allPosts: CMSPostMeta[] = listJson ? JSON.parse(listJson) : []
+  // 公開済みのみフィルタリング（statusがない古いデータは公開済みとみなす）
+  const posts = allPosts.filter((p) => !p.status || p.status === 'published')
   // 作成日時の新しい順にソート
   posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   return new Response(JSON.stringify({ posts }), {
@@ -705,8 +934,102 @@ async function handleGetCMSPosts(env: Env, corsHeaders: Record<string, string>):
   })
 }
 
+// CMS: 下書き一覧取得（管理者のみ）
+async function handleGetCMSDrafts(
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const listJson = await env.HAROIN_PV.get('cms:posts:list')
+  const allPosts: CMSPostMeta[] = listJson ? JSON.parse(listJson) : []
+  // 下書きのみフィルタリング
+  const drafts = allPosts.filter((p) => p.status === 'draft')
+  // 更新日時の新しい順にソート
+  drafts.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+  return new Response(JSON.stringify({ drafts }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
+// CMS: 記事ステータス変更（管理者のみ）
+async function handleUpdateCMSPostStatus(
+  slug: string,
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  if (!(await checkAdminAuth(req, env))) {
+    return new Response(JSON.stringify({ error: 'unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const existingJson = await env.HAROIN_PV.get(`cms:post:${slug}`)
+  if (!existingJson) {
+    return new Response(JSON.stringify({ error: 'post not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  let payload: { status?: 'draft' | 'published' } = {}
+  try {
+    payload = await req.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'bad request' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  if (!payload.status || !['draft', 'published'].includes(payload.status)) {
+    return new Response(JSON.stringify({ error: 'invalid status' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'content-type': 'application/json' },
+    })
+  }
+
+  const existing: CMSPost = JSON.parse(existingJson)
+  const now = new Date().toISOString()
+  const updated: CMSPost = {
+    ...existing,
+    status: payload.status,
+    updatedAt: now,
+  }
+
+  await env.HAROIN_PV.put(`cms:post:${slug}`, JSON.stringify(updated))
+
+  // 一覧のメタデータも更新
+  const listJson = await env.HAROIN_PV.get('cms:posts:list')
+  const posts: CMSPostMeta[] = listJson ? JSON.parse(listJson) : []
+  const idx = posts.findIndex((p) => p.slug === slug)
+  if (idx !== -1) {
+    posts[idx] = { ...posts[idx], status: payload.status, updatedAt: now }
+    await env.HAROIN_PV.put('cms:posts:list', JSON.stringify(posts))
+  }
+
+  console.log('cms post status updated', { slug, status: payload.status })
+
+  return new Response(JSON.stringify({ success: true, status: payload.status }), {
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
+  })
+}
+
 // CMS: 記事詳細取得
-async function handleGetCMSPost(slug: string, env: Env, corsHeaders: Record<string, string>): Promise<Response> {
+async function handleGetCMSPost(
+  slug: string,
+  req: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
   const postJson = await env.HAROIN_PV.get(`cms:post:${slug}`)
   if (!postJson) {
     return new Response(JSON.stringify({ error: 'post not found' }), {
@@ -715,6 +1038,17 @@ async function handleGetCMSPost(slug: string, env: Env, corsHeaders: Record<stri
     })
   }
   const post: CMSPost = JSON.parse(postJson)
+
+  // 下書きは管理者のみ閲覧可能
+  if (post.status === 'draft') {
+    if (!(await checkAdminAuth(req, env))) {
+      return new Response(JSON.stringify({ error: 'post not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'content-type': 'application/json' },
+      })
+    }
+  }
+
   return new Response(JSON.stringify({ post }), {
     headers: { ...corsHeaders, 'content-type': 'application/json' },
   })
@@ -761,6 +1095,7 @@ async function handleCreateCMSPost(
   }
 
   const now = new Date().toISOString()
+  const status = payload.status || 'published'
   const post: CMSPost = {
     slug,
     title,
@@ -768,7 +1103,8 @@ async function handleCreateCMSPost(
     markdown,
     html,
     tags: tags || [],
-    createdAt: now,
+    status,
+    createdAt: payload.createdAt || now,
     updatedAt: now,
   }
 
@@ -778,7 +1114,7 @@ async function handleCreateCMSPost(
   // 一覧にメタデータ追加
   const listJson = await env.HAROIN_PV.get('cms:posts:list')
   const posts: CMSPostMeta[] = listJson ? JSON.parse(listJson) : []
-  const meta: CMSPostMeta = { slug, title, summary: summary || '', tags: tags || [], createdAt: now, updatedAt: now }
+  const meta: CMSPostMeta = { slug, title, summary: summary || '', tags: tags || [], status, createdAt: post.createdAt, updatedAt: now }
   posts.unshift(meta)
   await env.HAROIN_PV.put('cms:posts:list', JSON.stringify(posts))
 
@@ -831,6 +1167,8 @@ async function handleUpdateCMSPost(
     markdown: payload.markdown ?? existing.markdown,
     html: payload.html ?? existing.html,
     tags: payload.tags ?? existing.tags,
+    status: payload.status ?? existing.status ?? 'published',
+    createdAt: payload.createdAt ?? existing.createdAt,
     updatedAt: now,
   }
 
@@ -846,6 +1184,7 @@ async function handleUpdateCMSPost(
       title: updated.title,
       summary: updated.summary,
       tags: updated.tags,
+      status: updated.status,
       createdAt: updated.createdAt,
       updatedAt: now,
     }
@@ -1194,9 +1533,13 @@ async function handleCms(
 
   // Posts
   if (pathParts[0] === 'posts') {
-    // GET /api/cms/posts - 記事一覧
+    // GET /api/cms/posts - 記事一覧（公開済みのみ）
     if (req.method === 'GET' && pathParts.length === 1) {
       return handleGetCMSPosts(env, corsHeaders)
+    }
+    // GET /api/cms/posts/drafts - 下書き一覧（管理者のみ）
+    if (req.method === 'GET' && pathParts[1] === 'drafts' && pathParts.length === 2) {
+      return handleGetCMSDrafts(req, env, corsHeaders)
     }
     // POST /api/cms/posts - 記事作成
     if (req.method === 'POST' && pathParts.length === 1) {
@@ -1204,11 +1547,15 @@ async function handleCms(
     }
     // GET /api/cms/posts/:slug - 記事詳細
     if (req.method === 'GET' && pathParts.length === 2) {
-      return handleGetCMSPost(pathParts[1], env, corsHeaders)
+      return handleGetCMSPost(pathParts[1], req, env, corsHeaders)
     }
     // PUT /api/cms/posts/:slug - 記事更新
     if (req.method === 'PUT' && pathParts.length === 2) {
       return handleUpdateCMSPost(pathParts[1], req, env, corsHeaders)
+    }
+    // PATCH /api/cms/posts/:slug/status - ステータス変更（管理者のみ）
+    if (req.method === 'PATCH' && pathParts[2] === 'status' && pathParts.length === 3) {
+      return handleUpdateCMSPostStatus(pathParts[1], req, env, corsHeaders)
     }
     // DELETE /api/cms/posts/:slug - 記事削除
     if (req.method === 'DELETE' && pathParts.length === 2) {
@@ -1299,9 +1646,9 @@ export default {
       return handleBbs(req, env, corsHeaders, url.pathname)
     }
 
-    // CMS は GET, POST, PUT, DELETE を許可
+    // CMS は GET, POST, PUT, PATCH, DELETE を許可
     if (isCms) {
-      if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'DELETE') {
+      if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'PATCH' && req.method !== 'DELETE') {
         return new Response('Method not allowed', { status: 405, headers: corsHeaders })
       }
       return handleCms(req, env, corsHeaders, url.pathname)

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAdminAuth } from '../../contexts/AdminAuthContext'
 import MarkdownEditor from '../../components/admin/MarkdownEditor'
 import { unified } from 'unified'
@@ -7,7 +7,7 @@ import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
 import remarkRehype from 'remark-rehype'
 import rehypeStringify from 'rehype-stringify'
-import { saveDraft, loadDraft, deleteDraft, formatDraftDate, revertPostToDraft, type PostDraft } from '../../lib/draftStorage'
+import { saveDraft, loadDraft, deleteDraft, formatDraftDate, type PostDraft } from '../../lib/draftStorage'
 
 const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
 
@@ -18,6 +18,7 @@ type PostData = {
   markdown: string
   html: string
   tags: string[]
+  status: 'draft' | 'published'
   createdAt: string
   updatedAt: string
 }
@@ -35,8 +36,6 @@ async function markdownToHtml(markdown: string): Promise<string> {
 
 export default function PostEditor() {
   const { slug } = useParams<{ slug: string }>()
-  const [searchParams] = useSearchParams()
-  const draftKey = searchParams.get('draft') // URLから下書きキーを取得
   const navigate = useNavigate()
   const { isAdmin, idToken, loginWithGoogle, isLoading: authLoading, registerBeforeLogout } = useAdminAuth()
   const pageRef = useRef<HTMLDivElement>(null)
@@ -50,54 +49,52 @@ export default function PostEditor() {
     tags: '',
   })
   const [markdown, setMarkdown] = useState('')
+  const [currentStatus, setCurrentStatus] = useState<'draft' | 'published'>('draft')
   const [isLoading, setIsLoading] = useState(!isNewPost)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [draftInfo, setDraftInfo] = useState<{ savedAt: number } | null>(null)
-  const [showDraftNotice, setShowDraftNotice] = useState(false)
+  const [localDraftInfo, setLocalDraftInfo] = useState<{ savedAt: number } | null>(null)
+  const [showLocalDraftNotice, setShowLocalDraftNotice] = useState(false)
 
-  // 現在のデータを下書きとして保存
-  const saveCurrentDraft = useCallback(() => {
-    if (!formData.slug && !formData.title && !markdown) return // 空の場合は保存しない
+  // ローカルの一時保存（編集中のデータ）
+  const saveLocalDraft = useCallback(() => {
+    if (!formData.slug && !formData.title && !markdown) return
 
-    const targetKey = draftKey || slug || 'new'
-    saveDraft<PostDraft>('post', targetKey, {
+    saveDraft<PostDraft>('post', slug || 'new', {
       slug: formData.slug,
       title: formData.title,
       summary: formData.summary,
       tags: formData.tags,
       markdown,
     })
-    setDraftInfo({ savedAt: Date.now() })
-  }, [formData, markdown, slug, draftKey])
+    setLocalDraftInfo({ savedAt: Date.now() })
+  }, [formData, markdown, slug])
 
-  // ログアウト前に下書きを保存
+  // ログアウト前にローカル下書きを保存
   useEffect(() => {
     const unregister = registerBeforeLogout(() => {
-      saveCurrentDraft()
+      saveLocalDraft()
     })
     return unregister
-  }, [registerBeforeLogout, saveCurrentDraft])
+  }, [registerBeforeLogout, saveLocalDraft])
 
-  // 既存記事の読み込み + 下書きチェック
+  // 既存記事の読み込み + ローカル下書きチェック
   useEffect(() => {
     const fetchAndCheckDraft = async () => {
-      // URLパラメータから下書きキーが指定されている場合は優先的に読み込む
-      const targetDraftKey = draftKey || (slug || 'new')
-      const draft = loadDraft<PostDraft>('post', targetDraftKey)
+      const localDraft = loadDraft<PostDraft>('post', slug || 'new')
 
       if (isNewPost) {
-        // 新規作成の場合、下書きがあれば復元
-        if (draft) {
+        // 新規作成の場合、ローカル下書きがあれば復元
+        if (localDraft) {
           setFormData({
-            slug: draft.slug,
-            title: draft.title,
-            summary: draft.summary,
-            tags: draft.tags,
+            slug: localDraft.slug,
+            title: localDraft.title,
+            summary: localDraft.summary,
+            tags: localDraft.tags,
           })
-          setMarkdown(draft.markdown)
-          setDraftInfo({ savedAt: draft.savedAt })
-          setShowDraftNotice(true)
+          setMarkdown(localDraft.markdown)
+          setLocalDraftInfo({ savedAt: localDraft.savedAt })
+          setShowLocalDraftNotice(true)
         }
         return
       }
@@ -105,7 +102,9 @@ export default function PostEditor() {
       // 既存記事の読み込み
       try {
         setIsLoading(true)
-        const res = await fetch(`${CMS_ENDPOINT}/posts/${slug}`)
+        const res = await fetch(`${CMS_ENDPOINT}/posts/${slug}`, {
+          headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
+        })
         if (!res.ok) {
           if (res.status === 404) {
             setError('記事が見つかりません')
@@ -115,17 +114,18 @@ export default function PostEditor() {
         }
         const data = await res.json() as { post: PostData }
 
-        // 下書きがあり、サーバーより新しい場合は復元確認
-        if (draft && draft.savedAt > new Date(data.post.updatedAt).getTime()) {
+        // ローカル下書きがあり、サーバーより新しい場合は復元確認
+        if (localDraft && localDraft.savedAt > new Date(data.post.updatedAt).getTime()) {
           setFormData({
-            slug: draft.slug,
-            title: draft.title,
-            summary: draft.summary,
-            tags: draft.tags,
+            slug: localDraft.slug,
+            title: localDraft.title,
+            summary: localDraft.summary,
+            tags: localDraft.tags,
           })
-          setMarkdown(draft.markdown)
-          setDraftInfo({ savedAt: draft.savedAt })
-          setShowDraftNotice(true)
+          setMarkdown(localDraft.markdown)
+          setLocalDraftInfo({ savedAt: localDraft.savedAt })
+          setShowLocalDraftNotice(true)
+          setCurrentStatus(data.post.status)
         } else {
           setFormData({
             slug: data.post.slug,
@@ -134,6 +134,7 @@ export default function PostEditor() {
             tags: data.post.tags.join(', '),
           })
           setMarkdown(data.post.markdown)
+          setCurrentStatus(data.post.status)
         }
       } catch (err) {
         console.error('Failed to fetch post:', err)
@@ -144,15 +145,15 @@ export default function PostEditor() {
     }
 
     fetchAndCheckDraft()
-  }, [slug, isNewPost, draftKey])
+  }, [slug, isNewPost, idToken])
 
   // ページタイトル
   useEffect(() => {
     document.title = isNewPost ? '新規記事作成 | Admin | haroin57' : `記事編集: ${formData.title} | Admin | haroin57`
   }, [isNewPost, formData.title])
 
-  // 保存処理
-  const handleSave = useCallback(async () => {
+  // 保存処理（公開または下書きとして保存）
+  const handleSave = useCallback(async (saveAsDraft = false) => {
     if (!idToken) {
       alert('ログインが必要です')
       return
@@ -171,6 +172,8 @@ export default function PostEditor() {
         .map((t) => t.trim())
         .filter(Boolean)
 
+      const status = saveAsDraft ? 'draft' : 'published'
+
       const body = {
         slug: formData.slug,
         title: formData.title,
@@ -178,6 +181,7 @@ export default function PostEditor() {
         markdown,
         html,
         tags,
+        status,
       }
 
       const method = isNewPost ? 'POST' : 'PUT'
@@ -198,13 +202,13 @@ export default function PostEditor() {
         throw new Error(data.error || 'Failed to save post')
       }
 
-      // 保存成功したら下書きを削除
-      const targetKey = draftKey || slug || 'new'
-      deleteDraft('post', targetKey)
-      setDraftInfo(null)
-      setShowDraftNotice(false)
+      // 保存成功したらローカル下書きを削除
+      deleteDraft('post', slug || 'new')
+      setLocalDraftInfo(null)
+      setShowLocalDraftNotice(false)
+      setCurrentStatus(status)
 
-      alert('保存しました')
+      alert(saveAsDraft ? '下書きとして保存しました' : '公開しました')
 
       if (isNewPost && data.post) {
         navigate(`/admin/posts/${data.post.slug}/edit`, { replace: true })
@@ -215,17 +219,15 @@ export default function PostEditor() {
     } finally {
       setIsSaving(false)
     }
-  }, [idToken, formData, markdown, isNewPost, slug, navigate, draftKey])
+  }, [idToken, formData, markdown, isNewPost, slug, navigate])
 
-  // 下書きを破棄
-  const discardDraft = useCallback(() => {
-    const targetKey = draftKey || slug || 'new'
-    deleteDraft('post', targetKey)
-    setDraftInfo(null)
-    setShowDraftNotice(false)
-    // ページをリロードして元のデータを読み込む
+  // ローカル下書きを破棄
+  const discardLocalDraft = useCallback(() => {
+    deleteDraft('post', slug || 'new')
+    setLocalDraftInfo(null)
+    setShowLocalDraftNotice(false)
     window.location.reload()
-  }, [slug, draftKey])
+  }, [slug])
 
   // 削除処理
   const handleDelete = useCallback(async () => {
@@ -256,46 +258,36 @@ export default function PostEditor() {
     }
   }, [idToken, isNewPost, slug, navigate])
 
-  // 下書きに戻す処理（公開済み記事をローカル下書きとして保存し、サーバーから削除）
+  // 下書きに戻す処理（サーバー側でステータス変更）
   const handleRevertToDraft = useCallback(async () => {
     if (!idToken || isNewPost) return
-    if (!window.confirm('この記事を下書きに戻しますか？\n公開されている記事は削除され、ローカルの下書きとして保存されます。')) return
+    if (!window.confirm('この記事を下書きに戻しますか？\n公開一覧から非表示になりますが、下書き一覧から編集・再公開できます。')) return
 
     setIsSaving(true)
     try {
-      // まず現在のデータを下書きとして保存
-      const tags = formData.tags.split(',').map(t => t.trim()).filter(Boolean)
-      revertPostToDraft({
-        slug: formData.slug,
-        title: formData.title,
-        summary: formData.summary,
-        tags,
-        markdown,
-        createdAt: new Date().toISOString().split('T')[0], // 現在の日付
-      })
-
-      // サーバーから削除
-      const res = await fetch(`${CMS_ENDPOINT}/posts/${slug}`, {
-        method: 'DELETE',
+      const res = await fetch(`${CMS_ENDPOINT}/posts/${slug}/status`, {
+        method: 'PATCH',
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${idToken}`,
         },
+        body: JSON.stringify({ status: 'draft' }),
       })
 
       if (!res.ok) {
         const data = await res.json() as { error?: string }
-        throw new Error(data.error || 'Failed to delete post from server')
+        throw new Error(data.error || 'Failed to update status')
       }
 
-      alert('下書きに戻しました。投稿一覧の下書きセクションから再編集・再投稿できます。')
-      navigate('/posts')
+      setCurrentStatus('draft')
+      alert('下書きに戻しました')
     } catch (err) {
       console.error('Failed to revert to draft:', err)
-      alert(err instanceof Error ? err.message : '下書きへの変換に失敗しました')
+      alert(err instanceof Error ? err.message : 'ステータス変更に失敗しました')
     } finally {
       setIsSaving(false)
     }
-  }, [idToken, isNewPost, slug, formData, markdown, navigate])
+  }, [idToken, isNewPost, slug])
 
   // 認証待ち
   if (authLoading) {
@@ -342,24 +334,33 @@ export default function PostEditor() {
           </Link>
           <span className="opacity-50">/</span>
           <span>{isNewPost ? '新規作成' : '編集'}</span>
+          {!isNewPost && (
+            <span className={`text-xs px-2 py-0.5 rounded ${
+              currentStatus === 'draft'
+                ? 'bg-yellow-500/20 text-yellow-400'
+                : 'bg-green-500/20 text-green-400'
+            }`}>
+              {currentStatus === 'draft' ? '下書き' : '公開中'}
+            </span>
+          )}
         </header>
 
-        {/* 下書き復元通知 */}
-        {showDraftNotice && draftInfo && (
+        {/* ローカル下書き復元通知 */}
+        {showLocalDraftNotice && localDraftInfo && (
           <div className="glass-panel p-4 border-l-4 border-yellow-500/50 bg-yellow-500/5">
             <div className="flex items-center justify-between gap-4">
               <div className="text-sm">
-                <span className="text-yellow-400 font-semibold">下書きから復元しました</span>
+                <span className="text-yellow-400 font-semibold">ローカル下書きから復元しました</span>
                 <span className="opacity-70 ml-2">
-                  ({formatDraftDate(draftInfo.savedAt)})
+                  ({formatDraftDate(localDraftInfo.savedAt)})
                 </span>
               </div>
               <button
                 type="button"
-                onClick={discardDraft}
+                onClick={discardLocalDraft}
                 className="text-xs px-3 py-1 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] hover:border-[color:var(--ui-border-strong)]"
               >
-                下書きを破棄
+                破棄してサーバーデータを読み込む
               </button>
             </div>
           </div>
@@ -437,7 +438,7 @@ export default function PostEditor() {
             </div>
 
             {/* アクションボタン */}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 {!isNewPost && (
                   <>
@@ -449,30 +450,32 @@ export default function PostEditor() {
                     >
                       削除
                     </button>
-                    <button
-                      type="button"
-                      onClick={handleRevertToDraft}
-                      disabled={isSaving}
-                      className="px-4 py-2 rounded border border-yellow-500/50 bg-yellow-500/10 text-yellow-400 font-semibold transition-colors hover:bg-yellow-500/20 disabled:opacity-50"
-                    >
-                      下書きに戻す
-                    </button>
+                    {currentStatus === 'published' && (
+                      <button
+                        type="button"
+                        onClick={handleRevertToDraft}
+                        disabled={isSaving}
+                        className="px-4 py-2 rounded border border-yellow-500/50 bg-yellow-500/10 text-yellow-400 font-semibold transition-colors hover:bg-yellow-500/20 disabled:opacity-50"
+                      >
+                        下書きに戻す
+                      </button>
+                    )}
                   </>
                 )}
                 <button
                   type="button"
-                  onClick={saveCurrentDraft}
+                  onClick={saveLocalDraft}
                   className="px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] text-sm transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
                 >
-                  下書き保存
+                  ローカル保存
                 </button>
-                {draftInfo && !showDraftNotice && (
+                {localDraftInfo && !showLocalDraftNotice && (
                   <span className="text-xs opacity-50">
-                    保存済み: {formatDraftDate(draftInfo.savedAt)}
+                    保存済み: {formatDraftDate(localDraftInfo.savedAt)}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <Link
                   to="/posts"
                   className="px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
@@ -481,11 +484,19 @@ export default function PostEditor() {
                 </Link>
                 <button
                   type="button"
-                  onClick={handleSave}
+                  onClick={() => handleSave(true)}
+                  disabled={isSaving || !formData.slug || !formData.title || !markdown}
+                  className="px-4 py-2 rounded border border-yellow-500/50 bg-yellow-500/10 text-yellow-400 font-semibold transition-colors hover:bg-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? '保存中...' : '下書き保存'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSave(false)}
                   disabled={isSaving || !formData.slug || !formData.title || !markdown}
                   className="px-6 py-2 rounded border border-green-500/50 bg-green-500/10 text-green-400 font-semibold transition-colors hover:bg-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSaving ? '保存中...' : '保存'}
+                  {isSaving ? '保存中...' : '公開'}
                 </button>
               </div>
             </div>

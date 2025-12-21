@@ -4,6 +4,8 @@ import PrefetchLink from '../components/PrefetchLink'
 import postsData from '../data/posts.json' with { type: 'json' }
 import AccessCounter from '../components/AccessCounter'
 
+const CMS_ENDPOINT = import.meta.env.VITE_CMS_ENDPOINT || '/api/cms'
+
 type Interest = { title: string; text: string }
 type PostMeta = { slug?: string; title?: string; createdAt?: string }
 
@@ -16,13 +18,15 @@ const interests: Interest[] = [
   { title: 'PaaS', text: 'Cloudflare, Vercel, AWS' },
 ]
 
-const allPosts: PostMeta[] = Array.isArray(postsData) ? (postsData as PostMeta[]) : []
-const latestPosts: PostMeta[] = [...allPosts]
+// 静的データからの初期表示用
+const staticPosts: PostMeta[] = Array.isArray(postsData) ? (postsData as PostMeta[]) : []
+const initialLatestPosts: PostMeta[] = [...staticPosts]
   .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
   .slice(0, 5)
 
 function Home() {
   const [openInterests, setOpenInterests] = useState(false)
+  const [latestPosts, setLatestPosts] = useState<PostMeta[]>(initialLatestPosts)
   const pageRef = useRef<HTMLDivElement | null>(null)
   const navigate = useNavigate()
 
@@ -34,7 +38,29 @@ function Home() {
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
 
+  // CMS APIから最新記事を取得（下書きに戻した記事は除外される）
+  useEffect(() => {
+    const fetchLatestPosts = async () => {
+      try {
+        const res = await fetch(`${CMS_ENDPOINT}/posts`)
+        if (res.ok) {
+          const data = (await res.json()) as { posts: PostMeta[] }
+          if (data.posts && data.posts.length > 0) {
+            const sorted = [...data.posts]
+              .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+              .slice(0, 5)
+            setLatestPosts(sorted)
+          }
+        }
+      } catch {
+        // API失敗時は静的データを使用
+      }
+    }
+    fetchLatestPosts()
+  }, [])
+
   // 即座にreveal要素を表示（遅延なし）
+  // latestPostsが変更されたときにも再実行
   useEffect(() => {
     const root = pageRef.current
     if (!root) return
@@ -46,7 +72,7 @@ function Home() {
     queueMicrotask(() => {
       targets.forEach((el) => el.classList.add('is-visible'))
     })
-  }, [])
+  }, [latestPosts])
 
   return (
     <div ref={pageRef} className="relative overflow-hidden">
