@@ -730,34 +730,39 @@ async function verifyFirebaseToken(token: string, env: Env): Promise<FirebaseTok
   }
 }
 
-// BBS: 管理者認証チェック（Firebase対応）
+// BBS: 管理者認証チェック（Firebase + ADMIN_SECRET 両方必須）
 async function checkAdminAuth(req: Request, env: Env): Promise<boolean> {
-  // まずBearerトークン（Firebase）をチェック
-  const authHeader = req.headers.get('Authorization')
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.slice(7)
-    const payload = await verifyFirebaseToken(token, env)
-
-    if (payload?.email) {
-      // 管理者メールリストをチェック
-      const adminEmails = (env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase())
-      if (adminEmails.includes(payload.email.toLowerCase())) {
-        console.log('Admin authenticated via Firebase:', payload.email)
-        return true
-      }
-      console.log('Email not in admin list:', payload.email)
-    }
+  // 1. ADMIN_SECRETのチェック（必須）
+  const secret = req.headers.get('X-Admin-Secret')
+  if (!env.ADMIN_SECRET || secret !== env.ADMIN_SECRET) {
+    console.log('Admin secret verification failed')
     return false
   }
 
-  // フォールバック: X-Admin-Secret ヘッダー（後方互換性）
-  const secret = req.headers.get('X-Admin-Secret')
-  if (env.ADMIN_SECRET && secret === env.ADMIN_SECRET) {
-    console.log('Admin authenticated via secret')
-    return true
+  // 2. Firebase認証のチェック（必須）
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    console.log('Firebase token not provided')
+    return false
   }
 
-  return false
+  const token = authHeader.slice(7)
+  const payload = await verifyFirebaseToken(token, env)
+
+  if (!payload?.email) {
+    console.log('Firebase token verification failed')
+    return false
+  }
+
+  // 管理者メールリストをチェック
+  const adminEmails = (env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase())
+  if (!adminEmails.includes(payload.email.toLowerCase())) {
+    console.log('Email not in admin list:', payload.email)
+    return false
+  }
+
+  console.log('Admin authenticated via Firebase + Secret:', payload.email)
+  return true
 }
 
 // BBS: スレッド削除（管理者用）

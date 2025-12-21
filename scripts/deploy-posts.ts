@@ -58,7 +58,7 @@ type HastElement = {
 }
 type MdastNode = { type: string; [key: string]: unknown }
 type MdastRoot = { type: 'root'; children: MdastNode[] }
-type MdastHeading = { type: 'heading'; depth: number; data?: { id?: unknown } }
+type _MdastHeading = { type: 'heading'; depth: number; data?: { id?: unknown } }
 type MdastText = { type: 'text'; value: string }
 type MdastParagraph = { type: 'paragraph'; children: MdastNode[]; data?: Record<string, unknown> }
 type MdastList = { type: 'list'; ordered?: boolean; children: MdastNode[]; data?: Record<string, unknown> }
@@ -234,44 +234,11 @@ const rehypeMdnCodeHeaders = () => {
   }
 }
 
+// 目次自動生成は廃止。マニュアルで目次を記述する方式に変更。
+// 各記事内でMarkdownリストを使って手動で目次を記述してください。
 const injectToc = () => {
-  return (tree: MdastRoot) => {
-    const headings: { depth: number; text: string; id?: string }[] = []
-    visit(tree, 'heading', (node: MdastHeading) => {
-      const text = toString(node).trim()
-      if (text === '目次') return
-      if (node.depth >= 2 && node.depth <= 4) {
-        const id = typeof node.data?.id === 'string' ? node.data.id : undefined
-        headings.push({ depth: node.depth, text, id })
-      }
-    })
-
-    const tocIndex = tree.children.findIndex(
-      (n: MdastNode) => n.type === 'heading' && toString(n).trim() === '目次'
-    )
-    if (tocIndex === -1 || headings.length === 0) return
-
-    const list: MdastList = {
-      type: 'list',
-      ordered: false,
-      children: headings.map((h) => ({
-        type: 'listItem',
-        children: [
-          {
-            type: 'paragraph',
-            children: [
-              {
-                type: 'link',
-                url: h.id ? `#${h.id}` : '#',
-                children: [{ type: 'text', value: h.text }],
-              },
-            ],
-          },
-        ],
-      })),
-    }
-
-    tree.children.splice(tocIndex + 1, 0, list)
+  return (_tree: MdastRoot) => {
+    // 自動生成を無効化 - 何もしない
   }
 }
 
@@ -672,10 +639,10 @@ async function deployPost(post: PostData, options: DeployOptions): Promise<{ suc
     }
   }
 
-  if (!options.token && !options.adminSecret) {
+  if (!options.token || !options.adminSecret) {
     return {
       success: false,
-      message: 'FIREBASE_ID_TOKEN or ADMIN_SECRET is not set. Please set the environment variable.',
+      message: 'Both FIREBASE_ID_TOKEN and ADMIN_SECRET are required. Please set both environment variables.',
     }
   }
 
