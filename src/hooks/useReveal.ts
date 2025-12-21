@@ -1,6 +1,6 @@
 import { useEffect, type DependencyList, type RefObject } from 'react'
 
-export function useReveal(ref: RefObject<HTMLElement>, deps: DependencyList = []) {
+export function useReveal<T extends HTMLElement>(ref: RefObject<T | null>, deps: DependencyList = []) {
   useEffect(() => {
     const root = ref.current
     if (!root) return
