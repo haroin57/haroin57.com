@@ -288,6 +288,9 @@ img {
 .prose strong {
   font-weight: 700;
   color: var(--fg-strong);
+  /* iOS/日本語フォントで太字が表示されない問題を修正 */
+  font-synthesis: weight;
+  -webkit-text-stroke: 0.3px currentColor;
 }
 
 .prose em {
@@ -356,6 +359,8 @@ img {
   margin: 1.2rem 0 0.6rem;
   font-weight: 600;
   color: var(--fg-strong);
+  /* iOS/日本語フォントで太字が表示されない問題を修正 */
+  font-synthesis: weight;
 }
 
 .prose h1 {

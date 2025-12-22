@@ -13,6 +13,7 @@ type AdminAuthContextType = {
   user: User | null
   idToken: string | null
   isLoading: boolean
+  isRedirecting: boolean
   sessionExpiresAt: number | null
   loginWithGoogle: () => Promise<boolean>
   logout: () => Promise<void>
@@ -32,6 +33,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [idToken, setIdToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const [, setFirebaseReady] = useState(false)
   const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(null)
   const sessionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -48,71 +50,6 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // 管理者ページかどうかを判定
-  const isAdminPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
-
-  // Firebase遅延初期化（管理者ページアクセス時のみ、または既存セッション復元時）
-  useEffect(() => {
-    // 管理者ページでない場合は初期化をスキップ（ただしlocalStorageにセッションがある場合は初期化）
-    const hasStoredSession = typeof localStorage !== 'undefined' &&
-      localStorage.getItem('firebase:authUser:' + import.meta.env.VITE_FIREBASE_API_KEY + ':[DEFAULT]')
-
-    if (!isAdminPage && !hasStoredSession) {
-      setIsLoading(false)
-      return
-    }
-
-    let unsubscribe: (() => void) | null = null
-
-    const init = async () => {
-      try {
-        const { auth, googleProvider } = await initializeFirebase()
-        cachedAuth = auth
-        cachedGoogleProvider = googleProvider
-        setFirebaseReady(true)
-
-        // Firebase認証状態の監視
-        const { onAuthStateChanged } = await import('firebase/auth')
-        unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-          setUser(firebaseUser)
-          if (firebaseUser) {
-            const token = await firebaseUser.getIdToken()
-            setIdToken(token)
-          } else {
-            setIdToken(null)
-          }
-          setIsLoading(false)
-        })
-      } catch (error) {
-        console.error('Firebase initialization failed:', error)
-        setIsLoading(false)
-      }
-    }
-
-    init()
-
-    return () => {
-      if (unsubscribe) unsubscribe()
-    }
-  }, [isAdminPage])
-
-  // IDトークンの自動更新（1時間ごと）
-  useEffect(() => {
-    if (!user) return
-
-    const refreshToken = async () => {
-      try {
-        const token = await user.getIdToken(true) // 強制リフレッシュ
-        setIdToken(token)
-      } catch (error) {
-        console.error('Failed to refresh token:', error)
-      }
-    }
-
-    // 50分ごとにトークンをリフレッシュ（有効期限は1時間）
-    const interval = setInterval(refreshToken, 50 * 60 * 1000)
-    return () => clearInterval(interval)
-  }, [user])
 
   // ログアウト（下書き保存コールバックを先に実行）
   const logout = useCallback(async (skipCallbacks = false) => {
@@ -164,7 +101,95 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }, SESSION_TIMEOUT_MS)
   }, [logout])
 
-  // Googleでログイン
+  // startSessionTimeoutをrefで保持（useEffect内で使用するため）
+  const startSessionTimeoutRef = useRef(startSessionTimeout)
+  startSessionTimeoutRef.current = startSessionTimeout
+
+  // Firebase遅延初期化（管理者ページアクセス時のみ、または既存セッション復元時）
+  useEffect(() => {
+    // useEffect内でwindowを直接参照（SSR対策）
+    const isAdminPage = window.location.pathname.startsWith('/admin')
+
+    // 管理者ページでない場合は初期化をスキップ（ただしlocalStorageにセッションがある場合は初期化）
+    const hasStoredSession = localStorage.getItem('firebase:authUser:' + import.meta.env.VITE_FIREBASE_API_KEY + ':[DEFAULT]')
+
+    if (!isAdminPage && !hasStoredSession) {
+      setIsLoading(false)
+      return
+    }
+
+    let unsubscribe: (() => void) | null = null
+
+    const init = async () => {
+      try {
+        const { auth, googleProvider } = await initializeFirebase()
+        cachedAuth = auth
+        cachedGoogleProvider = googleProvider
+        setFirebaseReady(true)
+
+        // リダイレクト認証の結果を取得
+        const { getRedirectResult, signOut, onAuthStateChanged } = await import('firebase/auth')
+        try {
+          const result = await getRedirectResult(auth)
+          if (result?.user) {
+            // 管理者メールかチェック
+            if (!result.user.email || !ADMIN_EMAILS.includes(result.user.email.toLowerCase())) {
+              // 管理者ではない場合はサインアウト
+              await signOut(auth)
+              alert('このアカウントには管理者権限がありません。')
+            } else {
+              // セッションタイムアウトを開始
+              startSessionTimeoutRef.current()
+            }
+          }
+        } catch (redirectError) {
+          console.error('Redirect result error:', redirectError)
+        }
+
+        // Firebase認証状態の監視
+        unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+          setUser(firebaseUser)
+          if (firebaseUser) {
+            const token = await firebaseUser.getIdToken()
+            setIdToken(token)
+          } else {
+            setIdToken(null)
+          }
+          setIsLoading(false)
+        })
+      } catch (error) {
+        console.error('Firebase initialization failed:', error)
+        setIsLoading(false)
+      }
+    }
+
+    init()
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // 初回マウント時のみ実行
+
+  // IDトークンの自動更新（1時間ごと）
+  useEffect(() => {
+    if (!user) return
+
+    const refreshToken = async () => {
+      try {
+        const token = await user.getIdToken(true) // 強制リフレッシュ
+        setIdToken(token)
+      } catch (error) {
+        console.error('Failed to refresh token:', error)
+      }
+    }
+
+    // 50分ごとにトークンをリフレッシュ（有効期限は1時間）
+    const interval = setInterval(refreshToken, 50 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [user])
+
+  // Googleでログイン（リダイレクト方式）
   const loginWithGoogle = useCallback(async (): Promise<boolean> => {
     try {
       // Firebaseがまだ初期化されていない場合は初期化
@@ -175,26 +200,17 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         setFirebaseReady(true)
       }
 
-      const { signInWithPopup, signOut } = await import('firebase/auth')
-      const result = await signInWithPopup(cachedAuth, cachedGoogleProvider)
-      const firebaseUser = result.user
-
-      // 管理者メールかチェック
-      if (!firebaseUser.email || !ADMIN_EMAILS.includes(firebaseUser.email.toLowerCase())) {
-        // 管理者ではない場合はサインアウト
-        await signOut(cachedAuth)
-        return false
-      }
-
-      // セッションタイムアウトを開始
-      startSessionTimeout()
-
+      const { signInWithRedirect } = await import('firebase/auth')
+      setIsRedirecting(true)
+      await signInWithRedirect(cachedAuth, cachedGoogleProvider)
+      // リダイレクト後は戻ってこないので、ここには到達しない
       return true
     } catch (error) {
       console.error('Google login failed:', error)
+      setIsRedirecting(false)
       return false
     }
-  }, [startSessionTimeout])
+  }, [])
 
   // ページリロード時もセッションを維持（ただしリロード時から1時間）
   useEffect(() => {
@@ -213,7 +229,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AdminAuthContext.Provider value={{ isAdmin, user, idToken, isLoading, sessionExpiresAt, loginWithGoogle, logout, registerBeforeLogout }}>
+    <AdminAuthContext.Provider value={{ isAdmin, user, idToken, isLoading, isRedirecting, sessionExpiresAt, loginWithGoogle, logout, registerBeforeLogout }}>
       {children}
     </AdminAuthContext.Provider>
   )
