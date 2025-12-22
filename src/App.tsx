@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePageMeta } from './hooks/usePageMeta'
 import { useReveal } from './hooks/useReveal'
@@ -14,6 +14,13 @@ function App() {
   usePageMeta()
 
   useScrollToTop()
+
+  useEffect(() => {
+    document.body.classList.add('top-page')
+    return () => {
+      document.body.classList.remove('top-page')
+    }
+  }, [])
 
   const handleNavigate = useCallback(() => {
     navigate('/home')

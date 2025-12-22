@@ -14,6 +14,7 @@
   --overlay: 1.00;
   --bg-wash: 0.55;
   --bg-wash-color: #000;
+  --p5-opacity: 0.3;
   --home-progress: 0;
   --home-wash-start: 0;
   --home-wash-end: 0;
@@ -51,6 +52,10 @@ body.home-page::before {
   opacity: 0.25;
 }
 
+body.top-page {
+  --p5-opacity: 0.5;
+}
+
 /* 背景画像のトランジション強化 */
 .pointer-events-none.fixed img {
   transition:
@@ -68,43 +73,37 @@ body.home-page::before {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 /* グローバル背景画像 - ルートに応じてopacityが変わる */
 .global-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   transition: opacity 600ms var(--ease-out-quart);
+}
+
+.p5-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: var(--p5-opacity, 0.3);
+  mix-blend-mode: screen;
+  filter: blur(var(--bg-blur, 0px));
+  pointer-events: none;
+}
+
+.p5-bg canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 body {
   @apply bg-ink text-slate-100 font-sans antialiased;
   background-color: #222222;
   min-height: 100vh;
-}
-
-/* ページ遷移アニメーション - 60fps GPU accelerated */
-.page-transition-enter {
-  opacity: 0;
-  transform: translate3d(0, 0, 0);
-  will-change: opacity;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.page-transition-enter-active {
-  opacity: 1;
-  transform: translate3d(0, 0, 0);
-  transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.page-transition-exit {
-  display: none;
-}
-
-.page-transition-exit-active {
-  display: none;
 }
 
 /* ページコンテンツのフェードイン */
@@ -121,20 +120,6 @@ body {
     opacity: 1;
     transform: translate3d(0, 0, 0);
   }
-}
-
-/* 遷移中はスクロールを防止し、重い処理を抑制 */
-html.route-transitioning {
-  overflow: hidden;
-}
-
-html.route-transitioning .reveal {
-  transition: none !important;
-}
-
-/* 遷移中はhome-heroのアニメーションも無効化 */
-html.route-transitioning .home-hero {
-  transition: none !important;
 }
 
 /* Collapse - 滑らかな開閉 */
@@ -210,11 +195,7 @@ html.route-transitioning .home-hero {
 
   .reveal,
   .home-hero,
-  .page-fade,
-  .page-transition-enter,
-  .page-transition-enter-active,
-  .page-transition-exit,
-  .page-transition-exit-active {
+  .page-fade {
     opacity: 1;
     animation: none;
     transform: none;

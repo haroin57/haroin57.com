@@ -1,4 +1,5 @@
 import { useLocation } from 'react-router-dom'
+import P5HypercubeBackground from './P5HypercubeBackground'
 
 const BACKGROUND_SRC = '/background-1920.webp'
 const BACKGROUND_SRCSET = [
@@ -15,6 +16,7 @@ export default function GlobalBackground() {
 
   return (
     <div className="global-bg-container">
+      <P5HypercubeBackground />
       <img
         src={BACKGROUND_SRC}
         srcSet={BACKGROUND_SRCSET}
@@ -39,4 +41,3 @@ export default function GlobalBackground() {
     </div>
   )
 }
-

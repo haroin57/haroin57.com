@@ -25,16 +25,21 @@
 
 ```
 src/
-├── main.tsx                    # アプリケーションエントリーポイント
+├── main.tsx                    # クライアントエントリ（hydrate対応）
+├── entry-server.tsx            # SSG/SSR用エントリ（renderToString）
 ├── App.tsx                     # ランディングページ（トップページ）
 ├── index.css                   # グローバルスタイル
 ├── contexts/
 │   └── AdminAuthContext.tsx    # Firebase認証コンテキスト
 ├── components/
-│   ├── AnimatedRoutes.tsx      # ルーティング・ページ遷移アニメーション
-│   ├── GlobalBackground.tsx    # 背景画像管理
+│   ├── AnimatedRoutes.tsx      # ルーティング（コード分割 + preload/prefetch）
+│   ├── ServerRoutes.tsx        # SSG/SSR向けRoutes（同期import）
+│   ├── GlobalBackground.tsx    # 背景画像 + p5背景アニメ管理
+│   ├── P5HypercubeBackground.tsx # p5.js: 4次元立方体背景
 │   ├── ScrollTopHomeSwitch.tsx # スクロール/スワイプによるページ切り替え
+│   ├── ClientOnly.tsx          # SSG/SSRでクライアントのみ描画
 │   ├── AccessCounter.tsx       # PVカウンター
+│   ├── SiteFooter.tsx          # フッター（PVカウンター含む）
 │   ├── PrefetchLink.tsx        # プリフェッチ対応リンク
 │   ├── Lightbox.tsx            # 画像モーダル
 │   ├── MermaidRenderer.tsx     # Mermaidダイアグラム描画
@@ -56,12 +61,16 @@ src/
 ├── lib/
 │   ├── firebase.ts             # Firebase初期化
 │   └── draftStorage.ts         # 下書き保存ユーティリティ
+├── types/
+│   └── p5.d.ts                 # p5モジュール型宣言
 └── data/
     ├── posts.json              # 記事データ（ビルド時生成）
     ├── products.json           # プロダクトデータ
     ├── product-posts.json      # プロダクト詳細記事
     └── photos.ts               # 写真データ定義
 ```
+
+※ SSG（静的HTML生成）は `src/entry-server.tsx` と `scripts/prerender.ts` を利用します。
 
 ---
 
@@ -72,7 +81,10 @@ src/
 アプリケーションのエントリーポイント。
 
 ```typescript
-createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root')
+if (!rootElement) throw new Error('Root element not found')
+
+const app = (
   <BrowserRouter>
     <AdminAuthProvider>
       <GlobalBackground />
@@ -81,15 +93,61 @@ createRoot(document.getElementById('root')!).render(
     </AdminAuthProvider>
   </BrowserRouter>
 )
+
+if (rootElement.hasChildNodes()) {
+  hydrateRoot(rootElement, app)  // SSG/SSRで事前生成されたHTMLを利用
+} else {
+  createRoot(rootElement).render(app)
+}
 ```
 
 **依存関係:**
-- `react-dom/client`: `createRoot`
+- `react-dom/client`: `createRoot`, `hydrateRoot`
 - `react-router-dom`: `BrowserRouter`
 - `./components/AnimatedRoutes`
 - `./components/GlobalBackground`
 - `./components/ScrollTopHomeSwitch`
 - `./contexts/AdminAuthContext`
+
+---
+
+### `src/entry-server.tsx`
+
+SSG/SSR（静的HTML生成）用のサーバーエントリ。`vite build --ssr` で `dist/server/` に出力され、`scripts/prerender.ts` から呼び出されます。
+
+```typescript
+import { renderToString } from 'react-dom/server'
+import { StaticRouter } from 'react-router'
+
+export function render(url: string) {
+  return renderToString(
+    <StaticRouter location={url}>
+      {/* ... */}
+    </StaticRouter>
+  )
+}
+```
+
+**依存関係:**
+- `react-dom/server`: `renderToString`
+- `react-router`: `StaticRouter`
+
+---
+
+### `scripts/prerender.ts`
+
+SSG（静的HTML生成）スクリプト。`dist/index.html` をテンプレートにして、`dist/server/entry-server.*` の `render(url)` を呼び出し、各ルートのHTMLを `dist/<route>/index.html` として書き出します。
+
+**主な挙動:**
+- 対象ルート: `['/', '/home', '/posts', '/products', '/photos']`
+- 記事詳細: `src/data/posts.json` の `slug` から `/posts/:slug` を生成
+- プロダクト詳細: `src/data/products.json` の `slug` から `/products/:slug` を生成
+- `BBS` や管理者ページなどはプリレンダ対象外（SPAとして動作）
+
+**関連するビルドフロー（`package.json`）:**
+- `vite build`（クライアント）
+- `vite build --ssr src/entry-server.tsx --outDir dist/server`（SSRバンドル）
+- `node --experimental-strip-types scripts/prerender.ts`（HTML書き出し）
 
 ---
 
@@ -174,46 +232,45 @@ type AdminAuthContextType = {
 
 ### `src/components/AnimatedRoutes.tsx`
 
-ルーティングとページ遷移アニメーションを管理。
+ルーティング（コード分割 + preload/prefetch）を管理。
 
-**定数:**
-
-| 定数名 | 値 | 説明 |
-|--------|-----|------|
-| `TRANSITION_DURATION` | `400` | CSSTransitionのタイムアウト（ms） |
-| `ROUTE_TRANSITIONING_DURATION` | `500` | 遷移中クラス付与時間（ms） |
-
-**遅延読み込みルート:**
+**ルートローダー（例）:**
 
 ```typescript
-const loadHome = () => import('../routes/Home')
-const loadPosts = () => import('../routes/Posts')
-const loadPostDetail = () => import('../routes/PostDetail')
-const loadProducts = () => import('../routes/Products')
-const loadProductDetail = () => import('../routes/ProductDetail')
-const loadPhotos = () => import('../routes/Photos')
-const loadBBSList = () => import('../routes/BBSList')
-const loadBBSThread = () => import('../routes/BBSThread')
-const loadPostEditor = () => import('../routes/admin/PostEditor')
-const loadProductEditor = () => import('../routes/admin/ProductEditor')
+const loadHome = preload(() => import('../routes/Home'))         // 高優先度
+const loadBBSList = prefetch(() => import('../routes/BBSList'))  // 低優先度
+const loadPostDetail = lazyLoad(() => import('../routes/PostDetail'))  // ユーザー操作時
 ```
 
 **機能:**
-- React.lazyによる全ルートの遅延読み込み
-- `requestIdleCallback`を使用した全ルートの事前プリロード
-- nodeRefキャッシュによるCSSTransitionの最適化
-- 遷移中に`route-transitioning`クラスを付与
+- React.lazy + Suspenseによる全ルートの遅延読み込み（動的import）
+- `preload`/`prefetch`/`lazyLoad` でルートの読み込み優先度を制御
+- 回線状況に応じて、遷移時に関連ルートを順番にプリロード（`shouldPrefetch()`）
 
 **依存関係:**
 - `react-router-dom`: `Routes`, `Route`, `useLocation`
-- `react-transition-group`: `CSSTransition`, `TransitionGroup`
-- `react`: `useRef`, `lazy`, `Suspense`, `useEffect`, `useLayoutEffect`, `useMemo`, `createRef`
+- `react`: `lazy`, `Suspense`, `useEffect`
+- `../lib/network`: `shouldPrefetch`
+- `../lib/preload`: `preload`, `prefetch`, `lazyLoad`
+
+---
+
+### `src/components/ServerRoutes.tsx`
+
+SSG/SSR向けのRoutes定義（同期import）。`src/entry-server.tsx` から利用します（管理者ルートは含めません）。
+
+**機能:**
+- 各ページを同期importして即時レンダリング
+- `AnimatedRoutes.tsx`（クライアント向けの遅延ロード）と責務分離
+
+**依存関係:**
+- `react-router-dom`: `Routes`, `Route`, `useLocation`
 
 ---
 
 ### `src/components/GlobalBackground.tsx`
 
-レスポンシブ背景画像を管理。
+レスポンシブ背景画像 + p5背景アニメを管理。
 
 **定数:**
 
@@ -228,12 +285,30 @@ const BACKGROUND_SRCSET = [
 ```
 
 **機能:**
+- `P5HypercubeBackground` による背景アニメ描画
 - srcsetによるレスポンシブ画像読み込み
 - パスに応じた透明度変更（`/`では1、それ以外では0.45）
-- CSS変数による動的ブラー・スケール適用
+- CSS変数による動的ブラー・スケール適用（`--bg-blur`, `--bg-scale`）
+  - 記事/プロダクト詳細ページで設定されるブラーが、背景画像とp5側の両方に反映される
 
 **依存関係:**
 - `react-router-dom`: `useLocation`
+
+---
+
+### `src/components/P5HypercubeBackground.tsx`
+
+p5.js（WEBGL）で「4次元立方体（tesseract）」の投影アニメーションを背景として描画。
+
+**機能:**
+- `p5` を動的importして初期バンドルを軽量化
+- 4D回転 → 3D投影 → 2D投影でワイヤーフレームを描画
+- パフォーマンス調整（低解像度レンダリング、FPS制限、`pixelDensity(1)`、`noSmooth()`）
+- `prefers-reduced-motion` では描画停止
+
+**依存関係:**
+- `react`: `useEffect`, `useRef`
+- `p5`（dynamic import）
 
 ---
 
@@ -264,6 +339,30 @@ const BACKGROUND_SRCSET = [
 **依存関係:**
 - `react`: `useEffect`, `useRef`
 - `react-router-dom`: `useLocation`, `useNavigate`
+
+---
+
+### `src/components/ClientOnly.tsx`
+
+SSG/SSRでのhydration差分や `window` 依存の副作用を避けるため、マウント後にのみ子要素を描画するラッパー。
+
+**機能:**
+- 初回レンダリングでは `null` を返す
+- `useEffect` でマウントを検知して描画を開始
+
+**依存関係:**
+- `react`: `useEffect`, `useState`
+
+---
+
+### `src/components/SiteFooter.tsx`
+
+サイト共通のフッター。`AccessCounter`（PVカウンター）は `ClientOnly` 内で描画し、SSG/SSRで静的HTMLに含めないようにします。
+
+**依存関係:**
+- `./AccessCounter`
+- `./ClientOnly`
+- `../styles/typography`: `MAIN_TEXT_STYLE`
 
 ---
 
@@ -1902,9 +2001,10 @@ el.classList.remove('active')      // クラスを削除
 el.classList.toggle('active')      // あれば削除、なければ追加
 el.classList.contains('active')    // 含まれているか確認
 
-// 本プロジェクトでの例（AnimatedRoutes.tsx）
-root.classList.add('route-transitioning')
-root.classList.remove('route-transitioning')
+// 本プロジェクトでの例（PostDetail.tsx / ProductDetail.tsx）
+const body = document.body
+body.classList.add('post-detail-page')
+body.classList.remove('post-detail-page')
 ```
 
 ##### `addEventListener()` / `removeEventListener()`
@@ -3464,28 +3564,7 @@ useLayoutEffect(effect: () => void | (() => void), deps?: DependencyList)
 | 用途 | データフェッチ、イベントリスナー | DOM測定、レイアウト調整 |
 
 **本プロジェクトでの使用例:**
-
-```typescript
-// AnimatedRoutes.tsx - ルート遷移中のクラス付与
-useLayoutEffect(() => {
-  if (!hasMountedRef.current) {
-    hasMountedRef.current = true
-    return  // 初回マウント時はスキップ
-  }
-
-  const root = document.documentElement
-  root.classList.add('route-transitioning')  // 遷移中クラスを即座に付与
-
-  const timer = window.setTimeout(() => {
-    root.classList.remove('route-transitioning')
-  }, ROUTE_TRANSITIONING_DURATION)
-
-  return () => {
-    window.clearTimeout(timer)
-    root.classList.remove('route-transitioning')
-  }
-}, [location.pathname])
-```
+現状のコードベースでは `useLayoutEffect` は未使用です（以前はページ遷移アニメーションのために使用していました）。
 
 **useLayoutEffectを使うべき場面:**
 - DOM要素のサイズ・位置を測定して即座に反映する時

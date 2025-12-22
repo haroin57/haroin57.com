@@ -1,6 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { CSSTransition, TransitionGroup } from 'react-transition-group'
-import { useRef, lazy, Suspense, useEffect, useLayoutEffect, createRef } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import App from '../App'
 import { shouldPrefetch } from '../lib/network'
 import { preload, prefetch, lazyLoad } from '../lib/preload'
@@ -53,42 +52,8 @@ const routeLoaders: Record<string, Array<() => Promise<unknown>>> = {
   '/bbs': [loadHome, loadBBSThread],
 }
 
-// nodeRefキャッシュ（コンポーネント外で保持 - 再レンダリングで失われない）
-const nodeRefCache = new Map<string, React.RefObject<HTMLDivElement | null>>()
-
-function getNodeRef(pathname: string): React.RefObject<HTMLDivElement | null> {
-  if (!nodeRefCache.has(pathname)) {
-    nodeRefCache.set(pathname, createRef<HTMLDivElement>())
-  }
-  return nodeRefCache.get(pathname)!
-}
-
-// キャッシュサイズ制限
-function cleanupNodeRefCache(currentPath: string) {
-  if (nodeRefCache.size > 15) {
-    const keys = Array.from(nodeRefCache.keys())
-    for (const key of keys) {
-      if (key !== currentPath && nodeRefCache.size > 8) {
-        nodeRefCache.delete(key)
-      }
-    }
-  }
-}
-
-const TRANSITION_DURATION = 400
-const ROUTE_TRANSITIONING_DURATION = 500
-
 function AnimatedRoutes() {
   const location = useLocation()
-  const hasMountedRef = useRef(false)
-
-  // nodeRefを同期的に取得（ボトルネック解消：useMemoを使わず直接取得）
-  const nodeRef = getNodeRef(location.pathname)
-
-  // キャッシュクリーンアップ（非同期で実行）
-  useEffect(() => {
-    cleanupNodeRefCache(location.pathname)
-  }, [location.pathname])
 
   // preload/prefetch関数が自動的にプリロードを開始するため、
   // 初回マウント時の明示的なプリロードは不要
@@ -109,57 +74,27 @@ function AnimatedRoutes() {
     }
   }, [location.pathname])
 
-  // 遷移中にroute-transitioningクラスを付与（400ms）
-  useLayoutEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true
-      return
-    }
-
-    const root = document.documentElement
-    root.classList.add('route-transitioning')
-
-    const timer = window.setTimeout(() => {
-      root.classList.remove('route-transitioning')
-    }, ROUTE_TRANSITIONING_DURATION)
-
-    return () => {
-      window.clearTimeout(timer)
-      root.classList.remove('route-transitioning')
-    }
-  }, [location.pathname])
-
   return (
-    <TransitionGroup component={null}>
-      <CSSTransition
-        key={location.pathname}
-        nodeRef={nodeRef}
-        classNames="page-transition"
-        timeout={TRANSITION_DURATION}
-        unmountOnExit
-      >
-        <div ref={nodeRef} style={{ position: 'relative', width: '100%' }}>
-          <Suspense fallback={null}>
-            <Routes location={location}>
-              <Route path="/" element={<App />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/posts" element={<Posts />} />
-              <Route path="/posts/:slug" element={<PostDetail />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/products/:slug" element={<ProductDetail />} />
-              <Route path="/photos" element={<Photos />} />
-              <Route path="/bbs" element={<BBSList />} />
-              <Route path="/bbs/:threadId" element={<BBSThread />} />
-              {/* 管理者ルート */}
-              <Route path="/admin/posts/new" element={<PostEditor />} />
-              <Route path="/admin/posts/:slug/edit" element={<PostEditor />} />
-              <Route path="/admin/products/new" element={<ProductEditor />} />
-              <Route path="/admin/products/:slug/edit" element={<ProductEditor />} />
-            </Routes>
-          </Suspense>
-        </div>
-      </CSSTransition>
-    </TransitionGroup>
+    <div style={{ position: 'relative', width: '100%' }}>
+      <Suspense fallback={null}>
+        <Routes location={location}>
+          <Route path="/" element={<App />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/posts" element={<Posts />} />
+          <Route path="/posts/:slug" element={<PostDetail />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:slug" element={<ProductDetail />} />
+          <Route path="/photos" element={<Photos />} />
+          <Route path="/bbs" element={<BBSList />} />
+          <Route path="/bbs/:threadId" element={<BBSThread />} />
+          {/* 管理者ルート */}
+          <Route path="/admin/posts/new" element={<PostEditor />} />
+          <Route path="/admin/posts/:slug/edit" element={<PostEditor />} />
+          <Route path="/admin/products/new" element={<ProductEditor />} />
+          <Route path="/admin/products/:slug/edit" element={<ProductEditor />} />
+        </Routes>
+      </Suspense>
+    </div>
   )
 }
 
