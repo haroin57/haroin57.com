@@ -41,7 +41,9 @@
       "Bash(git -C c:/Users/harut/haroin57-web gc --prune=now --aggressive)",
       "Bash(git -C c:/Users/harut/haroin57-web push --force --all)",
       "Bash(git checkout:*)",
-      "Bash(del \"c:\\\\Users\\\\harut\\\\haroin57-web\\\\temp_post.json\")"
+      "Bash(del \"c:\\\\Users\\\\harut\\\\haroin57-web\\\\temp_post.json\")",
+      "Bash(npx wrangler d1 execute:*)",
+      "Bash(npx wrangler deploy:*)"
     ]
   }
 }

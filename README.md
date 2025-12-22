@@ -293,6 +293,7 @@ const BACKGROUND_SRCSET = [
 
 **依存関係:**
 - `react-router-dom`: `useLocation`
+- `./P5HypercubeBackground`
 
 ---
 
@@ -2508,14 +2509,14 @@ Reactは、Facebookが開発したUIライブラリ。コンポーネントベ�
 | `useState` | コンポーネント内で状態を管理するフック | 全ページコンポーネント |
 | `useEffect` | 副作用（API呼び出し、DOM操作等）を実行するフック | 全ページコンポーネント |
 | `useCallback` | コールバック関数をメモ化し、不要な再レンダリングを防ぐ | イベントハンドラ定義 |
-| `useMemo` | 計算結果をメモ化し、パフォーマンスを最適化 | `AnimatedRoutes.tsx` |
+| `useMemo` | 計算結果をメモ化し、パフォーマンスを最適化 | `Posts.tsx`, `PostDetail.tsx`, `MarkdownEditor.tsx` |
 | `useRef` | ミュータブルな参照を保持。DOM参照やタイマーID等に使用 | 全ページコンポーネント |
 | `useContext` | Contextから値を取得するフック | `AdminAuthContext.tsx` |
 | `createContext` | Context（コンポーネントツリー全体で値を共有する仕組み）を作成 | `AdminAuthContext.tsx` |
 | `lazy` | コンポーネントの遅延読み込み（コード分割） | `AnimatedRoutes.tsx` |
 | `Suspense` | 遅延読み込み中のフォールバックUIを表示 | `AnimatedRoutes.tsx` |
-| `createRef` | ref オブジェクトを作成 | `AnimatedRoutes.tsx` |
-| `useLayoutEffect` | DOM変更後、ブラウザ描画前に同期的に実行 | `AnimatedRoutes.tsx` |
+| `createRef` | ref オブジェクトを作成 | （現状未使用） |
+| `useLayoutEffect` | DOM変更後、ブラウザ描画前に同期的に実行 | （現状未使用） |
 | `startTransition` | 低優先度の状態更新をマーク（Concurrent Mode） | `Posts.tsx`, `PostDetail.tsx` |
 | `ReactNode` | Reactがレンダリングできるすべての型 | 型定義 |
 
@@ -2932,17 +2933,6 @@ const memoizedValue = useMemo<T>(factory: () => T, deps: DependencyList): T
 - 戻り値 → factory関数の実行結果
 
 **本プロジェクトでの使用例:**
-
-```typescript
-// AnimatedRoutes.tsx - nodeRefのキャッシュ管理
-const nodeRef = useMemo(() => {
-  const key = location.pathname
-  if (!nodeRefCache.current.has(key)) {
-    nodeRefCache.current.set(key, createRef<HTMLDivElement>())
-  }
-  return nodeRefCache.current.get(key)!
-}, [location.pathname])  // パスが変更された時のみ再計算
-```
 
 ```typescript
 // Posts.tsx - フィルタリングされた記事リストのメモ化
@@ -3472,20 +3462,7 @@ const ref = createRef<T>(): RefObject<T>
 ```
 
 **本プロジェクトでの使用例:**
-
-```typescript
-// AnimatedRoutes.tsx - 動的なrefキャッシュ
-const nodeRefCache = useRef<Map<string, React.RefObject<HTMLDivElement | null>>>(new Map())
-
-const nodeRef = useMemo(() => {
-  const key = location.pathname
-  if (!nodeRefCache.current.has(key)) {
-    // 新しいルート用のrefを作成してキャッシュ
-    nodeRefCache.current.set(key, createRef<HTMLDivElement>())
-  }
-  return nodeRefCache.current.get(key)!
-}, [location.pathname])
-```
+現状のコードベースでは `createRef` は未使用です（以前はページ遷移アニメーションのために使用していました）。
 
 **useRefとcreateRefの違い:**
 | 特性 | useRef | createRef |
@@ -3749,16 +3726,19 @@ type LightboxProps = {
 ---
 
 ##### `react-dom`
-ReactをDOM（ブラウザ）環境でレンダリングするためのライブラリ。
+ReactをDOM（ブラウザ）環境/サーバー環境でレンダリングするためのライブラリ。
 
 **インポートされるAPI:**
 | API | 説明 | 使用ファイル |
 |-----|------|-------------|
-| `createRoot` | React 18のルートAPI。アプリをDOMにマウント | `main.tsx` |
+| `createRoot` | CSR時にアプリをDOMにマウント | `main.tsx` |
+| `hydrateRoot` | SSG/SSRで事前生成されたHTMLをハイドレート | `main.tsx` |
+| `renderToString` | SSG/SSR用にHTML文字列を生成 | `entry-server.tsx` |
 
 ```typescript
 // 使用例
-createRoot(document.getElementById('root')!).render(<App />)
+hydrateRoot(rootElement, app)
+const html = renderToString(<App />)
 ```
 
 ---
@@ -3773,7 +3753,7 @@ React用のクライアントサイドルーティングライブラリ。SPAで
 | `Routes` | ルート定義のコンテナ | `AnimatedRoutes.tsx` |
 | `Route` | 個別のルート定義 | `AnimatedRoutes.tsx` |
 | `Link` | クライアントサイドナビゲーション用リンク | 全ページコンポーネント |
-| `useNavigate` | プログラマティックなナビゲーション用フック | `App.tsx`, `Home.tsx` |
+| `useNavigate` | プログラマティックなナビゲーション用フック | `App.tsx`, `ScrollTopHomeSwitch.tsx`, `BackButton.tsx` |
 | `useLocation` | 現在のURL情報を取得 | `AnimatedRoutes.tsx`, `GlobalBackground.tsx` |
 | `useParams` | URLパラメータを取得 | `PostDetail.tsx`, `BBSThread.tsx` |
 | `useSearchParams` | クエリパラメータを取得・設定 | `Posts.tsx` |
@@ -3789,28 +3769,25 @@ const { slug } = useParams<{ slug: string }>()  // URL: /posts/:slug
 
 ---
 
-##### `react-transition-group`
-Reactコンポーネントのアニメーション遷移を管理するライブラリ。
+##### `react-router`
+SSG/SSR向けのルーティング（`StaticRouter` など）を提供。`react-router-dom` の内部依存としても利用されます。
 
 **インポートされるAPI:**
 | API | 説明 | 使用ファイル |
 |-----|------|-------------|
-| `CSSTransition` | CSSクラスベースのトランジション。enter/exit時にクラスを付与 | `AnimatedRoutes.tsx` |
-| `TransitionGroup` | 複数のトランジションをグループ化 | `AnimatedRoutes.tsx` |
+| `StaticRouter` | サーバー側でlocationを固定してレンダリング | `entry-server.tsx` |
 
 ```typescript
 // 使用例
-<TransitionGroup>
-  <CSSTransition
-    key={location.pathname}
-    classNames="page-transition"  // page-transition-enter, page-transition-exit等
-    timeout={400}
-    unmountOnExit
-  >
-    <div>{children}</div>
-  </CSSTransition>
-</TransitionGroup>
+<StaticRouter location="/posts/example">
+  <App />
+</StaticRouter>
 ```
+
+---
+
+##### `p5`
+クリエイティブコーディング向けの描画ライブラリ。背景アニメ（`P5HypercubeBackground.tsx`）でWEBGL描画に使用します（動的importで必要時のみロード）。
 
 ---
 
@@ -3969,11 +3946,22 @@ const { svg } = await mermaid.render('diagram-id', `
 #### `src/main.tsx`
 ```typescript
 import { BrowserRouter } from 'react-router-dom'
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import AnimatedRoutes from './components/AnimatedRoutes'
 import GlobalBackground from './components/GlobalBackground'
 import ScrollTopHomeSwitch from './components/ScrollTopHomeSwitch'
 import { AdminAuthProvider } from './contexts/AdminAuthContext'
+import './index.css'
+```
+
+#### `src/entry-server.tsx`
+```typescript
+import { renderToString } from 'react-dom/server'
+import { StaticRouter } from 'react-router'
+import { AdminAuthProvider } from './contexts/AdminAuthContext'
+import GlobalBackground from './components/GlobalBackground'
+import ScrollTopHomeSwitch from './components/ScrollTopHomeSwitch'
+import ServerRoutes from './components/ServerRoutes'
 ```
 
 #### `src/App.tsx`
@@ -3992,13 +3980,35 @@ import { auth, googleProvider } from '../lib/firebase'
 #### `src/components/AnimatedRoutes.tsx`
 ```typescript
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { CSSTransition, TransitionGroup } from 'react-transition-group'
-import { useRef, lazy, Suspense, useEffect, useLayoutEffect, useMemo, createRef } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
+import App from '../App'
+import { shouldPrefetch } from '../lib/network'
+import { preload, prefetch, lazyLoad } from '../lib/preload'
+```
+
+#### `src/components/ServerRoutes.tsx`
+```typescript
+import { Routes, Route, useLocation } from 'react-router-dom'
+import App from '../App'
+import Home from '../routes/Home'
+import Posts from '../routes/Posts'
+import PostDetail from '../routes/PostDetail'
+import Products from '../routes/Products'
+import ProductDetail from '../routes/ProductDetail'
+import Photos from '../routes/Photos'
+import BBSList from '../routes/BBSList'
+import BBSThread from '../routes/BBSThread'
 ```
 
 #### `src/components/GlobalBackground.tsx`
 ```typescript
 import { useLocation } from 'react-router-dom'
+import P5HypercubeBackground from './P5HypercubeBackground'
+```
+
+#### `src/components/P5HypercubeBackground.tsx`
+```typescript
+import { useEffect, useRef } from 'react'
 ```
 
 #### `src/components/ScrollTopHomeSwitch.tsx`
@@ -4010,6 +4020,18 @@ import { useLocation, useNavigate } from 'react-router-dom'
 #### `src/components/AccessCounter.tsx`
 ```typescript
 import { useEffect, useRef, useState } from 'react'
+```
+
+#### `src/components/ClientOnly.tsx`
+```typescript
+import { useEffect, useState, type ReactNode } from 'react'
+```
+
+#### `src/components/SiteFooter.tsx`
+```typescript
+import AccessCounter from './AccessCounter'
+import ClientOnly from './ClientOnly'
+import { MAIN_TEXT_STYLE } from '../styles/typography'
 ```
 
 #### `src/components/PrefetchLink.tsx`
@@ -4048,11 +4070,15 @@ import 'katex/dist/katex.min.css'
 
 #### `src/routes/Home.tsx`
 ```typescript
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
 import postsData from '../data/posts.json' with { type: 'json' }
-import AccessCounter from '../components/AccessCounter'
+import { usePageMeta } from '../hooks/usePageMeta'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { CMS_ENDPOINT } from '../lib/endpoints'
+import { MAIN_TEXT_STYLE } from '../styles/typography'
 ```
 
 #### `src/routes/Posts.tsx`
@@ -4060,19 +4086,31 @@ import AccessCounter from '../components/AccessCounter'
 import { useSearchParams, Link } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useCallback, startTransition, useState } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
-import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { formatDraftDate } from '../lib/draftStorage'
+import { CMS_ENDPOINT } from '../lib/endpoints'
+import { usePageMeta } from '../hooks/usePageMeta'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 ```
 
 #### `src/routes/PostDetail.tsx`
 ```typescript
 import { useLocation, useParams, Link } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState, useCallback, startTransition } from 'react'
-import mermaid from 'mermaid'
 import postsData from '../data/posts.json' with { type: 'json' }
-import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
+import ClientOnly from '../components/ClientOnly'
+import { useMermaidBlocks } from '../hooks/useMermaidBlocks'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { CMS_ENDPOINT, GOOD_ENDPOINT } from '../lib/endpoints'
+import { usePageMeta } from '../hooks/usePageMeta'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 ```
 
 #### `src/routes/Products.tsx`
@@ -4080,48 +4118,71 @@ import PrefetchLink from '../components/PrefetchLink'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import productsData from '../data/products.json' with { type: 'json' }
-import AccessCounter from '../components/AccessCounter'
+import ArrowRightIcon from '../components/icons/ArrowRightIcon'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { usePageMeta } from '../hooks/usePageMeta'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { CMS_ENDPOINT } from '../lib/endpoints'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 ```
 
 #### `src/routes/ProductDetail.tsx`
 ```typescript
 import { useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import mermaid from 'mermaid'
 import productsData from '../data/products.json' with { type: 'json' }
 import productPostsData from '../data/product-posts.json' with { type: 'json' }
-import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
+import { useMermaidBlocks } from '../hooks/useMermaidBlocks'
+import { usePageMeta } from '../hooks/usePageMeta'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 ```
 
 #### `src/routes/Photos.tsx`
 ```typescript
-import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import AccessCounter from '../components/AccessCounter'
-import PrefetchLink from '../components/PrefetchLink'
 import Lightbox from '../components/Lightbox'
+import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
+import { useState, useRef } from 'react'
 import { photos, shotTags, type Photo, type PhotoRatio } from '../data/photos'
+import { usePageMeta } from '../hooks/usePageMeta'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 ```
 
 #### `src/routes/BBSList.tsx`
 ```typescript
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { usePageMeta } from '../hooks/usePageMeta'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { BBS_ENDPOINT } from '../lib/endpoints'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 ```
 
 #### `src/routes/BBSThread.tsx`
 ```typescript
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import AccessCounter from '../components/AccessCounter'
 import PrefetchLink from '../components/PrefetchLink'
+import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { usePageMeta } from '../hooks/usePageMeta'
+import { useReveal } from '../hooks/useReveal'
+import { useScrollToTop } from '../hooks/useScrollToTop'
+import { BBS_ENDPOINT } from '../lib/endpoints'
+import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 ```
 
 #### `src/routes/admin/PostEditor.tsx`
@@ -4224,10 +4285,10 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 ### パフォーマンス最適化
 
 1. 全ルートの遅延読み込み（React.lazy）
-2. `requestIdleCallback`による事前プリロード
-3. ホバー/フォーカス時のルートプリフェッチ
-4. 背景画像のsrcset対応
-5. nodeRefキャッシュによるCSSTransition最適化
+2. `preload`/`prefetch`による優先度付きロード（アイドル時の事前ロードを含む）
+3. ホバー/フォーカス時のルートプリフェッチ（`PrefetchLink`）
+4. 背景画像のsrcset対応 + CSS変数による動的ブラー
+5. SSG（SSRビルド + prerender）と `hydrateRoot` による初期表示最適化
 
 ---
 

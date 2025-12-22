@@ -107,7 +107,7 @@ function P5HypercubeBackground() {
             return { x: projected2d[0], y: projected2d[1], z: projected2d[2] }
           })
 
-          const size = Math.min(p.width, p.height) * 0.07
+          const size = Math.min(p.width, p.height) * 0.1
           const padding = p.windowWidth < 640 ? 16 : 24
           const maxWidth = 896
           const contentWidth = Math.min(p.windowWidth - padding * 2, maxWidth)

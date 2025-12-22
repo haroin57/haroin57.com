@@ -1,0 +1,49 @@
+# Cloudflare Workers 設定ファイル
+# ドキュメント: https://developers.cloudflare.com/workers/wrangler/configuration/
+
+name = "haroin-api"
+main = "src/workers/index.ts"
+compatibility_date = "2025-12-02"
+
+# ============================================
+# KV Namespace (レート制限、PV、Good用)
+# ============================================
+[[kv_namespaces]]
+binding = "HAROIN_PV"
+id = "186445ba0495498facbca1e8c5c67bcc"
+
+# ============================================
+# D1 Database
+# ============================================
+# Posts/Products用 (要: wrangler d1 create Posts)
+[[d1_databases]]
+binding = "POSTS_DB"
+database_name = "Posts"
+database_id = "174c9ce0-1c13-4140-ab6f-0e41caadbcac"  # TODO: wrangler d1 listで確認して更新
+
+# BBS用 (要: wrangler d1 create BBS)
+[[d1_databases]]
+binding = "BBS_DB"
+database_name = "BBS"
+database_id = "839bf128-78bb-46a3-913b-34a203b3d926"  # TODO: wrangler d1 listで確認して更新
+
+# ============================================
+# R2 Bucket (画像ストレージ)
+# ============================================
+[[r2_buckets]]
+binding = "CMS_IMAGES"
+bucket_name = "haroin-cms-images"
+
+# ============================================
+# 環境変数
+# ============================================
+[vars]
+R2_PUBLIC_URL = "https://images.haroin57.com"
+ALLOWED_ORIGIN = "https://haroin57.com"
+
+# ============================================
+# Secrets (wrangler secret put で設定)
+# ============================================
+# - ADMIN_SECRET: 管理者用シークレットキー
+# - FIREBASE_PROJECT_ID: Firebase プロジェクトID
+# - ADMIN_EMAILS: 管理者メールアドレス（カンマ区切り）
