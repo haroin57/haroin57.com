@@ -125,8 +125,8 @@ function ProductDetail() {
 
     const startPx = 48
     const rangePx = 420
-    const maxBlurPx = 5
-    const maxExtraWash = 0.12
+    const maxBlurPx = 12
+    const maxExtraWash = 0.25
 
     let rafId = 0
     const update = () => {

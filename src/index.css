@@ -292,6 +292,9 @@ img {
 
 .prose em {
   font-style: italic;
+  /* 日本語フォントはイタリック体を持たないため、疑似的に傾ける */
+  display: inline-block;
+  transform: skewX(-8deg);
 }
 
 /* テーブルのスタイル */
