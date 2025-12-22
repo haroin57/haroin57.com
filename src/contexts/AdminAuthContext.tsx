@@ -29,6 +29,9 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((e
 let cachedAuth: Auth | null = null
 let cachedGoogleProvider: GoogleAuthProvider | null = null
 
+// signInWithRedirect を開始したことを示すフラグ（戻り先で getRedirectResult を確実に走らせる）
+const REDIRECT_PENDING_KEY = 'adminAuth:redirectPending'
+
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [idToken, setIdToken] = useState<string | null>(null)
@@ -112,8 +115,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
     // 管理者ページでない場合は初期化をスキップ（ただしlocalStorageにセッションがある場合は初期化）
     const hasStoredSession = localStorage.getItem('firebase:authUser:' + import.meta.env.VITE_FIREBASE_API_KEY + ':[DEFAULT]')
+    const hasPendingRedirect = sessionStorage.getItem(REDIRECT_PENDING_KEY) === '1'
 
-    if (!isAdminPage && !hasStoredSession) {
+    if (!isAdminPage && !hasStoredSession && !hasPendingRedirect) {
       setIsLoading(false)
       return
     }
@@ -144,6 +148,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           }
         } catch (redirectError) {
           console.error('Redirect result error:', redirectError)
+        } finally {
+          sessionStorage.removeItem(REDIRECT_PENDING_KEY)
         }
 
         // Firebase認証状態の監視
@@ -192,6 +198,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   // Googleでログイン（リダイレクト方式）
   const loginWithGoogle = useCallback(async (): Promise<boolean> => {
     try {
+      sessionStorage.setItem(REDIRECT_PENDING_KEY, '1')
+
       // Firebaseがまだ初期化されていない場合は初期化
       if (!cachedAuth || !cachedGoogleProvider) {
         const { auth, googleProvider } = await initializeFirebase()
