@@ -49,7 +49,7 @@ function BBSList() {
 
   // ページタイトル設定
   useEffect(() => {
-    document.title = 'BBS | haroin57'
+    document.title = 'BBS'
   }, [])
 
   // スレッド一覧取得

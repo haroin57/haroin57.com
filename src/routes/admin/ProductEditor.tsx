@@ -163,8 +163,8 @@ export default function ProductEditor() {
   // ページタイトル
   useEffect(() => {
     document.title = isNewProduct
-      ? '新規プロダクト作成 | Admin | haroin57'
-      : `プロダクト編集: ${formData.name} | Admin | haroin57`
+      ? '新規プロダクト作成 | Admin'
+      : `プロダクト編集: ${formData.name} | Admin`
   }, [isNewProduct, formData.name])
 
   // 保存処理

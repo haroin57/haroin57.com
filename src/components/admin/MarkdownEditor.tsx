@@ -3,9 +3,9 @@ import MDEditor, { commands } from '@uiw/react-md-editor'
 import { useAdminAuth } from '../../contexts/AdminAuthContext'
 import rehypeKatex from 'rehype-katex'
 import remarkMath from 'remark-math'
-import mermaid from 'mermaid'
 import 'katex/dist/katex.min.css'
 import { CMS_ENDPOINT } from '../../lib/endpoints'
+import { loadMermaid } from '../../utils/mermaid'
 
 // Frontmatterをパースする関数
 type FrontmatterData = {
@@ -120,13 +120,6 @@ function FrontmatterHeader({ data }: { data: FrontmatterData }) {
   )
 }
 
-// Mermaidの初期化
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'dark',
-  securityLevel: 'loose',
-})
-
 // Mermaidコードブロックをレンダリングするコンポーネント
 function MermaidRenderer({ code }: { code: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -134,19 +127,32 @@ function MermaidRenderer({ code }: { code: string }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let isActive = true
     const renderMermaid = async () => {
       if (!code.trim()) return
       try {
         const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`
-        const { svg: renderedSvg } = await mermaid.render(id, code)
+        const api = await loadMermaid()
+        const { svg: renderedSvg, bindFunctions } = await api.render(id, code)
+        if (!isActive) return
         setSvg(renderedSvg)
         setError(null)
+        if (bindFunctions) {
+          requestAnimationFrame(() => {
+            const container = containerRef.current
+            if (container) bindFunctions(container)
+          })
+        }
       } catch (err) {
         console.error('Mermaid render error:', err)
+        if (!isActive) return
         setError(err instanceof Error ? err.message : 'Mermaid rendering failed')
       }
     }
     renderMermaid()
+    return () => {
+      isActive = false
+    }
   }, [code])
 
   if (error) {

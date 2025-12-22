@@ -1,103 +1,14 @@
 import { useLocation, useParams, Link } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState, useCallback, startTransition } from 'react'
-import mermaid from 'mermaid'
 import postsData from '../data/posts.json' with { type: 'json' }
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
+import { useMermaidBlocks } from '../hooks/useMermaidBlocks'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
 import { CMS_ENDPOINT, GOOD_ENDPOINT } from '../lib/endpoints'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
-
-// Mermaidの初期化（サイトのglass-panel UIに合わせた黒ベースのテーマ）
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'dark',
-  themeVariables: {
-    // 背景・サーフェス（透過背景、glass-panel風）
-    background: 'transparent',
-    mainBkg: 'rgba(0, 0, 0, 0.3)',
-    secondaryBkg: 'rgba(0, 0, 0, 0.2)',
-    tertiaryColor: 'rgba(0, 0, 0, 0.15)',
-
-    // ノード・クラスター（透過度を上げて背景を見せる）
-    primaryColor: 'rgba(0, 0, 0, 0.35)',
-    secondaryColor: 'rgba(0, 0, 0, 0.25)',
-    nodeBorder: 'rgba(255, 255, 255, 0.4)',
-    clusterBkg: 'rgba(0, 0, 0, 0.2)',
-    clusterBorder: 'rgba(255, 255, 255, 0.3)',
-
-    // ボーダー・ライン（白の半透明、--ui-border相当）
-    primaryBorderColor: 'rgba(255, 255, 255, 0.35)',
-    lineColor: 'rgba(255, 255, 255, 0.5)',
-
-    // テキスト（--fg, --fg-strong相当）
-    primaryTextColor: '#e2e8f0',
-    secondaryTextColor: '#e2e8f0',
-    tertiaryTextColor: '#e2e8f0',
-    titleColor: '#ffffff',
-    nodeTextColor: '#e2e8f0',
-
-    // エッジラベル
-    edgeLabelBackground: 'rgba(0, 0, 0, 0.4)',
-
-    // シーケンス図用（透過背景）
-    actorBkg: 'rgba(0, 0, 0, 0.35)',
-    actorBorder: 'rgba(255, 255, 255, 0.4)',
-    actorTextColor: '#e2e8f0',
-    actorLineColor: 'rgba(255, 255, 255, 0.35)',
-    signalColor: '#e2e8f0',
-    signalTextColor: '#e2e8f0',
-    labelBoxBkgColor: 'rgba(0, 0, 0, 0.3)',
-    labelBoxBorderColor: 'rgba(255, 255, 255, 0.3)',
-    labelTextColor: '#e2e8f0',
-    loopTextColor: '#e2e8f0',
-    noteBkgColor: 'rgba(0, 0, 0, 0.3)',
-    noteBorderColor: 'rgba(255, 255, 255, 0.3)',
-    noteTextColor: '#e2e8f0',
-    activationBkgColor: 'rgba(255, 255, 255, 0.08)',
-    activationBorderColor: 'rgba(255, 255, 255, 0.35)',
-
-    // 状態遷移図用
-    labelColor: '#e2e8f0',
-    altBackground: 'rgba(0, 0, 0, 0.15)',
-
-    // クラス図・ER図用
-    classText: '#e2e8f0',
-    relationColor: 'rgba(255, 255, 255, 0.5)',
-    relationLabelColor: '#e2e8f0',
-
-    // 円グラフ用
-    pie1: 'rgba(255, 255, 255, 0.7)',
-    pie2: 'rgba(255, 255, 255, 0.5)',
-    pie3: 'rgba(255, 255, 255, 0.35)',
-    pie4: 'rgba(255, 255, 255, 0.2)',
-    pie5: 'rgba(255, 255, 255, 0.1)',
-    pieStrokeColor: 'rgba(0, 0, 0, 0.8)',
-    pieStrokeWidth: '1px',
-    pieOuterStrokeColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-  flowchart: {
-    htmlLabels: true,
-    curve: 'basis',
-    padding: 15,
-    nodeSpacing: 50,
-    rankSpacing: 50,
-  },
-  sequence: {
-    diagramMarginX: 50,
-    diagramMarginY: 10,
-    actorMargin: 50,
-    width: 150,
-    height: 65,
-    boxMargin: 10,
-    boxTextMargin: 5,
-    noteMargin: 10,
-    messageMargin: 35,
-  },
-})
 
 type Post = { slug?: string; title?: string; summary?: string; html?: string; createdAt?: string }
 // tagsはgen-postsで配列化される前提
@@ -188,6 +99,8 @@ function PostDetail() {
   // 即座にreveal要素を表示（遅延なし）
   // postが変更されたときにも再実行
   useReveal(pageRef, [post])
+  // Mermaidブロックをレンダリング
+  useMermaidBlocks(proseRef, [post?.html])
 
   const shareUrl = useMemo(() => {
     if (typeof window === 'undefined') return ''
@@ -292,34 +205,6 @@ function PostDetail() {
       }
       timeouts.clear()
     }
-  }, [post?.html])
-
-  // Mermaidブロックをレンダリング
-  useEffect(() => {
-    const proseRoot = proseRef.current
-    if (!proseRoot) return
-
-    const mermaidBlocks = proseRoot.querySelectorAll<HTMLElement>('.mermaid-block')
-    if (mermaidBlocks.length === 0) return
-
-    const renderMermaid = async () => {
-      for (const block of mermaidBlocks) {
-        const code = block.getAttribute('data-mermaid')
-        if (!code || block.querySelector('svg')) continue
-
-        try {
-          const id = `mermaid-${Math.random().toString(36).slice(2, 11)}`
-          const { svg } = await mermaid.render(id, code)
-          block.innerHTML = svg
-          block.classList.add('mermaid-rendered')
-        } catch (err) {
-          console.error('Mermaid rendering error:', err)
-          block.innerHTML = `<div class="mermaid-error">Failed to render diagram</div>`
-        }
-      }
-    }
-
-    renderMermaid()
   }, [post?.html])
 
   useEffect(() => {

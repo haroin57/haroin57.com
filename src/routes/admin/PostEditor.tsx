@@ -149,7 +149,7 @@ export default function PostEditor() {
 
   // ページタイトル
   useEffect(() => {
-    document.title = isNewPost ? '新規記事作成 | Admin | haroin57' : `記事編集: ${formData.title} | Admin | haroin57`
+    document.title = isNewPost ? '新規記事作成 | Admin' : `記事編集: ${formData.title} | Admin`
   }, [isNewPost, formData.title])
 
   // 保存処理（公開または下書きとして保存）

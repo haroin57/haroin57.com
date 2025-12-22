@@ -134,9 +134,9 @@ function BBSThread() {
   // ページタイトル設定
   useEffect(() => {
     if (thread) {
-      document.title = `${thread.title} | BBS | haroin57`
+      document.title = `${thread.title} | BBS`
     } else {
-      document.title = 'BBS | haroin57'
+      document.title = 'BBS'
     }
   }, [thread])
 

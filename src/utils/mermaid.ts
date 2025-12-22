@@ -1,6 +1,11 @@
+type MermaidRenderResult = {
+  svg: string
+  bindFunctions?: (element: Element) => void
+}
+
 type MermaidAPI = {
   initialize: (config: unknown) => void
-  render: (id: string, code: string) => Promise<{ svg: string }>
+  render: (id: string, code: string) => Promise<MermaidRenderResult>
 }
 
 let mermaidPromise: Promise<MermaidAPI> | null = null
@@ -9,6 +14,7 @@ let initialized = false
 const mermaidConfig = {
   startOnLoad: false,
   theme: 'dark',
+  securityLevel: 'loose',
   themeVariables: {
     background: 'transparent',
     mainBkg: 'rgba(0, 0, 0, 0.3)',
@@ -77,6 +83,12 @@ const mermaidConfig = {
   },
 } as const
 
+const normalizeMermaidCode = (code: string) => code.replace(/\r\n?/g, '\n')
+
+const setMermaidError = (block: HTMLElement) => {
+  block.innerHTML = `<div class="mermaid-error">Failed to render diagram</div>`
+}
+
 export async function loadMermaid(): Promise<MermaidAPI> {
   if (!mermaidPromise) {
     mermaidPromise = import('mermaid').then((mod) => {
@@ -90,4 +102,37 @@ export async function loadMermaid(): Promise<MermaidAPI> {
     initialized = true
   }
   return api
+}
+
+export async function renderMermaidBlocks(root: ParentNode): Promise<void> {
+  const blocks = Array.from(root.querySelectorAll<HTMLElement>('.mermaid-block'))
+  if (blocks.length === 0) return
+
+  let api: MermaidAPI
+  try {
+    api = await loadMermaid()
+  } catch (err) {
+    console.error('Mermaid loading error:', err)
+    blocks.forEach(setMermaidError)
+    return
+  }
+
+  for (const block of blocks) {
+    const code = block.getAttribute('data-mermaid')
+    if (!code || block.querySelector('svg')) continue
+
+    const normalizedCode = normalizeMermaidCode(code)
+    if (!normalizedCode.trim()) continue
+
+    try {
+      const id = `mermaid-${Math.random().toString(36).slice(2, 11)}`
+      const { svg, bindFunctions } = await api.render(id, normalizedCode)
+      block.innerHTML = svg
+      block.classList.add('mermaid-rendered')
+      bindFunctions?.(block)
+    } catch (err) {
+      console.error('Mermaid rendering error:', err)
+      setMermaidError(block)
+    }
+  }
 }

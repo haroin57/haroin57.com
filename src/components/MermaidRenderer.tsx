@@ -1,46 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import mermaid from 'mermaid'
-
-// Mermaidの初期化
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'dark',
-  themeVariables: {
-    primaryColor: '#4f46e5',
-    primaryTextColor: '#f3f4f6',
-    primaryBorderColor: '#6366f1',
-    lineColor: '#6366f1',
-    secondaryColor: '#1f2937',
-    tertiaryColor: '#111827',
-    background: '#0f172a',
-    mainBkg: '#1e293b',
-    nodeBorder: '#6366f1',
-    clusterBkg: '#1e293b',
-    clusterBorder: '#4f46e5',
-    titleColor: '#f3f4f6',
-    edgeLabelBackground: '#1e293b',
-    nodeTextColor: '#f3f4f6',
-  },
-  fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-  flowchart: {
-    htmlLabels: true,
-    curve: 'basis',
-    padding: 15,
-    nodeSpacing: 50,
-    rankSpacing: 50,
-  },
-  sequence: {
-    diagramMarginX: 50,
-    diagramMarginY: 10,
-    actorMargin: 50,
-    width: 150,
-    height: 65,
-    boxMargin: 10,
-    boxTextMargin: 5,
-    noteMargin: 10,
-    messageMargin: 35,
-  },
-})
+import { loadMermaid } from '../utils/mermaid'
 
 interface MermaidRendererProps {
   chart: string
@@ -53,21 +12,34 @@ export function MermaidRenderer({ chart, className = '' }: MermaidRendererProps)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let isActive = true
     const renderChart = async () => {
       if (!containerRef.current) return
 
       try {
         const id = `mermaid-${Math.random().toString(36).slice(2, 11)}`
-        const { svg: renderedSvg } = await mermaid.render(id, chart)
+        const api = await loadMermaid()
+        const { svg: renderedSvg, bindFunctions } = await api.render(id, chart)
+        if (!isActive) return
         setSvg(renderedSvg)
         setError(null)
+        if (bindFunctions) {
+          requestAnimationFrame(() => {
+            const container = containerRef.current
+            if (container) bindFunctions(container)
+          })
+        }
       } catch (err) {
         console.error('Mermaid rendering error:', err)
+        if (!isActive) return
         setError(err instanceof Error ? err.message : 'Failed to render diagram')
       }
     }
 
     renderChart()
+    return () => {
+      isActive = false
+    }
   }, [chart])
 
   if (error) {

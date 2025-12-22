@@ -1198,6 +1198,33 @@ body {
   stroke: rgba(255, 255, 255, 0.4);
 }
 
+/* Mermaid class diagram relation labels */
+.mermaid-block svg.classDiagram .edgeLabel .label rect {
+  fill: rgba(15, 23, 42, 0.7);
+  stroke: rgba(148, 163, 184, 0.35);
+  stroke-width: 0.6px;
+  rx: 6px;
+  ry: 6px;
+}
+
+.mermaid-block svg.classDiagram .edgeLabel text {
+  font-weight: 600;
+  fill: #e2e8f0;
+}
+
+.mermaid-block svg.classDiagram .edgeTerminals {
+  font-weight: 600;
+  fill: #e2e8f0;
+}
+
+.mermaid-block svg.classDiagram .edgeTerminals text,
+.mermaid-block svg.classDiagram .edgeLabel text {
+  paint-order: stroke;
+  stroke: rgba(15, 23, 42, 0.7);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
 /* エラー表示 */
 .mermaid-error {
   padding: 1rem;
