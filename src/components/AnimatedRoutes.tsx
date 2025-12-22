@@ -1,8 +1,9 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { lazy, Suspense, useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import App from '../App'
 import { shouldPrefetch } from '../lib/network'
 import { preload, prefetch, lazyLoad } from '../lib/preload'
+import { lazyWithPreload } from '../lib/lazyWithPreload'
 
 /**
  * ルートローダー定義
@@ -31,16 +32,16 @@ const loadProductDetail = lazyLoad(() => import('../routes/ProductDetail'))
 const loadPostEditor = lazyLoad(() => import('../routes/admin/PostEditor'))
 const loadProductEditor = lazyLoad(() => import('../routes/admin/ProductEditor'))
 
-const Home = lazy(loadHome)
-const Posts = lazy(loadPosts)
-const PostDetail = lazy(loadPostDetail)
-const Products = lazy(loadProducts)
-const ProductDetail = lazy(loadProductDetail)
-const Photos = lazy(loadPhotos)
-const BBSList = lazy(loadBBSList)
-const BBSThread = lazy(loadBBSThread)
-const PostEditor = lazy(loadPostEditor)
-const ProductEditor = lazy(loadProductEditor)
+const Home = lazyWithPreload(loadHome)
+const Posts = lazyWithPreload(loadPosts)
+const PostDetail = lazyWithPreload(loadPostDetail)
+const Products = lazyWithPreload(loadProducts)
+const ProductDetail = lazyWithPreload(loadProductDetail)
+const Photos = lazyWithPreload(loadPhotos)
+const BBSList = lazyWithPreload(loadBBSList)
+const BBSThread = lazyWithPreload(loadBBSThread)
+const PostEditor = lazyWithPreload(loadPostEditor)
+const ProductEditor = lazyWithPreload(loadProductEditor)
 
 // 遷移時に関連ルートをプリロード（詳細ページは除外 - 大きなJSONを含むため）
 const routeLoaders: Record<string, Array<() => Promise<unknown>>> = {
@@ -50,6 +51,58 @@ const routeLoaders: Record<string, Array<() => Promise<unknown>>> = {
   '/products': [loadHome],
   '/photos': [loadHome],
   '/bbs': [loadHome, loadBBSThread],
+}
+
+export async function preloadRoutesForPath(pathname: string): Promise<void> {
+  const segments = pathname.split('/').filter(Boolean)
+  const first = segments[0]
+  const second = segments[1]
+
+  if (first === 'posts' && second) {
+    await PostDetail.preload()
+    return
+  }
+
+  if (first === 'products' && second) {
+    await ProductDetail.preload()
+    return
+  }
+
+  if (first === 'bbs' && second) {
+    await BBSThread.preload()
+    return
+  }
+
+  if (first === 'admin') {
+    if (second === 'posts') {
+      await PostEditor.preload()
+      return
+    }
+    if (second === 'products') {
+      await ProductEditor.preload()
+      return
+    }
+  }
+
+  if (first === 'home') {
+    await Home.preload()
+    return
+  }
+  if (first === 'posts') {
+    await Posts.preload()
+    return
+  }
+  if (first === 'products') {
+    await Products.preload()
+    return
+  }
+  if (first === 'photos') {
+    await Photos.preload()
+    return
+  }
+  if (first === 'bbs') {
+    await BBSList.preload()
+  }
 }
 
 function AnimatedRoutes() {

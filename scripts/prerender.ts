@@ -47,7 +47,10 @@ const rootPattern = /<div id="root"><\/div>/
 
 for (const route of routes) {
   const html = render(route)
-  const outputHtml = template.replace(rootPattern, `<div id="root">${html}</div>`)
+  const outputHtml = template.replace(
+    rootPattern,
+    `<div id="root" data-prerendered="true" data-prerendered-path="${route}">${html}</div>`
+  )
   const outputPath =
     route === '/'
       ? path.join(distDir, 'index.html')

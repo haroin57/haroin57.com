@@ -103,10 +103,11 @@ function PostDetail() {
   // Mermaidブロックをレンダリング
   useMermaidBlocks(proseRef, [post?.html])
 
+  const siteOrigin = (import.meta.env.VITE_SITE_ORIGIN || 'https://haroin57.com').replace(/\/$/, '')
+
   const shareUrl = useMemo(() => {
-    if (typeof window === 'undefined') return ''
-    return `${window.location.origin}${location.pathname}`
-  }, [location.pathname])
+    return `${siteOrigin}${location.pathname}`
+  }, [location.pathname, siteOrigin])
 
   // 記事のメタタグを動的に設定
   const descSource = useMemo(() => {
