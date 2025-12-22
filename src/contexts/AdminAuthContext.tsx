@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react'
-import { signInWithPopup, signOut, onAuthStateChanged, type User } from 'firebase/auth'
-import { auth, googleProvider } from '../lib/firebase'
+import type { User, Auth, GoogleAuthProvider } from 'firebase/auth'
+import { initializeFirebase } from '../lib/firebase'
 
 // セッションタイムアウト（1時間）
 const SESSION_TIMEOUT_MS = 60 * 60 * 1000
@@ -24,10 +24,15 @@ const AdminAuthContext = createContext<AdminAuthContextType | null>(null)
 // 管理者メールアドレスのリスト（環境変数から取得）
 const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((e: string) => e.trim().toLowerCase())
 
+// Firebase認証インスタンスのキャッシュ
+let cachedAuth: Auth | null = null
+let cachedGoogleProvider: GoogleAuthProvider | null = null
+
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [idToken, setIdToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [, setFirebaseReady] = useState(false)
   const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(null)
   const sessionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const beforeLogoutCallbacksRef = useRef<Set<BeforeLogoutCallback>>(new Set())
@@ -43,22 +48,53 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Firebase認証状態の監視
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser)
-      if (firebaseUser) {
-        // IDトークンを取得
-        const token = await firebaseUser.getIdToken()
-        setIdToken(token)
-      } else {
-        setIdToken(null)
-      }
-      setIsLoading(false)
-    })
+  // 管理者ページかどうかを判定
+  const isAdminPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
 
-    return () => unsubscribe()
-  }, [])
+  // Firebase遅延初期化（管理者ページアクセス時のみ、または既存セッション復元時）
+  useEffect(() => {
+    // 管理者ページでない場合は初期化をスキップ（ただしlocalStorageにセッションがある場合は初期化）
+    const hasStoredSession = typeof localStorage !== 'undefined' &&
+      localStorage.getItem('firebase:authUser:' + import.meta.env.VITE_FIREBASE_API_KEY + ':[DEFAULT]')
+
+    if (!isAdminPage && !hasStoredSession) {
+      setIsLoading(false)
+      return
+    }
+
+    let unsubscribe: (() => void) | null = null
+
+    const init = async () => {
+      try {
+        const { auth, googleProvider } = await initializeFirebase()
+        cachedAuth = auth
+        cachedGoogleProvider = googleProvider
+        setFirebaseReady(true)
+
+        // Firebase認証状態の監視
+        const { onAuthStateChanged } = await import('firebase/auth')
+        unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+          setUser(firebaseUser)
+          if (firebaseUser) {
+            const token = await firebaseUser.getIdToken()
+            setIdToken(token)
+          } else {
+            setIdToken(null)
+          }
+          setIsLoading(false)
+        })
+      } catch (error) {
+        console.error('Firebase initialization failed:', error)
+        setIsLoading(false)
+      }
+    }
+
+    init()
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [isAdminPage])
 
   // IDトークンの自動更新（1時間ごと）
   useEffect(() => {
@@ -100,7 +136,10 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       }
       setSessionExpiresAt(null)
 
-      await signOut(auth)
+      if (cachedAuth) {
+        const { signOut } = await import('firebase/auth')
+        await signOut(cachedAuth)
+      }
       setUser(null)
       setIdToken(null)
     } catch (error) {
@@ -128,13 +167,22 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   // Googleでログイン
   const loginWithGoogle = useCallback(async (): Promise<boolean> => {
     try {
-      const result = await signInWithPopup(auth, googleProvider)
+      // Firebaseがまだ初期化されていない場合は初期化
+      if (!cachedAuth || !cachedGoogleProvider) {
+        const { auth, googleProvider } = await initializeFirebase()
+        cachedAuth = auth
+        cachedGoogleProvider = googleProvider
+        setFirebaseReady(true)
+      }
+
+      const { signInWithPopup, signOut } = await import('firebase/auth')
+      const result = await signInWithPopup(cachedAuth, cachedGoogleProvider)
       const firebaseUser = result.user
 
       // 管理者メールかチェック
       if (!firebaseUser.email || !ADMIN_EMAILS.includes(firebaseUser.email.toLowerCase())) {
         // 管理者ではない場合はサインアウト
-        await signOut(auth)
+        await signOut(cachedAuth)
         return false
       }
 

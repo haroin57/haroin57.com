@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, useCallback, startTransition } fr
 import postsData from '../data/posts.json' with { type: 'json' }
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
+import ClientOnly from '../components/ClientOnly'
 import { useMermaidBlocks } from '../hooks/useMermaidBlocks'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
@@ -394,22 +395,24 @@ function PostDetail() {
                 />
               ) : null}
             </article>
-            <section className="mt-10 flex justify-center">
-              <button
-                type="button"
-                onClick={handleGood}
-                disabled={isVoting}
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm sm:text-base font-semibold transition border ${
-                  hasVoted
-                    ? 'border-[color:var(--ui-border-strong)] bg-[color:var(--ui-surface)] hover:bg-[color:var(--ui-surface-hover)]'
-                    : 'border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]'
-                }`}
-                style={{ color: 'var(--fg)' }}
-              >
-                <img src="/good.svg" alt="Good" className="good-icon h-5 w-5" />
-                <span className="tracking-wide">{`${hasVoted ? 'Good!' : 'Good'} ${goodCount}`}</span>
-              </button>
-            </section>
+            <ClientOnly>
+              <section className="mt-10 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleGood}
+                  disabled={isVoting}
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm sm:text-base font-semibold transition border ${
+                    hasVoted
+                      ? 'border-[color:var(--ui-border-strong)] bg-[color:var(--ui-surface)] hover:bg-[color:var(--ui-surface-hover)]'
+                      : 'border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]'
+                  }`}
+                  style={{ color: 'var(--fg)' }}
+                >
+                  <img src="/good.svg" alt="Good" className="good-icon h-5 w-5" />
+                  <span className="tracking-wide">{`${hasVoted ? 'Good!' : 'Good'} ${goodCount}`}</span>
+                </button>
+              </section>
+            </ClientOnly>
             {shareUrl ? (
               <section className="mt-4 flex justify-center">
                 <a

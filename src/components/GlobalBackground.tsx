@@ -21,8 +21,8 @@ export default function GlobalBackground() {
         sizes={BACKGROUND_SIZES}
         alt=""
         className="global-bg select-none"
-        fetchPriority="high"
-        loading="eager"
+        fetchPriority="low"
+        loading="lazy"
         decoding="async"
         width={6000}
         height={4000}

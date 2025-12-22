@@ -1,4 +1,5 @@
 import AccessCounter from './AccessCounter'
+import ClientOnly from './ClientOnly'
 import { MAIN_TEXT_STYLE } from '../styles/typography'
 
 function SiteFooter() {
@@ -8,7 +9,9 @@ function SiteFooter() {
       style={MAIN_TEXT_STYLE}
     >
       <div className="text-xs sm:text-sm opacity-70 flex items-center gap-3">
-        <AccessCounter />
+        <ClientOnly>
+          <AccessCounter />
+        </ClientOnly>
         <span>c haroin</span>
       </div>
       <div className="flex items-center gap-4">

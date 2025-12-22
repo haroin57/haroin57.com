@@ -586,16 +586,41 @@ function skipAsn1Element(bytes: Uint8Array, offset: number): number {
   return offset + lenBytes + len
 }
 
-// Google公開鍵を取得（キャッシュ付き）
-async function getGooglePublicKeys(): Promise<Record<string, CryptoKey>> {
+// Google公開鍵を取得（KV分散キャッシュ + メモリキャッシュの2層構造）
+const GOOGLE_KEYS_KV_KEY = 'cache:google:public-keys'
+
+async function getGooglePublicKeys(env: Env): Promise<Record<string, CryptoKey>> {
   const now = Date.now()
 
-  // キャッシュが有効な場合はそれを返す
+  // 1. メモリキャッシュが有効な場合はそれを返す
   if (publicKeyCache && publicKeyCache.expiresAt > now) {
     return publicKeyCache.keys
   }
 
-  // Googleから証明書を取得
+  // 2. KVキャッシュを確認
+  const kvCacheJson = await env.HAROIN_PV.get(GOOGLE_KEYS_KV_KEY)
+  if (kvCacheJson) {
+    try {
+      const kvCache = JSON.parse(kvCacheJson) as { certs: Record<string, string>; expiresAt: number }
+      if (kvCache.expiresAt > now) {
+        // KVから復元してメモリキャッシュに保存
+        const keys: Record<string, CryptoKey> = {}
+        for (const [kid, pem] of Object.entries(kvCache.certs)) {
+          try {
+            keys[kid] = await importPublicKeyFromCert(pem)
+          } catch (e) {
+            console.error(`Failed to import key ${kid}:`, e)
+          }
+        }
+        publicKeyCache = { keys, expiresAt: kvCache.expiresAt }
+        return keys
+      }
+    } catch (e) {
+      console.error('Failed to parse KV cache:', e)
+    }
+  }
+
+  // 3. Googleから証明書を取得
   const response = await fetch(GOOGLE_CERTS_URL)
   if (!response.ok) {
     throw new Error(`Failed to fetch Google public keys: ${response.status}`)
@@ -605,6 +630,7 @@ async function getGooglePublicKeys(): Promise<Record<string, CryptoKey>> {
   const cacheControl = response.headers.get('Cache-Control') || ''
   const maxAgeMatch = cacheControl.match(/max-age=(\d+)/)
   const maxAge = maxAgeMatch ? parseInt(maxAgeMatch[1], 10) : 3600
+  const expiresAt = now + maxAge * 1000
 
   const certs = (await response.json()) as Record<string, string>
   const keys: Record<string, CryptoKey> = {}
@@ -618,11 +644,13 @@ async function getGooglePublicKeys(): Promise<Record<string, CryptoKey>> {
     }
   }
 
-  // キャッシュを更新
-  publicKeyCache = {
-    keys,
-    expiresAt: now + maxAge * 1000,
-  }
+  // 4. メモリキャッシュを更新
+  publicKeyCache = { keys, expiresAt }
+
+  // 5. KVキャッシュを更新（PEM文字列を保存、CryptoKeyはシリアライズ不可）
+  const kvCacheData = JSON.stringify({ certs, expiresAt })
+  const kvTtl = Math.max(60, Math.floor(maxAge * 0.9)) // 少し短めのTTL
+  await env.HAROIN_PV.put(GOOGLE_KEYS_KV_KEY, kvCacheData, { expirationTtl: kvTtl })
 
   return keys
 }
@@ -700,7 +728,7 @@ async function verifyFirebaseToken(token: string, env: Env): Promise<FirebaseTok
     }
 
     // 8. 署名検証（RS256）
-    const publicKeys = await getGooglePublicKeys()
+    const publicKeys = await getGooglePublicKeys(env)
     const publicKey = publicKeys[header.kid]
     if (!publicKey) {
       console.log('Public key not found for kid:', header.kid)

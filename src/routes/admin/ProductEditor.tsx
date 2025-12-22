@@ -2,11 +2,6 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAdminAuth } from '../../contexts/AdminAuthContext'
 import MarkdownEditor from '../../components/admin/MarkdownEditor'
-import { unified } from 'unified'
-import remarkParse from 'remark-parse'
-import remarkGfm from 'remark-gfm'
-import remarkRehype from 'remark-rehype'
-import rehypeStringify from 'rehype-stringify'
 import { saveDraft, loadDraft, deleteDraft, formatDraftDate, type ProductDraft } from '../../lib/draftStorage'
 import { CMS_ENDPOINT } from '../../lib/endpoints'
 import { MAIN_TEXT_STYLE } from '../../styles/typography'
@@ -25,8 +20,15 @@ type ProductData = {
   updatedAt: string
 }
 
-// MarkdownをHTMLに変換
+// MarkdownをHTMLに変換（遅延読み込み）
 async function markdownToHtml(markdown: string): Promise<string> {
+  const [{ unified }, remarkParse, remarkGfm, remarkRehype, rehypeStringify] = await Promise.all([
+    import('unified'),
+    import('remark-parse').then(m => m.default),
+    import('remark-gfm').then(m => m.default),
+    import('remark-rehype').then(m => m.default),
+    import('rehype-stringify').then(m => m.default),
+  ])
   const result = await unified()
     .use(remarkParse)
     .use(remarkGfm)

@@ -1,30 +1,41 @@
 import { Link, type LinkProps } from 'react-router-dom'
 import { useCallback, useRef } from 'react'
+import { shouldPrefetch } from '../lib/network'
+import { lazyLoad } from '../lib/preload'
 
 interface PrefetchLinkProps extends LinkProps {
   enablePrefetch?: boolean
 }
 
-const routeChunkPrefetchers: Array<[match: (path: string) => boolean, load: () => Promise<unknown>]> = [
-  [(path) => path === '/', () => import(/* webpackChunkName: "app" */ '../App')],
-  [(path) => path === '/home', () => import(/* webpackChunkName: "home" */ '../routes/Home')],
-  [(path) => path === '/posts', () => import(/* webpackChunkName: "posts" */ '../routes/Posts')],
-  [(path) => path.startsWith('/posts/'), () => import(/* webpackChunkName: "post-detail" */ '../routes/PostDetail')],
-  [(path) => path === '/products', () => import(/* webpackChunkName: "products" */ '../routes/Products')],
-  [(path) => path.startsWith('/products/'), () => import(/* webpackChunkName: "product-detail" */ '../routes/ProductDetail')],
-  [(path) => path === '/photos', () => import(/* webpackChunkName: "photos" */ '../routes/Photos')],
-]
+/**
+ * ルートチャンクのプリフェッチャー
+ * - 高優先度ルート: preloadで既にプリロード済みなのでここでは重複しない
+ * - 詳細ページ: lazyLoadで明示的にプリロードなし
+ */
+const routeChunkLoaders: Record<string, () => Promise<unknown>> = {
+  '/': lazyLoad(() => import('../App')),
+  '/home': lazyLoad(() => import('../routes/Home')),
+  '/posts': lazyLoad(() => import('../routes/Posts')),
+  '/products': lazyLoad(() => import('../routes/Products')),
+  '/photos': lazyLoad(() => import('../routes/Photos')),
+  '/bbs': lazyLoad(() => import('../routes/BBSList')),
+  // PostDetail/ProductDetailは大きなJSONを含むためプリフェッチしない
+}
 
 function normalizePathname(raw: string) {
   return raw.split('#')[0]?.split('?')[0] ?? raw
 }
 
 function prefetchRouteChunk(rawPath: string) {
+  // 低速回線ではプリフェッチしない
+  if (!shouldPrefetch()) return
+
   const path = normalizePathname(rawPath)
-  for (const [match, load] of routeChunkPrefetchers) {
-    if (!match(path)) continue
-    void load()
-    break
+
+  // 完全一致でロード
+  const loader = routeChunkLoaders[path]
+  if (loader) {
+    void loader()
   }
 }
 
@@ -33,6 +44,10 @@ function PrefetchLink({ enablePrefetch = true, to, children, onMouseEnter, onFoc
 
   const handlePrefetch = useCallback(() => {
     if (!enablePrefetch || prefetched.current) return
+
+    // 低速回線チェック
+    if (!shouldPrefetch()) return
+
     prefetched.current = true
 
     const rawPath = typeof to === 'string' ? to : to.pathname

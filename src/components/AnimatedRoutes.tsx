@@ -2,19 +2,35 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import { CSSTransition, TransitionGroup } from 'react-transition-group'
 import { useRef, lazy, Suspense, useEffect, useLayoutEffect, createRef } from 'react'
 import App from '../App'
+import { shouldPrefetch } from '../lib/network'
+import { preload, prefetch, lazyLoad } from '../lib/preload'
 
-// 遅延読み込み - 初期ロードを高速化
-// webpackPreloadでブラウザに早期フェッチを指示、webpackChunkNameでキャッシュ効率向上
-const loadHome = () => import(/* webpackPreload: true, webpackChunkName: "home" */ '../routes/Home')
-const loadPosts = () => import(/* webpackPreload: true, webpackChunkName: "posts" */ '../routes/Posts')
-const loadPostDetail = () => import(/* webpackPrefetch: true, webpackChunkName: "post-detail" */ '../routes/PostDetail')
-const loadProducts = () => import(/* webpackPreload: true, webpackChunkName: "products" */ '../routes/Products')
-const loadProductDetail = () => import(/* webpackPrefetch: true, webpackChunkName: "product-detail" */ '../routes/ProductDetail')
-const loadPhotos = () => import(/* webpackPreload: true, webpackChunkName: "photos" */ '../routes/Photos')
-const loadBBSList = () => import(/* webpackPreload: true, webpackChunkName: "bbs-list" */ '../routes/BBSList')
-const loadBBSThread = () => import(/* webpackPrefetch: true, webpackChunkName: "bbs-thread" */ '../routes/BBSThread')
-const loadPostEditor = () => import(/* webpackPrefetch: true, webpackChunkName: "post-editor" */ '../routes/admin/PostEditor')
-const loadProductEditor = () => import(/* webpackPrefetch: true, webpackChunkName: "product-editor" */ '../routes/admin/ProductEditor')
+/**
+ * ルートローダー定義
+ *
+ * 優先度:
+ * - preload: 高優先度（クリティカルなルート、即座にロード開始）
+ * - prefetch: 低優先度（アイドル時にロード、低速回線では無効）
+ * - lazyLoad: プリロードなし（ユーザーアクション時のみ）
+ */
+
+// 高優先度: メインナビゲーションのルート（即座にプリロード）
+const loadHome = preload(() => import('../routes/Home'))
+const loadPosts = preload(() => import('../routes/Posts'))
+const loadProducts = preload(() => import('../routes/Products'))
+const loadPhotos = preload(() => import('../routes/Photos'))
+
+// 低優先度: サブページ（アイドル時にプリフェッチ）
+const loadBBSList = prefetch(() => import('../routes/BBSList'))
+const loadBBSThread = prefetch(() => import('../routes/BBSThread'))
+
+// 遅延ロード: 大きなJSONを含む詳細ページ（プリロードなし）
+const loadPostDetail = lazyLoad(() => import('../routes/PostDetail'))
+const loadProductDetail = lazyLoad(() => import('../routes/ProductDetail'))
+
+// 遅延ロード: 管理者ルート（管理者のみ使用）
+const loadPostEditor = lazyLoad(() => import('../routes/admin/PostEditor'))
+const loadProductEditor = lazyLoad(() => import('../routes/admin/ProductEditor'))
 
 const Home = lazy(loadHome)
 const Posts = lazy(loadPosts)
@@ -27,14 +43,14 @@ const BBSThread = lazy(loadBBSThread)
 const PostEditor = lazy(loadPostEditor)
 const ProductEditor = lazy(loadProductEditor)
 
-// すべてのローダーをマップ化（関連ルートのプリロード用）
+// 遷移時に関連ルートをプリロード（詳細ページは除外 - 大きなJSONを含むため）
 const routeLoaders: Record<string, Array<() => Promise<unknown>>> = {
   '/': [loadHome, loadPosts, loadProducts, loadPhotos],
   '/home': [loadPosts, loadProducts, loadPhotos],
-  '/posts': [loadPostDetail, loadHome],
-  '/products': [loadProductDetail, loadHome],
+  '/posts': [loadHome],
+  '/products': [loadHome],
   '/photos': [loadHome],
-  '/bbs': [loadBBSThread, loadHome],
+  '/bbs': [loadHome, loadBBSThread],
 }
 
 // nodeRefキャッシュ（コンポーネント外で保持 - 再レンダリングで失われない）
@@ -62,9 +78,6 @@ function cleanupNodeRefCache(currentPath: string) {
 const TRANSITION_DURATION = 400
 const ROUTE_TRANSITIONING_DURATION = 500
 
-// プリロード済みフラグ
-let hasPreloadedAll = false
-
 function AnimatedRoutes() {
   const location = useLocation()
   const hasMountedRef = useRef(false)
@@ -77,42 +90,22 @@ function AnimatedRoutes() {
     cleanupNodeRefCache(location.pathname)
   }, [location.pathname])
 
-  // 初回マウント時に全ルートを即座にプリロード
+  // preload/prefetch関数が自動的にプリロードを開始するため、
+  // 初回マウント時の明示的なプリロードは不要
+  // （preload: 即座に、prefetch: アイドル時に、lazyLoad: なし）
+
+  // 遷移時に関連ルートをプリロード（低速回線では無効）
   useEffect(() => {
-    if (hasPreloadedAll) return
-    hasPreloadedAll = true
+    if (!shouldPrefetch()) return
 
-    const nav = navigator as Navigator & { connection?: { effectiveType?: string; saveData?: boolean } }
-    const connection = nav.connection
-    const isSlow = connection?.saveData || (connection?.effectiveType?.includes('2g') ?? false)
-    if (isSlow) return
-
-    // 即座にプリロード開始（requestIdleCallbackを待たない）
-    void Promise.all([
-      loadHome(),
-      loadPosts(),
-      loadProducts(),
-      loadPhotos(),
-      loadBBSList(),
-    ])
-
-    // 詳細ページは少し遅延させてプリロード（管理者ルートは除外）
-    setTimeout(() => {
-      void Promise.all([
-        loadPostDetail(),
-        loadProductDetail(),
-        loadBBSThread(),
-      ])
-    }, 50)
-  }, [])
-
-  // 遷移時に関連ルートを優先プリロード
-  useEffect(() => {
     const basePath = '/' + (location.pathname.split('/')[1] || '')
     const loaders = routeLoaders[basePath]
     if (loaders) {
-      // 関連ルートを即座にプリロード
-      void Promise.all(loaders.map(loader => loader()))
+      // 関連ルートを順番にプリロード（競合を避けるため）
+      loaders.reduce(
+        (promise, loader) => promise.then(() => loader()),
+        Promise.resolve() as Promise<unknown>
+      )
     }
   }, [location.pathname])
 

@@ -16,7 +16,8 @@
 8. [データファイル](#データファイル)
 9. [依存関係一覧](#依存関係一覧)
 10. [セキュリティ実装](#セキュリティ実装)
-11. [ローカル記事のデプロイ](#ローカル記事のデプロイ)
+11. [pv-worker.ts 詳細解説](#pv-workerts-詳細解説)
+12. [ローカル記事のデプロイ](#ローカル記事のデプロイ)
 
 ---
 
@@ -4723,6 +4724,503 @@ console.log('Payload:', JSON.parse(atob(parts[1])))
 - [JWT.io: JWTのデバッグツール](https://jwt.io/)
 - [MDN: Web Crypto API](https://developer.mozilla.org/ja/docs/Web/API/Web_Crypto_API)
 - [RFC 7519: JSON Web Token (JWT)](https://datatracker.ietf.org/doc/html/rfc7519)
+
+---
+
+## pv-worker.ts 詳細解説
+
+`src/pv-worker.ts` はCloudflare Workerとして動作するバックエンドAPIです。PVカウンター、いいねボタン、BBS、CMSの4つの機能を1つのWorkerで提供しています。
+
+### 1. 概要とアーキテクチャ
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Cloudflare Worker                             │
+│                      (pv-worker.ts)                              │
+├─────────────────────────────────────────────────────────────────┤
+│  /api/pv     → PVカウンター（アクセス数カウント）                  │
+│  /api/good   → Goodボタン（いいね機能）                          │
+│  /api/bbs/*  → BBS（掲示板機能）                                 │
+│  /api/cms/*  → CMS（記事・プロダクト管理）                        │
+├─────────────────────────────────────────────────────────────────┤
+│                          Bindings                                │
+│  ├── HAROIN_PV (KV Namespace) - データストレージ                  │
+│  ├── CMS_IMAGES (R2 Bucket) - 画像ストレージ                     │
+│  └── 環境変数: ADMIN_SECRET, FIREBASE_PROJECT_ID, ADMIN_EMAILS   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 2. 型定義
+
+#### 2.1 環境変数の型
+
+```typescript
+type Env = {
+  HAROIN_PV: KVNamespace           // Cloudflare KV（データ保存）
+  CMS_IMAGES?: R2Bucket            // R2バケット（画像アップロード用）
+  ALLOWED_ORIGIN?: string          // CORSで許可するオリジン
+  ADMIN_SECRET?: string            // 管理者用シークレットキー
+  FIREBASE_PROJECT_ID?: string     // Firebase プロジェクトID
+  ADMIN_EMAILS?: string            // 管理者メールアドレス（カンマ区切り）
+  R2_PUBLIC_URL?: string           // R2の公開URL
+}
+```
+
+#### 2.2 BBSの型
+
+```typescript
+type Thread = {
+  id: string           // スレッドID（例: "m1abc2def"）
+  title: string        // スレッドタイトル
+  createdAt: string    // 作成日時（ISO 8601形式）
+  createdBy: string    // 作成者名
+  postCount: number    // 投稿数
+  lastPostAt: string   // 最終投稿日時
+}
+
+type Post = {
+  id: number           // 投稿番号（1から連番）
+  name: string         // 投稿者名
+  date: string         // 投稿日時（2ch形式: "2025/01/15(水) 12:34:56.78"）
+  userId: string       // ユーザーID（IPベースで生成、9文字）
+  content: string      // 投稿内容
+}
+```
+
+#### 2.3 CMSの型
+
+```typescript
+type CMSPostMeta = {
+  slug: string                    // URL識別子
+  title: string                   // タイトル
+  summary: string                 // 概要
+  createdAt: string               // 作成日時
+  updatedAt: string               // 更新日時
+  tags: string[]                  // タグ配列
+  status: 'draft' | 'published'   // 公開状態
+}
+
+type CMSPost = CMSPostMeta & {
+  markdown: string    // Markdownソース
+  html: string        // レンダリング済みHTML
+}
+
+type CMSProductMeta = {
+  slug: string          // URL識別子
+  name: string          // プロダクト名
+  description: string   // 説明
+  language: string      // 使用言語
+  tags: string[]        // タグ配列
+  url: string           // GitHubリポジトリURL
+  demo?: string         // デモURL（オプション）
+  createdAt: string
+  updatedAt: string
+}
+```
+
+### 3. ユーティリティ関数
+
+#### 3.1 CORS処理
+
+```typescript
+function buildCorsHeaders(origin: string) {
+  return {
+    'access-control-allow-origin': origin,
+    'access-control-allow-methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'access-control-allow-headers': 'Content-Type, X-Admin-Secret, Authorization',
+  }
+}
+```
+
+すべてのレスポンスにCORSヘッダーを付与。`X-Admin-Secret`と`Authorization`ヘッダーを許可。
+
+#### 3.2 ユーザーID生成
+
+```typescript
+function generateUserId(ip: string): string {
+  const hash = simpleHash(ip)
+  return hash.slice(0, 9)  // 9文字のID
+}
+
+function simpleHash(str: string): string {
+  // 簡易ハッシュ関数
+  // IPアドレスから決定論的なIDを生成
+}
+```
+
+IPアドレスをハッシュ化して匿名のユーザーIDを生成。同じIPからは常に同じIDになる。
+
+#### 3.3 日時フォーマット（2ch形式）
+
+```typescript
+function formatDate(): string {
+  // UTC → JST（UTC+9）に変換
+  // 出力例: "2025/01/15(水) 12:34:56.78"
+}
+```
+
+日本時間で2ch風の日時フォーマットを生成。
+
+### 4. PVカウンター API
+
+#### エンドポイント: `POST /api/pv`
+
+```typescript
+async function handlePv(req: Request, env: Env, corsHeaders): Promise<Response>
+```
+
+**処理フロー:**
+1. IPアドレスからレート制限キーを生成
+2. 60秒以内に同一IPからのリクエストがあればカウントせず現在値を返却
+3. レート制限に引っかからなければカウントを+1
+4. 新しい合計値を返却
+
+**KVキー:**
+- `rl:{ip}` - レート制限フラグ（TTL: 60秒）
+- `total` - 合計PV数
+
+**レスポンス例:**
+```json
+{ "total": 12345 }
+```
+
+### 5. Goodボタン API
+
+#### エンドポイント: `POST /api/good`
+
+```typescript
+async function handleGood(req: Request, env: Env, corsHeaders): Promise<Response>
+```
+
+**リクエストボディ:**
+```json
+{
+  "slug": "my-article",
+  "action": "vote" | "unvote" | "get"
+}
+```
+
+**処理フロー:**
+1. `action: "get"` → 現在のいいね数と投票済みかを返却
+2. `action: "vote"` → いいね数+1、IP記録
+3. `action: "unvote"` → いいね数-1、IP記録削除
+
+**KVキー:**
+- `good:{slug}:count` - いいね総数
+- `good:{slug}:ip:{ip}` - 投票済みフラグ
+
+**レスポンス例:**
+```json
+{ "total": 42, "voted": true }
+```
+
+### 6. BBS API
+
+#### 6.1 スレッド一覧取得
+
+```
+GET /api/bbs/threads
+```
+
+最終投稿日時順にソートされたスレッド一覧を返却。
+
+#### 6.2 スレッド作成
+
+```
+POST /api/bbs/threads
+Body: { "title": "スレタイ", "name": "名前", "content": "本文" }
+```
+
+レート制限: 同一IPから60秒に1回まで。最大100スレッドまで。
+
+#### 6.3 スレッド取得
+
+```
+GET /api/bbs/threads/:id
+```
+
+スレッドメタ情報と全投稿を返却。
+
+#### 6.4 投稿追加
+
+```
+POST /api/bbs/threads/:id/posts
+Body: { "name": "名前", "content": "本文" }
+```
+
+レート制限: 同一IPから60秒に1回まで。1スレッド最大1000投稿まで。
+
+#### 6.5 スレッド削除（管理者のみ）
+
+```
+DELETE /api/bbs/threads/:id
+Headers: Authorization: Bearer {Firebase IDトークン}
+```
+
+#### 6.6 投稿削除（管理者のみ）
+
+```
+DELETE /api/bbs/threads/:id/posts/:postId
+Headers: Authorization: Bearer {Firebase IDトークン}
+```
+
+投稿内容を「この投稿は削除されました」に置換。
+
+### 7. CMS API
+
+#### 7.1 記事一覧
+
+```
+GET /api/cms/posts
+```
+
+公開済み（`status: "published"`）の記事のみ返却。作成日時降順。
+
+#### 7.2 下書き一覧（管理者のみ）
+
+```
+GET /api/cms/posts/drafts
+Headers: Authorization: Bearer {Firebase IDトークン}
+```
+
+#### 7.3 記事詳細
+
+```
+GET /api/cms/posts/:slug
+```
+
+下書き記事は管理者のみ閲覧可能。
+
+#### 7.4 記事作成（管理者のみ）
+
+```
+POST /api/cms/posts
+Headers: Authorization: Bearer {Firebase IDトークン}
+Body: {
+  "slug": "my-article",
+  "title": "タイトル",
+  "summary": "概要",
+  "markdown": "# 本文...",
+  "html": "<h1>本文...</h1>",
+  "tags": ["React", "TypeScript"],
+  "status": "draft" | "published"
+}
+```
+
+#### 7.5 記事更新（管理者のみ）
+
+```
+PUT /api/cms/posts/:slug
+Headers: Authorization: Bearer {Firebase IDトークン}
+```
+
+#### 7.6 記事ステータス変更（管理者のみ）
+
+```
+PATCH /api/cms/posts/:slug/status
+Headers: Authorization: Bearer {Firebase IDトークン}
+Body: { "status": "draft" | "published" }
+```
+
+#### 7.7 記事削除（管理者のみ）
+
+```
+DELETE /api/cms/posts/:slug
+Headers: Authorization: Bearer {Firebase IDトークン}
+```
+
+#### 7.8 プロダクトAPI
+
+記事と同様の構造で `/api/cms/products/*` エンドポイントを提供。
+
+#### 7.9 画像アップロード（管理者のみ）
+
+```
+POST /api/cms/upload
+Headers:
+  Authorization: Bearer {Firebase IDトークン}
+  Content-Type: image/png (または image/jpeg など)
+Body: バイナリ画像データ
+```
+
+R2バケットに保存し、公開URLを返却。
+
+```json
+{
+  "key": "1705312345678-abc123.png",
+  "url": "https://images.haroin57.com/1705312345678-abc123.png"
+}
+```
+
+### 8. 管理者認証
+
+#### 8.1 認証方式
+
+2つの認証方式をOR条件でサポート：
+
+```typescript
+async function checkAdminAuth(req: Request, env: Env): Promise<boolean> {
+  // 方法1: Firebase認証（ブラウザからのリクエスト用）
+  const authHeader = req.headers.get('Authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7)
+    const payload = await verifyFirebaseToken(token, env)
+    if (payload?.email && adminEmails.includes(payload.email.toLowerCase())) {
+      return true
+    }
+  }
+
+  // 方法2: ADMIN_SECRET（CLIツールからのリクエスト用）
+  const secret = req.headers.get('X-Admin-Secret')
+  if (env.ADMIN_SECRET && secret === env.ADMIN_SECRET) {
+    return true
+  }
+
+  return false
+}
+```
+
+| 方式 | ヘッダー | 用途 |
+|------|----------|------|
+| Firebase認証 | `Authorization: Bearer {token}` | ブラウザからのリクエスト |
+| ADMIN_SECRET | `X-Admin-Secret: {secret}` | CLIツール・スクリプト |
+
+#### 8.2 Firebase IDトークン検証
+
+`verifyFirebaseToken`関数で以下を検証：
+
+1. **JWTの構造解析**: Header.Payload.Signatureに分解
+2. **アルゴリズム検証**: `alg === "RS256"` のみ許可
+3. **時刻検証**:
+   - `exp > now` (有効期限チェック)
+   - `iat <= now` (発行時刻チェック)
+   - `auth_time <= now` (認証時刻チェック)
+4. **発行者検証**: `iss === "https://securetoken.google.com/{project_id}"`
+5. **オーディエンス検証**: `aud === project_id`
+6. **メール検証**: `email_verified === true`
+7. **RS256署名検証**: Googleの公開鍵で署名を検証
+
+#### 8.3 公開鍵の取得とキャッシュ
+
+```typescript
+const GOOGLE_CERTS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com'
+
+async function getGooglePublicKeys(): Promise<Record<string, CryptoKey>> {
+  // キャッシュが有効な場合はそれを返す
+  if (publicKeyCache && publicKeyCache.expiresAt > now) {
+    return publicKeyCache.keys
+  }
+
+  // Googleから証明書を取得
+  const response = await fetch(GOOGLE_CERTS_URL)
+  const certs = await response.json()
+
+  // X.509証明書からCryptoKeyに変換
+  for (const [kid, pem] of Object.entries(certs)) {
+    keys[kid] = await importPublicKeyFromCert(pem)
+  }
+
+  // Cache-Controlヘッダーに基づいてキャッシュ
+  publicKeyCache = { keys, expiresAt: now + maxAge * 1000 }
+  return keys
+}
+```
+
+- Googleの公開鍵は定期的にローテーションされる
+- JWTヘッダーの`kid`で対応する公開鍵を特定
+- `Cache-Control`ヘッダーに基づいてキャッシュ
+
+#### 8.4 X.509証明書の解析
+
+```typescript
+function extractSpkiFromCertificate(certBytes: Uint8Array): ArrayBuffer {
+  // ASN.1 DER形式のX.509証明書をパース
+  // tbsCertificate内のsubjectPublicKeyInfo（7番目のフィールド）を抽出
+  // Web Crypto APIで使えるSPKI形式に変換
+}
+```
+
+GoogleはPEM形式のX.509証明書を提供するため、ASN.1パースが必要。
+
+### 9. CORSとセキュリティ
+
+#### 9.1 Origin/Refererチェック
+
+```typescript
+const allowedOrigin = env.ALLOWED_ORIGIN || 'https://haroin57.com'
+
+const isAllowed =
+  origin === allowedOrigin ||
+  (origin === '' && referer.startsWith(allowedOrigin)) ||
+  (origin === '' && referer === '')
+
+if (!isAllowed) {
+  return new Response('forbidden', { status: 403 })
+}
+```
+
+許可されたオリジン以外からのリクエストを拒否。
+
+#### 9.2 Preflight対応
+
+```typescript
+if (req.method === 'OPTIONS') {
+  return new Response(null, { status: 204, headers: corsHeaders })
+}
+```
+
+### 10. KVデータ構造
+
+```
+HAROIN_PV KV Namespace
+├── total                           # 合計PV数
+├── rl:{ip}                         # レート制限フラグ（TTL: 60秒）
+├── good:{slug}:count               # いいね数
+├── good:{slug}:ip:{ip}             # 投票済みフラグ
+├── bbs:threads:list                # スレッド一覧（JSON配列）
+├── bbs:thread:{id}:meta            # スレッドメタ情報
+├── bbs:thread:{id}:posts           # スレッド投稿一覧
+├── bbs:rl:thread:{ip}              # スレッド作成レート制限
+├── bbs:rl:post:{ip}                # 投稿レート制限
+├── cms:posts:list                  # 記事メタ一覧
+├── cms:post:{slug}                 # 記事データ
+├── cms:products:list               # プロダクトメタ一覧
+└── cms:product:{slug}              # プロダクトデータ
+```
+
+### 11. デプロイ
+
+```bash
+# wrangler.pv.jsonc を使用してデプロイ
+wrangler deploy --config wrangler.pv.jsonc
+```
+
+#### wrangler.pv.jsonc
+
+```jsonc
+{
+  "name": "haroin-pv",
+  "main": "src/pv-worker.ts",
+  "compatibility_date": "2025-12-02",
+  "kv_namespaces": [
+    { "binding": "HAROIN_PV", "id": "..." }
+  ],
+  "r2_buckets": [
+    { "binding": "CMS_IMAGES", "bucket_name": "haroin-cms-images" }
+  ],
+  "vars": {
+    "R2_PUBLIC_URL": "https://images.haroin57.com"
+  }
+}
+```
+
+#### Secrets（機密情報）
+
+```bash
+wrangler secret put ADMIN_SECRET
+wrangler secret put FIREBASE_PROJECT_ID
+wrangler secret put ADMIN_EMAILS
+```
 
 ---
 
