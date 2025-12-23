@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom'
 import P5HypercubeBackground from './P5HypercubeBackground'
 
-const BACKGROUNDS = ['/background.webp', '/background2.webp']
+const BACKGROUNDS = ['/background-strip.webp']
 
 // 横スクロール背景（PC/スマホ共通）
 function ScrollingBackground({ baseOpacity }: { baseOpacity: number }) {
@@ -14,18 +14,20 @@ function ScrollingBackground({ baseOpacity }: { baseOpacity: number }) {
         transform: 'scale(var(--bg-scale, 1))',
       }}
     >
-      {/* 2つの画像を2セット並べて無限ループ */}
-      {[...BACKGROUNDS, ...BACKGROUNDS].map((src, index) => (
-        <img
-          key={`${src}-${index}`}
-          src={src}
-          alt=""
-          className="scrolling-bg-image select-none"
-          fetchPriority={index < 2 ? 'high' : 'low'}
-          loading={index < 2 ? 'eager' : 'lazy'}
-          decoding="async"
-        />
-      ))}
+      <div className="scrolling-bg-track">
+        {/* 1枚のストリップ画像を2セット並べて無限ループ */}
+        {[...BACKGROUNDS, ...BACKGROUNDS].map((src, index) => (
+          <img
+            key={`${src}-${index}`}
+            src={src}
+            alt=""
+            className="scrolling-bg-image select-none"
+            fetchPriority={index === 0 ? 'high' : 'low'}
+            loading={index === 0 ? 'eager' : 'lazy'}
+            decoding="async"
+          />
+        ))}
+      </div>
     </div>
   )
 }

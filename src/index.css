@@ -93,45 +93,46 @@ body.top-page .p5-bg {
   position: absolute;
   inset: 0;
   z-index: 0;
+  overflow: hidden;
+}
+
+.scrolling-bg-track {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: flex;
   flex-direction: row;
-  height: 100vh;
+  width: max-content;
+  height: 100%;
   animation: bgScroll 100s linear infinite;
   animation-play-state: var(--bg-animation-state, running);
+  will-change: transform;
 }
 
 .scrolling-bg-image {
   flex-shrink: 0;
   height: 100%;
   width: auto;
+  max-width: none;
   object-fit: cover;
 }
 
-/* モバイル縦型画面用のレスポンシブ対応 */
-@media (max-width: 768px) and (orientation: portrait) {
-  .scrolling-bg {
-    /* 縦型画面では各画像が画面全体を覆うように幅を計算 */
-    /* 4枚の画像 × 100vw = 400vw、半分でループなので-200vwまで移動 */
-    width: 400vw;
+@media (max-aspect-ratio: 4/3) {
+  .scrolling-bg-track {
+    height: 100vh;
+    height: 100svh;
     animation-duration: 80s;
   }
 
   .scrolling-bg-image {
-    /* 各画像が画面幅いっぱいに表示 */
-    width: 100vw;
-    height: 100vh;
-    object-fit: cover;
-    object-position: center;
+    height: 100%;
+    width: auto;
   }
+}
 
-  @keyframes bgScroll {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      /* 4枚中2枚分（50%）移動でループ */
-      transform: translateX(-50%);
-    }
+@media (orientation: landscape) {
+  .scrolling-bg-track {
+    animation-duration: 140s;
   }
 }
 

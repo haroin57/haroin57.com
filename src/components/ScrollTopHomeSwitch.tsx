@@ -44,14 +44,15 @@ export default function ScrollTopHomeSwitch() {
       if (navigatingRef.current) return
       if (now < cooldownUntilRef.current) return
       navigatingRef.current = true
-      cooldownUntilRef.current = now + 900
+      cooldownUntilRef.current = now + 400
+      wheelAccumRef.current = 0
       navigate(to)
     }
 
     const onWheel = (event: WheelEvent) => {
       if (shouldIgnoreTarget(event.target)) return
       const now = performance.now()
-      const resetAfterMs = 180
+      const resetAfterMs = 150
       if (now - wheelLastAtRef.current > resetAfterMs) wheelAccumRef.current = 0
       wheelLastAtRef.current = now
 
@@ -65,18 +66,25 @@ export default function ScrollTopHomeSwitch() {
           return
         }
         wheelAccumRef.current += deltaY
-        if (wheelAccumRef.current >= 120) trigger(HOME_PATH)
+        if (wheelAccumRef.current >= 40) trigger(HOME_PATH)
         return
       }
 
-      // HOME_PATH
-      if (!isAtTop()) return
+      // HOME_PATH: 上方向スクロールで最上部に到達したら遷移
       if (deltaY >= 0) {
         wheelAccumRef.current = 0
         return
       }
+      // 上方向スクロール中のみ累積
       wheelAccumRef.current += -deltaY
-      if (wheelAccumRef.current >= 120) trigger(TOP_PATH)
+      // 最上部に到達している、または十分なスクロール量で最上部付近にいる場合に遷移
+      const scrollY = window.scrollY || 0
+      if (scrollY <= 1 && wheelAccumRef.current >= 40) {
+        trigger(TOP_PATH)
+      } else if (scrollY <= 50 && wheelAccumRef.current >= 80) {
+        // スクロール位置が50px以内で、より強いスクロールなら遷移
+        trigger(TOP_PATH)
+      }
     }
 
     const onTouchStart = (event: TouchEvent) => {
@@ -94,7 +102,7 @@ export default function ScrollTopHomeSwitch() {
 
       const currentY = event.touches[0]?.clientY ?? startY
       const dy = startY - currentY
-      const threshold = 72
+      const threshold = 40
 
       if (path === TOP_PATH) {
         if (dy > threshold) trigger(HOME_PATH)
