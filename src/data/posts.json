@@ -4,6 +4,8 @@
     "title": "Markdown記法のメモ",
     "summary": "このサイトで実装しているMarkdown記法と、コードブロック/メモ/定義リストなどの拡張仕様をまとめる",
     "createdAt": "2025-12-15",
+    "updatedAt": null,
+    "status": "published",
     "tags": [
       "Markdown",
       "MDN"

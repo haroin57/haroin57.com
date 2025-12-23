@@ -18,6 +18,7 @@
 10. [セキュリティ実装](#セキュリティ実装)
 11. [pv-worker.ts 詳細解説](#pv-workerts-詳細解説)
 12. [ローカル記事のデプロイ](#ローカル記事のデプロイ)
+13. [初学者向けガイド](#初学者向けガイド)
 
 ---
 
@@ -38,14 +39,20 @@ src/
 │   ├── P5HypercubeBackground.tsx # p5.js: 4次元立方体背景
 │   ├── ScrollTopHomeSwitch.tsx # スクロール/スワイプによるページ切り替え
 │   ├── ClientOnly.tsx          # SSG/SSRでクライアントのみ描画
+│   ├── PostContent.tsx         # 記事HTMLコンテンツ表示（Mermaid対応・メモ化）
 │   ├── AccessCounter.tsx       # PVカウンター
 │   ├── SiteFooter.tsx          # フッター（PVカウンター含む）
 │   ├── PrefetchLink.tsx        # プリフェッチ対応リンク
 │   ├── Lightbox.tsx            # 画像モーダル
-│   ├── MermaidRenderer.tsx     # Mermaidダイアグラム描画
 │   ├── BackButton.tsx          # 戻るボタン
 │   └── admin/
 │       └── MarkdownEditor.tsx  # Markdownエディタ（画像アップロード対応）
+├── hooks/
+│   ├── useMermaidBlocks.ts     # Mermaidダイアグラムレンダリングフック
+│   └── ...                     # その他フック
+├── utils/
+│   ├── mermaid.ts              # Mermaidライブラリロード・レンダリング
+│   └── ...                     # その他ユーティリティ
 ├── routes/
 │   ├── Home.tsx                # ホームページ（コンテンツ一覧）
 │   ├── Posts.tsx               # 記事一覧ページ
@@ -444,25 +451,79 @@ type LightboxProps = {
 
 ---
 
-### `src/components/MermaidRenderer.tsx`
+### `src/components/PostContent.tsx`
 
-Mermaidダイアグラムをレンダリング。
+記事のHTMLコンテンツを表示するメモ化されたコンポーネント。Mermaidダイアグラムの自動レンダリングに対応。
 
-**コンポーネント:**
+**Props:**
 
-| コンポーネント名 | Props | 説明 |
-|-----------------|-------|------|
-| `MermaidRenderer` | `{ chart, className }` | Mermaidコードをレンダリング |
-| `MermaidBlock` | `{ code }` | Markdownから抽出されたMermaidブロック用ラッパー |
+```typescript
+type PostContentProps = {
+  html: string                                    // 記事のHTML文字列
+  onProseRef?: (el: HTMLDivElement | null) => void  // refを親に伝えるコールバック
+}
+```
 
 **機能:**
-- mermaidライブラリを使用した非同期レンダリング
-- ダークテーマ設定
-- エラー時はエラーメッセージと元コードを表示
+- `React.memo`でラップし、親コンポーネントの再レンダリングを防止
+- `dangerouslySetInnerHTML`で挿入されたMermaidブロックが消えるのを防ぐ
+- `useMermaidBlocks`フックを内部で呼び出し、Mermaidダイアグラムを自動レンダリング
+- SSR/hydration対応（hydration後にMermaidをレンダリング）
+
+**設計上の重要ポイント:**
+
+このコンポーネントが必要な理由は、Reactのhydrationと`dangerouslySetInnerHTML`の相互作用にあります。
+親コンポーネントが再レンダリングされると、Mermaid APIでレンダリングしたSVGがDOMから消えてしまいます。
+`memo()`でラップすることで、`html` propsが変わらない限り再レンダリングを防ぎ、SVGを保持します。
 
 **依存関係:**
-- `react`: `useEffect`, `useRef`, `useState`
-- `mermaid`
+- `react`: `useEffect`, `useRef`, `memo`
+- `../hooks/useMermaidBlocks`
+
+---
+
+### `src/hooks/useMermaidBlocks.ts`
+
+Mermaidダイアグラムをレンダリングするカスタムフック。
+
+**シグネチャ:**
+
+```typescript
+function useMermaidBlocks<T extends HTMLElement>(
+  ref: RefObject<T | null>,
+  deps?: DependencyList
+): void
+```
+
+**機能:**
+- hydrationの完了を待機してからレンダリング（SSR対応）
+- `requestIdleCallback`でブラウザがアイドル状態になってからレンダリング
+- `.mermaid-block`クラスと`data-mermaid`属性を持つ要素を検出
+- Mermaid APIでSVGに変換してDOMに挿入
+
+**依存関係:**
+- `react`: `useEffect`, `useState`
+- `../utils/mermaid`: `renderMermaidBlocks`
+
+---
+
+### `src/utils/mermaid.ts`
+
+Mermaidライブラリのロードとレンダリングを行うユーティリティ。
+
+**関数:**
+
+| 関数名 | 説明 |
+|--------|------|
+| `loadMermaid()` | Mermaidを動的importし、初期化して返す |
+| `renderMermaidBlocks(root)` | root内の`.mermaid-block`要素をSVGにレンダリング |
+
+**テーマ設定:**
+- ダークテーマ用に透過背景と白系のテキスト・ラインカラーを設定
+- `themeVariables`でノード、エッジ、テキストの色をカスタマイズ
+
+**依存関係:**
+- `mermaid`（動的import）
 
 ---
 
@@ -995,1502 +1056,6 @@ export type Photo = {
 
 - `photos: Photo[]` - 写真データ配列
 - `shotTags: string[]` - タグ配列
-
----
-
-## 初学者向け：TypeScript/JavaScript基礎文法
-
-本プロジェクトのコードを理解するために必要な基礎文法を解説します。
-
-### 変数宣言
-
-#### `const` - 再代入不可の変数
-
-```typescript
-const name = 'haroin57'      // 文字列
-const count = 42             // 数値
-const isActive = true        // 真偽値
-const items = [1, 2, 3]      // 配列
-const user = { id: 1 }       // オブジェクト
-
-// ❌ 再代入はエラー
-// name = 'other'  // Error: Assignment to constant variable
-
-// ✅ 配列やオブジェクトの中身は変更可能
-items.push(4)                // [1, 2, 3, 4]
-user.id = 2                  // { id: 2 }
-```
-
-#### `let` - 再代入可能な変数
-
-```typescript
-let count = 0
-count = count + 1    // ✅ 再代入OK
-count++              // ✅ インクリメントOK
-```
-
-**使い分け:** 基本は`const`を使い、再代入が必要な場合のみ`let`を使用。
-
----
-
-### アロー関数（Arrow Function）
-
-従来の`function`宣言の代わりに、`=>`を使った簡潔な関数定義。
-
-#### 基本構文
-
-```typescript
-// 従来の関数
-function add(a, b) {
-  return a + b
-}
-
-// アロー関数（同じ意味）
-const add = (a, b) => {
-  return a + b
-}
-
-// 1行で書ける場合はさらに省略可能（暗黙のreturn）
-const add = (a, b) => a + b
-
-// 引数が1つなら括弧も省略可能
-const double = x => x * 2
-
-// 引数がないなら空括弧
-const greet = () => 'Hello!'
-```
-
-#### 本プロジェクトでの例
-
-```typescript
-// BBSList.tsx - イベントハンドラ
-const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault()
-  // 処理...
-}
-
-// Photos.tsx - 配列のフィルタリング
-const filteredPhotos = photos.filter(photo => photo.tags.includes(selectedTag))
-
-// AnimatedRoutes.tsx - 遅延読み込み関数
-const loadHome = () => import('../routes/Home')
-```
-
----
-
-### 分割代入（Destructuring）
-
-配列やオブジェクトから値を取り出して変数に代入する構文。
-
-#### 配列の分割代入
-
-```typescript
-const colors = ['red', 'green', 'blue']
-
-// 従来の書き方
-const first = colors[0]   // 'red'
-const second = colors[1]  // 'green'
-
-// 分割代入（同じ意味）
-const [first, second] = colors  // first='red', second='green'
-
-// useStateで使われる形
-const [count, setCount] = useState(0)
-// count: 現在の値
-// setCount: 更新関数
-```
-
-#### オブジェクトの分割代入
-
-```typescript
-const user = { name: 'haroin57', age: 25, email: 'test@example.com' }
-
-// 従来の書き方
-const name = user.name
-const age = user.age
-
-// 分割代入（同じ意味）
-const { name, age } = user  // name='haroin57', age=25
-
-// 関数の引数で直接分割代入
-function greet({ name, age }: { name: string; age: number }) {
-  return `Hello, ${name}! You are ${age} years old.`
-}
-
-// 本プロジェクトでの例（Lightbox.tsx）
-function Lightbox({ isOpen, onClose, imageSrc, imageAlt }: LightboxProps) {
-  // propsから直接値を取り出している
-}
-```
-
----
-
-### スプレッド構文（Spread Syntax）
-
-`...`を使って配列やオブジェクトを展開する構文。
-
-#### 配列のスプレッド
-
-```typescript
-const arr1 = [1, 2, 3]
-const arr2 = [4, 5, 6]
-
-// 配列を結合
-const combined = [...arr1, ...arr2]  // [1, 2, 3, 4, 5, 6]
-
-// 先頭に要素を追加
-const newArr = [0, ...arr1]  // [0, 1, 2, 3]
-
-// 末尾に要素を追加
-const newArr2 = [...arr1, 4]  // [1, 2, 3, 4]
-```
-
-#### オブジェクトのスプレッド
-
-```typescript
-const user = { name: 'haroin57', age: 25 }
-
-// オブジェクトをコピーして一部を上書き
-const updatedUser = { ...user, age: 26 }
-// { name: 'haroin57', age: 26 }
-
-// 本プロジェクトでの例（PostEditor.tsx）
-setFormData((prev) => ({ ...prev, title: e.target.value }))
-// prevの全プロパティをコピーし、titleだけ上書き
-```
-
----
-
-### テンプレートリテラル（Template Literal）
-
-バッククォート（`` ` ``）を使った文字列。変数の埋め込みや改行が可能。
-
-```typescript
-const name = 'haroin57'
-const age = 25
-
-// 従来の文字列結合
-const message = 'Hello, ' + name + '! You are ' + age + ' years old.'
-
-// テンプレートリテラル（同じ意味）
-const message = `Hello, ${name}! You are ${age} years old.`
-
-// 複数行も可能
-const multiLine = `
-  First line
-  Second line
-  Third line
-`
-
-// 本プロジェクトでの例（PostDetail.tsx）
-document.title = `${post.title} | haroin57`
-
-// APIエンドポイント（BBSList.tsx）
-const res = await fetch(`${BBS_ENDPOINT}/threads/${id}`)
-```
-
----
-
-### 三項演算子（Ternary Operator）
-
-`条件 ? 真の場合 : 偽の場合` という形式の条件分岐。
-
-```typescript
-const age = 20
-
-// if文
-let status
-if (age >= 18) {
-  status = '成人'
-} else {
-  status = '未成年'
-}
-
-// 三項演算子（同じ意味）
-const status = age >= 18 ? '成人' : '未成年'
-
-// 本プロジェクトでの例（AccessCounter.tsx）
-return <span>Access: {count ?? '...'}</span>
-// countがnullかundefinedなら '...' を表示
-
-// ネストした三項演算子（読みにくいので注意）
-const color = score >= 90 ? 'gold' : score >= 70 ? 'silver' : 'bronze'
-```
-
----
-
-### Null合体演算子（`??`）とオプショナルチェーン（`?.`）
-
-#### Null合体演算子（`??`）
-
-左辺が`null`または`undefined`の場合のみ右辺を返す。
-
-```typescript
-const value = null
-const result = value ?? 'default'  // 'default'
-
-const zero = 0
-const result2 = zero ?? 'default'  // 0（0はnullでもundefinedでもない）
-
-// 本プロジェクトでの例（AccessCounter.tsx）
-const cached = Number(localStorage.getItem(CACHE_KEY) ?? '0')
-// localStorageにない場合は '0' を使用
-```
-
-#### オプショナルチェーン（`?.`）
-
-プロパティが存在しない場合にエラーにならず`undefined`を返す。
-
-```typescript
-const user = { profile: { name: 'haroin57' } }
-
-// 従来の書き方（エラー防止）
-const name = user && user.profile && user.profile.name
-
-// オプショナルチェーン（同じ意味）
-const name = user?.profile?.name  // 'haroin57'
-
-// プロパティがない場合
-const missing = user?.settings?.theme  // undefined（エラーにならない）
-
-// 本プロジェクトでの例（Home.tsx）
-const targets = pageRef.current?.querySelectorAll('.reveal')
-// pageRef.currentがnullなら処理をスキップ
-```
-
----
-
-### 非同期処理（async/await）
-
-時間のかかる処理（API呼び出し等）を待つための構文。
-
-#### Promise基礎
-
-```typescript
-// Promiseを返す関数
-function fetchData() {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve('データ取得完了')
-    }, 1000)
-  })
-}
-
-// .then()で結果を受け取る（従来の書き方）
-fetchData()
-  .then(result => console.log(result))
-  .catch(error => console.error(error))
-```
-
-#### async/await（推奨）
-
-```typescript
-// async関数内でawaitを使用
-async function loadData() {
-  try {
-    const result = await fetchData()  // 完了まで待つ
-    console.log(result)
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-// 本プロジェクトでの例（BBSList.tsx）
-const fetchThreads = useCallback(async () => {
-  try {
-    setIsLoading(true)
-    const res = await fetch(`${BBS_ENDPOINT}/threads`)
-    if (!res.ok) throw new Error('Failed to fetch')
-    const data = await res.json()
-    setThreads(data.threads)
-  } catch (err) {
-    setError('取得に失敗しました')
-  } finally {
-    setIsLoading(false)
-  }
-}, [])
-```
-
-#### 重要な注意点
-
-```typescript
-// ❌ 間違い: awaitはasync関数の中でのみ使用可能
-function wrong() {
-  const data = await fetch('/api/data')  // SyntaxError
-}
-
-// ✅ 正しい
-async function correct() {
-  const data = await fetch('/api/data')
-}
-
-// トップレベルawait（モジュールの最上位では使用可能）
-const data = await fetch('/api/data')  // ES2022以降
-```
-
----
-
-### 型注釈（Type Annotation）
-
-TypeScriptでは変数や関数に型を指定できる。
-
-#### 基本的な型
-
-```typescript
-// プリミティブ型
-const name: string = 'haroin57'
-const age: number = 25
-const isActive: boolean = true
-
-// 配列
-const numbers: number[] = [1, 2, 3]
-const names: string[] = ['a', 'b', 'c']
-const items: Array<string> = ['a', 'b']  // 同じ意味
-
-// オブジェクト
-const user: { name: string; age: number } = { name: 'haroin57', age: 25 }
-
-// nullを許容
-const value: string | null = null
-
-// 関数の型
-const greet: (name: string) => string = (name) => `Hello, ${name}!`
-```
-
-#### 型エイリアス（type）
-
-```typescript
-// 型に名前をつける
-type User = {
-  id: number
-  name: string
-  email: string
-}
-
-const user: User = { id: 1, name: 'haroin57', email: 'test@example.com' }
-
-// 本プロジェクトでの例（Lightbox.tsx）
-type LightboxProps = {
-  isOpen: boolean
-  onClose: () => void
-  imageSrc: string
-  imageAlt: string
-  children?: React.ReactNode  // ?は省略可能を意味
-}
-```
-
-#### interface
-
-```typescript
-// typeと似ているが、拡張が可能
-interface User {
-  id: number
-  name: string
-}
-
-interface AdminUser extends User {
-  role: 'admin'
-  permissions: string[]
-}
-
-// 本プロジェクトでの例（PrefetchLink.tsx）
-interface PrefetchLinkProps extends LinkProps {
-  enablePrefetch?: boolean
-}
-```
-
-#### ジェネリクス（Generics）
-
-型をパラメータとして受け取る仕組み。
-
-```typescript
-// Tは任意の型を表すプレースホルダー
-function identity<T>(value: T): T {
-  return value
-}
-
-identity<string>('hello')  // string型
-identity<number>(42)       // number型
-identity(true)             // 型推論でboolean型
-
-// useStateでの使用例
-const [count, setCount] = useState<number>(0)
-const [user, setUser] = useState<User | null>(null)
-const [items, setItems] = useState<Item[]>([])
-```
-
----
-
-### 配列メソッド
-
-#### `map` - 各要素を変換
-
-```typescript
-const numbers = [1, 2, 3]
-const doubled = numbers.map(n => n * 2)  // [2, 4, 6]
-
-// Reactでのリストレンダリング
-const items = ['A', 'B', 'C']
-return (
-  <ul>
-    {items.map((item, index) => (
-      <li key={index}>{item}</li>
-    ))}
-  </ul>
-)
-```
-
-#### `filter` - 条件に合う要素を抽出
-
-```typescript
-const numbers = [1, 2, 3, 4, 5]
-const evens = numbers.filter(n => n % 2 === 0)  // [2, 4]
-
-// 本プロジェクトでの例（Photos.tsx）
-const filteredPhotos = photos.filter(photo =>
-  photo.tags.includes(selectedTag)
-)
-```
-
-#### `find` - 条件に合う最初の要素を取得
-
-```typescript
-const users = [
-  { id: 1, name: 'Alice' },
-  { id: 2, name: 'Bob' }
-]
-const bob = users.find(user => user.name === 'Bob')  // { id: 2, name: 'Bob' }
-
-// 本プロジェクトでの例（PostDetail.tsx）
-const post = postsData.posts.find(p => p.slug === slug)
-```
-
-#### `some` / `every` - 条件判定
-
-```typescript
-const numbers = [1, 2, 3, 4, 5]
-
-// some: 1つでも条件を満たせばtrue
-numbers.some(n => n > 3)   // true
-
-// every: 全てが条件を満たせばtrue
-numbers.every(n => n > 0)  // true
-numbers.every(n => n > 3)  // false
-```
-
----
-
-### インポート/エクスポート（ES Modules）
-
-#### 名前付きエクスポート/インポート
-
-```typescript
-// utils.ts
-export function add(a: number, b: number) {
-  return a + b
-}
-export const PI = 3.14159
-
-// 使用側
-import { add, PI } from './utils'
-```
-
-#### デフォルトエクスポート/インポート
-
-```typescript
-// Component.tsx
-function MyComponent() {
-  return <div>Hello</div>
-}
-export default MyComponent
-
-// 使用側（名前は自由）
-import MyComponent from './Component'
-import AnyName from './Component'  // 同じものをインポート
-```
-
-#### 本プロジェクトでの例
-
-```typescript
-// 名前付きインポート（react）
-import { useState, useEffect, useCallback } from 'react'
-
-// デフォルトインポート（コンポーネント）
-import PrefetchLink from '../components/PrefetchLink'
-
-// 型のみのインポート
-import type { LinkProps } from 'react-router-dom'
-
-// JSON with type assertion
-import postsData from '../data/posts.json' with { type: 'json' }
-```
-
----
-
-### JavaScript/TypeScript標準関数・メソッド
-
-本プロジェクトで使用されている標準APIを解説します。
-
-#### 文字列メソッド
-
-##### `String.prototype.trim()`
-文字列の前後の空白を削除する。
-
-```typescript
-const input = '  hello world  '
-input.trim()  // 'hello world'
-
-// 本プロジェクトでの例（BBSList.tsx）
-if (!title.trim() || !content.trim()) return  // 空白のみの入力を拒否
-```
-
-##### `String.prototype.split()`
-文字列を指定した区切り文字で分割し、配列にする。
-
-```typescript
-const str = 'apple,banana,cherry'
-str.split(',')  // ['apple', 'banana', 'cherry']
-
-const path = '/posts/my-article'
-path.split('/')  // ['', 'posts', 'my-article']
-
-// 本プロジェクトでの例（PrefetchLink.tsx）
-const pathname = raw.split('#')[0]?.split('?')[0]  // ハッシュとクエリを除去
-```
-
-##### `String.prototype.startsWith()` / `endsWith()`
-文字列が指定した文字列で始まる/終わるかを判定。
-
-```typescript
-const url = '/posts/my-article'
-url.startsWith('/posts/')  // true
-url.endsWith('.html')      // false
-
-// 本プロジェクトでの例（PrefetchLink.tsx）
-if (path.startsWith('/posts/')) {
-  // 投稿詳細ページのプリフェッチ
-}
-```
-
-##### `String.prototype.includes()`
-文字列に指定した文字列が含まれるかを判定。
-
-```typescript
-const message = 'Hello, World!'
-message.includes('World')  // true
-message.includes('world')  // false（大文字小文字を区別）
-
-// 本プロジェクトでの例（Photos.tsx）
-photo.tags.includes(selectedTag)  // タグが含まれているか
-```
-
-##### `String.prototype.slice()`
-文字列の一部を切り出す。
-
-```typescript
-const str = 'Hello, World!'
-str.slice(0, 5)   // 'Hello'（0番目から5文字）
-str.slice(7)      // 'World!'（7番目から最後まで）
-str.slice(-6)     // 'World!'（末尾から6文字）
-
-// 本プロジェクトでの例（MermaidRenderer.tsx）
-const id = `mermaid-${Math.random().toString(36).slice(2, 11)}`
-```
-
-##### `String.prototype.replace()` / `replaceAll()`
-文字列の一部を置換する。
-
-```typescript
-const text = 'Hello World'
-text.replace('World', 'React')     // 'Hello React'（最初の1つだけ）
-text.replaceAll('l', 'L')          // 'HeLLo WorLd'（すべて置換）
-
-// 正規表現も使用可能
-'a1b2c3'.replace(/[0-9]/g, 'X')    // 'aXbXcX'
-```
-
----
-
-#### 配列メソッド（詳細）
-
-##### `Array.prototype.map()`
-各要素を変換した新しい配列を作成。
-
-```typescript
-const numbers = [1, 2, 3]
-numbers.map(n => n * 2)  // [2, 4, 6]
-
-// オブジェクト配列から特定のプロパティを抽出
-const users = [{ name: 'Alice', age: 25 }, { name: 'Bob', age: 30 }]
-users.map(u => u.name)  // ['Alice', 'Bob']
-
-// インデックスも取得可能
-['a', 'b', 'c'].map((item, index) => `${index}: ${item}`)
-// ['0: a', '1: b', '2: c']
-```
-
-##### `Array.prototype.filter()`
-条件に合う要素だけを抽出した新しい配列を作成。
-
-```typescript
-const numbers = [1, 2, 3, 4, 5]
-numbers.filter(n => n > 2)      // [3, 4, 5]
-numbers.filter(n => n % 2 === 0)  // [2, 4]（偶数のみ）
-
-// falsyな値を除去
-const mixed = [0, 1, '', 'hello', null, undefined]
-mixed.filter(Boolean)  // [1, 'hello']
-```
-
-##### `Array.prototype.find()` / `findIndex()`
-条件に合う最初の要素/インデックスを返す。
-
-```typescript
-const users = [
-  { id: 1, name: 'Alice' },
-  { id: 2, name: 'Bob' }
-]
-
-users.find(u => u.id === 2)       // { id: 2, name: 'Bob' }
-users.find(u => u.id === 99)      // undefined（見つからない）
-
-users.findIndex(u => u.id === 2)  // 1
-users.findIndex(u => u.id === 99) // -1（見つからない）
-```
-
-##### `Array.prototype.reduce()`
-配列を1つの値に集約する。
-
-```typescript
-const numbers = [1, 2, 3, 4, 5]
-
-// 合計
-numbers.reduce((sum, n) => sum + n, 0)  // 15
-
-// 最大値
-numbers.reduce((max, n) => Math.max(max, n), -Infinity)  // 5
-
-// オブジェクトの集計
-const items = [
-  { category: 'A', value: 10 },
-  { category: 'B', value: 20 },
-  { category: 'A', value: 30 }
-]
-items.reduce((acc, item) => {
-  acc[item.category] = (acc[item.category] || 0) + item.value
-  return acc
-}, {} as Record<string, number>)
-// { A: 40, B: 20 }
-```
-
-##### `Array.prototype.sort()`
-配列を並べ替える（元の配列を変更する）。
-
-```typescript
-// 文字列のソート
-['banana', 'apple', 'cherry'].sort()  // ['apple', 'banana', 'cherry']
-
-// 数値のソート（比較関数が必要）
-[3, 1, 4, 1, 5].sort((a, b) => a - b)  // [1, 1, 3, 4, 5]（昇順）
-[3, 1, 4, 1, 5].sort((a, b) => b - a)  // [5, 4, 3, 1, 1]（降順）
-
-// オブジェクト配列のソート
-const posts = [
-  { title: 'B', date: '2024-02-01' },
-  { title: 'A', date: '2024-01-01' }
-]
-posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-// 日付の降順（新しい順）
-```
-
-##### `Array.prototype.concat()` / スプレッド構文
-配列を結合する。
-
-```typescript
-const arr1 = [1, 2]
-const arr2 = [3, 4]
-
-arr1.concat(arr2)     // [1, 2, 3, 4]
-[...arr1, ...arr2]    // [1, 2, 3, 4]（同じ結果、こちらが一般的）
-```
-
-##### `Array.prototype.join()`
-配列を文字列に結合する。
-
-```typescript
-['a', 'b', 'c'].join('-')   // 'a-b-c'
-['a', 'b', 'c'].join('')    // 'abc'
-['a', 'b', 'c'].join(', ')  // 'a, b, c'
-```
-
-##### `Array.from()`
-イテラブルから配列を作成する。
-
-```typescript
-// 文字列を配列に
-Array.from('hello')  // ['h', 'e', 'l', 'l', 'o']
-
-// Setを配列に
-Array.from(new Set([1, 2, 2, 3]))  // [1, 2, 3]
-
-// 連番の配列を作成
-Array.from({ length: 5 }, (_, i) => i)  // [0, 1, 2, 3, 4]
-
-// 本プロジェクトでの例（AdminAuthContext.tsx）
-const callbacks = Array.from(beforeLogoutCallbacksRef.current)
-```
-
----
-
-#### オブジェクトメソッド
-
-##### `Object.keys()` / `Object.values()` / `Object.entries()`
-オブジェクトのキー/値/エントリを配列として取得。
-
-```typescript
-const user = { name: 'Alice', age: 25, city: 'Tokyo' }
-
-Object.keys(user)    // ['name', 'age', 'city']
-Object.values(user)  // ['Alice', 25, 'Tokyo']
-Object.entries(user) // [['name', 'Alice'], ['age', 25], ['city', 'Tokyo']]
-
-// エントリを使ったループ
-for (const [key, value] of Object.entries(user)) {
-  console.log(`${key}: ${value}`)
-}
-```
-
-##### `Object.assign()`
-オブジェクトをマージする（スプレッド構文の方が一般的）。
-
-```typescript
-const defaults = { theme: 'light', lang: 'en' }
-const userSettings = { theme: 'dark' }
-
-Object.assign({}, defaults, userSettings)  // { theme: 'dark', lang: 'en' }
-{ ...defaults, ...userSettings }           // 同じ結果
-```
-
----
-
-#### 数値・数学関数
-
-##### `Number()` / `parseInt()` / `parseFloat()`
-文字列を数値に変換する。
-
-```typescript
-Number('42')       // 42
-Number('3.14')     // 3.14
-Number('hello')    // NaN（変換失敗）
-Number('')         // 0
-
-parseInt('42px')   // 42（数値部分のみ解析）
-parseInt('3.14')   // 3（整数のみ）
-parseFloat('3.14') // 3.14
-
-// 本プロジェクトでの例（AccessCounter.tsx）
-const cached = Number(localStorage.getItem(CACHE_KEY) ?? '0')
-```
-
-##### `Number.isFinite()` / `Number.isNaN()`
-数値の検証。
-
-```typescript
-Number.isFinite(42)        // true
-Number.isFinite(Infinity)  // false
-Number.isFinite(NaN)       // false
-
-Number.isNaN(NaN)          // true
-Number.isNaN('hello')      // false（グローバルisNaNとは異なる）
-
-// 本プロジェクトでの例（AccessCounter.tsx）
-if (Number.isFinite(cached) && cached > 0) { ... }
-```
-
-##### `Math`オブジェクト
-数学関数のコレクション。
-
-```typescript
-Math.random()           // 0以上1未満のランダムな小数
-Math.floor(3.7)         // 3（切り捨て）
-Math.ceil(3.2)          // 4（切り上げ）
-Math.round(3.5)         // 4（四捨五入）
-Math.max(1, 5, 3)       // 5
-Math.min(1, 5, 3)       // 1
-Math.abs(-5)            // 5（絶対値）
-Math.pow(2, 3)          // 8（2の3乗）
-
-// ランダムなIDを生成
-Math.random().toString(36).slice(2, 11)  // 'k5x8m2n1p'のような文字列
-```
-
----
-
-#### 日付・時間
-
-##### `Date`オブジェクト
-日付と時間を扱う。
-
-```typescript
-// 現在時刻
-const now = new Date()
-now.getTime()          // 1703001600000（UNIXタイムスタンプ、ミリ秒）
-now.toISOString()      // '2024-12-20T00:00:00.000Z'
-now.toLocaleDateString('ja-JP')  // '2024/12/20'
-
-// 特定の日付を作成
-new Date('2024-12-20')
-new Date(2024, 11, 20)  // 月は0始まり（11 = 12月）
-
-// 日付の計算
-const future = new Date(Date.now() + 60 * 60 * 1000)  // 1時間後
-
-// 本プロジェクトでの例（AdminAuthContext.tsx）
-const expiresAt = Date.now() + SESSION_TIMEOUT_MS
-```
-
-##### `setTimeout()` / `setInterval()` / `clearTimeout()` / `clearInterval()`
-タイマー関数。
-
-```typescript
-// 一度だけ実行
-const timerId = setTimeout(() => {
-  console.log('3秒経過')
-}, 3000)
-
-// キャンセル
-clearTimeout(timerId)
-
-// 繰り返し実行
-const intervalId = setInterval(() => {
-  console.log('1秒ごとに実行')
-}, 1000)
-
-// 停止
-clearInterval(intervalId)
-
-// 本プロジェクトでの例（AdminAuthContext.tsx）
-sessionTimeoutRef.current = setTimeout(async () => {
-  await logout()
-}, SESSION_TIMEOUT_MS)
-```
-
----
-
-#### Web API
-
-##### `fetch()`
-HTTPリクエストを送信する。
-
-```typescript
-// GETリクエスト
-const response = await fetch('/api/posts')
-const data = await response.json()
-
-// POSTリクエスト
-const response = await fetch('/api/posts', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ title: 'New Post', content: '...' })
-})
-
-// エラーハンドリング
-if (!response.ok) {
-  throw new Error(`HTTP ${response.status}`)
-}
-
-// 本プロジェクトでの例（BBSList.tsx）
-const res = await fetch(`${BBS_ENDPOINT}/threads`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ title, content, author }),
-})
-```
-
-##### `localStorage` / `sessionStorage`
-ブラウザにデータを保存する。
-
-```typescript
-// 保存
-localStorage.setItem('key', 'value')
-localStorage.setItem('user', JSON.stringify({ name: 'Alice' }))
-
-// 取得
-const value = localStorage.getItem('key')  // 'value' または null
-const user = JSON.parse(localStorage.getItem('user') || '{}')
-
-// 削除
-localStorage.removeItem('key')
-
-// 全削除
-localStorage.clear()
-
-// 本プロジェクトでの例（AccessCounter.tsx）
-localStorage.setItem(CACHE_KEY, String(data.total))
-const cached = localStorage.getItem(CACHE_KEY)
-```
-
-##### `AbortController`
-非同期処理のキャンセル。
-
-```typescript
-const controller = new AbortController()
-
-fetch('/api/data', { signal: controller.signal })
-  .then(res => res.json())
-  .catch(err => {
-    if (err.name === 'AbortError') {
-      console.log('リクエストがキャンセルされました')
-    }
-  })
-
-// キャンセル
-controller.abort()
-
-// 本プロジェクトでの例（AccessCounter.tsx）
-useEffect(() => {
-  const controller = new AbortController()
-
-  fetch(API_ENDPOINT, { signal: controller.signal })
-    .then(/* ... */)
-
-  return () => controller.abort()  // クリーンアップ時にキャンセル
-}, [])
-```
-
-##### `console`メソッド
-デバッグ出力。
-
-```typescript
-console.log('通常のログ')
-console.error('エラー')
-console.warn('警告')
-console.table([{ a: 1 }, { a: 2 }])  // 表形式で表示
-console.time('処理'); /* ... */ console.timeEnd('処理')  // 時間計測
-console.group('グループ'); console.log('内容'); console.groupEnd()
-```
-
----
-
-#### DOM操作
-
-##### `document.querySelector()` / `querySelectorAll()`
-CSSセレクタで要素を取得。
-
-```typescript
-// 単一要素
-const header = document.querySelector('.header')
-const button = document.querySelector('#submit-btn')
-const input = document.querySelector('input[type="email"]')
-
-// 複数要素
-const items = document.querySelectorAll('.list-item')
-items.forEach(item => console.log(item.textContent))
-
-// 本プロジェクトでの例（Home.tsx）
-const targets = pageRef.current?.querySelectorAll('.reveal')
-```
-
-##### `element.classList`
-CSSクラスの操作。
-
-```typescript
-const el = document.querySelector('.box')
-
-el.classList.add('active')         // クラスを追加
-el.classList.remove('active')      // クラスを削除
-el.classList.toggle('active')      // あれば削除、なければ追加
-el.classList.contains('active')    // 含まれているか確認
-
-// 本プロジェクトでの例（PostDetail.tsx / ProductDetail.tsx）
-const body = document.body
-body.classList.add('post-detail-page')
-body.classList.remove('post-detail-page')
-```
-
-##### `addEventListener()` / `removeEventListener()`
-イベントリスナーの登録と解除。
-
-```typescript
-const handleClick = (e: MouseEvent) => {
-  console.log('クリックされた', e.target)
-}
-
-element.addEventListener('click', handleClick)
-element.removeEventListener('click', handleClick)
-
-// オプション
-window.addEventListener('scroll', handleScroll, { passive: true })
-window.addEventListener('click', handleClick, { once: true })  // 1回だけ
-
-// 本プロジェクトでの例（ScrollTopHomeSwitch.tsx）
-window.addEventListener('wheel', onWheel, { passive: true })
-return () => window.removeEventListener('wheel', onWheel)
-```
-
----
-
-#### Promise関連
-
-##### `Promise.all()` / `Promise.race()` / `Promise.allSettled()`
-複数のPromiseを扱う。
-
-```typescript
-// すべて完了を待つ（1つでも失敗すると全体が失敗）
-const [user, posts] = await Promise.all([
-  fetch('/api/user').then(r => r.json()),
-  fetch('/api/posts').then(r => r.json())
-])
-
-// 最初に完了したものを取得
-const fastest = await Promise.race([
-  fetch('/api/server1'),
-  fetch('/api/server2')
-])
-
-// すべての結果を取得（成功/失敗問わず）
-const results = await Promise.allSettled([
-  fetch('/api/a'),
-  fetch('/api/b')
-])
-// [{ status: 'fulfilled', value: ... }, { status: 'rejected', reason: ... }]
-```
-
----
-
-#### JSON
-
-##### `JSON.stringify()` / `JSON.parse()`
-オブジェクトとJSON文字列の相互変換。
-
-```typescript
-const obj = { name: 'Alice', age: 25 }
-
-// オブジェクト → JSON文字列
-JSON.stringify(obj)           // '{"name":"Alice","age":25}'
-JSON.stringify(obj, null, 2)  // 整形（インデント2）
-
-// JSON文字列 → オブジェクト
-JSON.parse('{"name":"Alice"}')  // { name: 'Alice' }
-
-// 本プロジェクトでの例（BBSList.tsx）
-body: JSON.stringify({ title, content, author })
-const data = await res.json()  // fetchのjson()は内部でJSON.parseを呼ぶ
-```
-
----
-
-## CSS基礎とTailwind CSS
-
-本プロジェクトではTailwind CSSを使用しています。まず標準CSSの基礎を理解してからTailwindを学びましょう。
-
-### CSS基礎
-
-#### ボックスモデル
-
-すべてのHTML要素は「ボックス」として扱われる。
-
-```
-┌─────────────────────────────────┐
-│           margin                │  ← 外側の余白
-│  ┌───────────────────────────┐  │
-│  │        border             │  │  ← 枠線
-│  │  ┌─────────────────────┐  │  │
-│  │  │      padding        │  │  │  ← 内側の余白
-│  │  │  ┌───────────────┐  │  │  │
-│  │  │  │   content     │  │  │  │  ← コンテンツ領域
-│  │  │  └───────────────┘  │  │  │
-│  │  └─────────────────────┘  │  │
-│  └───────────────────────────┘  │
-└─────────────────────────────────┘
-```
-
-```css
-/* 標準CSS */
-.box {
-  width: 200px;
-  height: 100px;
-  padding: 16px;
-  margin: 8px;
-  border: 1px solid black;
-}
-```
-
-```typescript
-/* Tailwind CSS */
-<div className="w-[200px] h-[100px] p-4 m-2 border border-black">
-```
-
----
-
-#### 主要CSSプロパティとTailwind対応表
-
-##### レイアウト
-
-| CSS | Tailwind | 説明 |
-|-----|----------|------|
-| `display: flex` | `flex` | フレックスボックス |
-| `display: grid` | `grid` | グリッドレイアウト |
-| `display: block` | `block` | ブロック要素 |
-| `display: inline` | `inline` | インライン要素 |
-| `display: none` | `hidden` | 非表示 |
-| `position: relative` | `relative` | 相対配置 |
-| `position: absolute` | `absolute` | 絶対配置 |
-| `position: fixed` | `fixed` | 固定配置 |
-| `position: sticky` | `sticky` | スティッキー配置 |
-
-##### Flexbox
-
-| CSS | Tailwind | 説明 |
-|-----|----------|------|
-| `flex-direction: row` | `flex-row` | 横並び |
-| `flex-direction: column` | `flex-col` | 縦並び |
-| `justify-content: center` | `justify-center` | 主軸の中央揃え |
-| `justify-content: space-between` | `justify-between` | 両端揃え |
-| `align-items: center` | `items-center` | 交差軸の中央揃え |
-| `flex-wrap: wrap` | `flex-wrap` | 折り返し |
-| `gap: 16px` | `gap-4` | 要素間の隙間 |
-
-```typescript
-// 本プロジェクトでの例（Lightbox.tsx）
-<div className="fixed inset-0 z-50 flex items-center justify-center">
-// → position: fixed; top/right/bottom/left: 0; z-index: 50;
-//   display: flex; align-items: center; justify-content: center;
-```
-
-##### サイズ
-
-| CSS | Tailwind | 説明 |
-|-----|----------|------|
-| `width: 100%` | `w-full` | 幅100% |
-| `width: 100vw` | `w-screen` | ビューポート幅 |
-| `width: auto` | `w-auto` | 自動 |
-| `max-width: 1024px` | `max-w-4xl` | 最大幅 |
-| `height: 100%` | `h-full` | 高さ100% |
-| `height: 100vh` | `h-screen` | ビューポート高さ |
-| `min-height: 100vh` | `min-h-screen` | 最小高さ |
-
-##### 余白（Spacing）
-
-Tailwindの余白は4pxを1単位とする。
-
-| CSS | Tailwind | 値 |
-|-----|----------|-----|
-| `padding: 0` | `p-0` | 0px |
-| `padding: 4px` | `p-1` | 4px |
-| `padding: 8px` | `p-2` | 8px |
-| `padding: 16px` | `p-4` | 16px |
-| `padding: 24px` | `p-6` | 24px |
-| `padding: 32px` | `p-8` | 32px |
-| `margin: 16px` | `m-4` | 16px |
-| `margin: auto` | `m-auto` | 自動 |
-
-方向指定:
-- `p-4` → 全方向
-- `px-4` → 左右（x軸）
-- `py-4` → 上下（y軸）
-- `pt-4` → 上（top）
-- `pr-4` → 右（right）
-- `pb-4` → 下（bottom）
-- `pl-4` → 左（left）
-
-##### 色
-
-```typescript
-// 背景色
-<div className="bg-white">        // 白
-<div className="bg-black">        // 黒
-<div className="bg-gray-500">     // グレー
-<div className="bg-blue-500">     // 青
-<div className="bg-red-500">      // 赤
-<div className="bg-transparent">  // 透明
-
-// 透明度付き
-<div className="bg-black/50">     // 黒、透明度50%
-<div className="bg-white/10">     // 白、透明度10%
-
-// 文字色
-<div className="text-white">
-<div className="text-gray-400">
-
-// 本プロジェクトでの例
-<div className="bg-black/90 backdrop-blur-sm">
-// → background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(4px);
-```
-
-##### テキスト
-
-| CSS | Tailwind | 説明 |
-|-----|----------|------|
-| `font-size: 14px` | `text-sm` | 小さい文字 |
-| `font-size: 16px` | `text-base` | 基本サイズ |
-| `font-size: 18px` | `text-lg` | 大きい文字 |
-| `font-size: 24px` | `text-2xl` | 見出し |
-| `font-weight: bold` | `font-bold` | 太字 |
-| `font-weight: 600` | `font-semibold` | やや太字 |
-| `text-align: center` | `text-center` | 中央揃え |
-| `text-align: left` | `text-left` | 左揃え |
-| `line-height: 1.5` | `leading-relaxed` | 行間 |
-
-##### 角丸（Border Radius）
-
-| CSS | Tailwind | 値 |
-|-----|----------|-----|
-| `border-radius: 0` | `rounded-none` | なし |
-| `border-radius: 4px` | `rounded` | 小 |
-| `border-radius: 8px` | `rounded-lg` | 中 |
-| `border-radius: 16px` | `rounded-2xl` | 大 |
-| `border-radius: 9999px` | `rounded-full` | 円形 |
-
-##### ボーダー
-
-```typescript
-<div className="border">                  // 1px solid
-<div className="border-2">                // 2px
-<div className="border-gray-300">         // 色指定
-<div className="border-t">                // 上だけ
-<div className="border border-white/50">  // 透明度付き
-```
-
-##### 影（Box Shadow）
-
-| CSS | Tailwind | 説明 |
-|-----|----------|------|
-| `box-shadow: ...` | `shadow-sm` | 小さい影 |
-| `box-shadow: ...` | `shadow` | 標準の影 |
-| `box-shadow: ...` | `shadow-lg` | 大きい影 |
-| `box-shadow: ...` | `shadow-xl` | より大きい影 |
-| `box-shadow: none` | `shadow-none` | 影なし |
-
-##### トランジション・アニメーション
-
-```typescript
-// トランジション
-<div className="transition">              // すべてのプロパティ
-<div className="transition-colors">       // 色のみ
-<div className="transition-opacity">      // 透明度のみ
-<div className="duration-300">            // 300ms
-<div className="ease-in-out">             // イージング
-
-// 本プロジェクトでの例（Lightbox.tsx）
-<button className="transition-colors hover:bg-white/20">
-// → マウスオーバー時に背景色がアニメーション
-```
-
-##### ホバー・フォーカス・状態
-
-```typescript
-// ホバー（マウスオーバー）
-<button className="hover:bg-blue-600">
-
-// フォーカス（選択時）
-<input className="focus:ring-2 focus:border-blue-500">
-
-// アクティブ（クリック中）
-<button className="active:scale-95">
-
-// 無効状態
-<button className="disabled:opacity-50" disabled>
-
-// グループホバー
-<div className="group">
-  <span className="group-hover:text-blue-500">
-</div>
-```
-
-##### レスポンシブ
-
-画面サイズに応じてスタイルを変更。
-
-| プレフィックス | 最小幅 | 説明 |
-|--------------|-------|------|
-| (なし) | 0px | モバイルファースト |
-| `sm:` | 640px | 小さいタブレット |
-| `md:` | 768px | タブレット |
-| `lg:` | 1024px | デスクトップ |
-| `xl:` | 1280px | 大きいデスクトップ |
-| `2xl:` | 1536px | 超大画面 |
-
-```typescript
-// モバイルでは1列、タブレット以上では2列、デスクトップでは3列
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-
-// モバイルでは非表示、デスクトップでは表示
-<div className="hidden lg:block">
-
-// 本プロジェクトでの例（Lightbox.tsx）
-<div className="p-4 sm:p-6">
-// → モバイル: padding: 16px; タブレット以上: padding: 24px;
-```
-
----
-
-### よく使うTailwindパターン
-
-#### センタリング
-
-```typescript
-// Flexboxで中央揃え
-<div className="flex items-center justify-center">
-
-// 水平方向のみ中央
-<div className="mx-auto max-w-4xl">
-
-// 絶対配置で中央
-<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-```
-
-#### フルスクリーンオーバーレイ
-
-```typescript
-// 本プロジェクトでの例（Lightbox.tsx）
-<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-// → 画面全体を覆う半透明の黒背景
-```
-
-#### カード
-
-```typescript
-<div className="rounded-lg bg-white p-4 shadow-lg">
-  <h2 className="text-lg font-bold">タイトル</h2>
-  <p className="text-gray-600">内容</p>
-</div>
-```
-
-#### ボタン
-
-```typescript
-<button className="rounded-lg bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600">
-  クリック
-</button>
-```
-
-#### 入力フィールド
-
-```typescript
-<input
-  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-  type="text"
-/>
-```
-
----
-
-## React基礎概念
-
-Reactを理解するための核となる概念を解説します。
-
-### コンポーネント（Component）
-
-UIを構成する再利用可能なパーツ。関数として定義する。
-
-```typescript
-// 最もシンプルなコンポーネント
-function HelloWorld() {
-  return <div>Hello, World!</div>
-}
-
-// propsを受け取るコンポーネント
-type GreetingProps = {
-  name: string
-  age?: number  // オプショナル
-}
-
-function Greeting({ name, age }: GreetingProps) {
-  return (
-    <div>
-      <p>Hello, {name}!</p>
-      {age && <p>You are {age} years old.</p>}
-    </div>
-  )
-}
-
-// 使用例
-<Greeting name="haroin57" age={25} />
-```
-
-### JSX
-
-JavaScriptの中にHTMLライクな構文を書ける拡張構文。
-
-```typescript
-// JSXの基本
-const element = <h1>Hello, World!</h1>
-
-// JavaScript式の埋め込み（{}で囲む）
-const name = 'haroin57'
-const element = <h1>Hello, {name}!</h1>
-
-// 条件付きレンダリング
-function Status({ isLoggedIn }: { isLoggedIn: boolean }) {
-  return (
-    <div>
-      {isLoggedIn ? (
-        <p>ログイン中</p>
-      ) : (
-        <p>ログインしてください</p>
-      )}
-    </div>
-  )
-}
-
-// 条件付き表示（&&演算子）
-function MaybeShow({ show, message }: { show: boolean; message: string }) {
-  return (
-    <div>
-      {show && <p>{message}</p>}  {/* showがtrueの時のみ表示 */}
-    </div>
-  )
-}
-```
-
-### フック（Hooks）
-
-関数コンポーネントに状態や副作用などの機能を追加する関数。
-
-```typescript
-// useで始まる関数がフック
-import { useState, useEffect, useCallback } from 'react'
-
-function Counter() {
-  // フックはコンポーネントの最上位で呼び出す
-  const [count, setCount] = useState(0)  // ✅ OK
-
-  // ❌ 条件分岐の中で呼び出すのはNG
-  // if (someCondition) {
-  //   const [value, setValue] = useState(0)  // Error
-  // }
-
-  return <button onClick={() => setCount(count + 1)}>{count}</button>
-}
-```
-
-### 再レンダリング（Re-rendering）
-
-Reactは状態が変更されると、そのコンポーネントを再度実行（再レンダリング）する。
-
-```typescript
-function Counter() {
-  console.log('レンダリング実行')  // 状態が変わるたびに出力
-
-  const [count, setCount] = useState(0)
-
-  return (
-    <div>
-      <p>Count: {count}</p>
-      <button onClick={() => setCount(count + 1)}>
-        +1
-      </button>
-    </div>
-  )
-}
-
-// クリックするたびに:
-// 1. setCountが呼ばれる
-// 2. countの値が更新される
-// 3. Counterコンポーネントが再レンダリングされる
-// 4. 新しいcountの値でUIが更新される
-```
 
 ---
 
@@ -5615,3 +4180,404 @@ jobs:
 ```
 
 **注意**: CI/CDでのトークン管理には注意が必要です。長期間有効なサービスアカウントトークンの使用を検討してください。
+
+---
+
+## 初学者向けガイド
+
+このセクションでは、本プロジェクトで使用されている技術の基本概念を解説します。
+
+### Reactの基本概念
+
+#### コンポーネント
+
+UIの再利用可能な部品。関数として定義し、JSXを返します。
+
+```tsx
+function Button({ onClick, children }) {
+  return <button onClick={onClick}>{children}</button>
+}
+```
+
+#### フック（Hooks）
+
+関数コンポーネントで状態管理や副作用を扱う仕組みです。
+
+```tsx
+// useState: 状態を管理
+const [count, setCount] = useState(0)
+
+// useEffect: 副作用（API呼び出し、DOM操作など）
+useEffect(() => {
+  document.title = `Count: ${count}`
+}, [count])
+
+// useRef: DOMへの参照や値の保持
+const inputRef = useRef<HTMLInputElement>(null)
+
+// useCallback: 関数をメモ化
+const handleClick = useCallback(() => {
+  console.log('clicked')
+}, [])
+
+// useMemo: 計算結果をメモ化
+const expensiveValue = useMemo(() => computeExpensiveValue(a, b), [a, b])
+```
+
+#### memo
+
+コンポーネントをメモ化し、propsが変わらない限り再レンダリングを防止します。
+
+```tsx
+const MyComponent = memo(function MyComponent({ value }) {
+  return <div>{value}</div>
+})
+```
+
+本プロジェクトでは `PostContent` コンポーネントで使用し、MermaidのSVGがhydration後に消えるのを防いでいます。
+
+---
+
+### TypeScriptの基本
+
+#### 型定義
+
+```tsx
+// 変数の型
+const name: string = 'haroin'
+const age: number = 20
+
+// 関数の型
+function greet(name: string): string {
+  return `Hello, ${name}`
+}
+
+// オブジェクトの型（type）
+type User = {
+  name: string
+  age: number
+  email?: string  // ?はオプショナル
+}
+
+// インターフェース（拡張可能）
+interface Post {
+  title: string
+  content: string
+}
+
+// ジェネリクス
+function identity<T>(arg: T): T {
+  return arg
+}
+```
+
+---
+
+### CSSの基礎
+
+#### Tailwind CSS
+
+ユーティリティファーストのCSSフレームワーク。クラス名でスタイルを適用します。
+
+```html
+<!-- 従来のCSS -->
+<div class="container">...</div>
+
+<!-- Tailwind CSS -->
+<div class="mx-auto max-w-4xl px-4 py-6">...</div>
+```
+
+よく使うクラス:
+- `flex`, `grid`: レイアウト
+- `p-4`, `m-2`: パディング、マージン
+- `text-lg`, `font-bold`: テキストスタイル
+- `bg-blue-500`, `text-white`: 色
+- `sm:`, `md:`, `lg:`: レスポンシブ
+
+#### CSS変数（カスタムプロパティ）
+
+```css
+:root {
+  --fg: #e2e8f0;
+  --bg: #1a1a1a;
+}
+
+.text {
+  color: var(--fg);
+  background: var(--bg);
+}
+```
+
+---
+
+### dangerouslySetInnerHTML
+
+HTMLの文字列をReactコンポーネントに挿入する方法です。XSS攻撃のリスクがあるため注意が必要です。
+
+```tsx
+// 信頼できるソースのHTMLのみ使用すること
+<div dangerouslySetInnerHTML={{ __html: trustedHtml }} />
+```
+
+**注意点:**
+- ユーザー入力をそのまま使用しない
+- サニタイズされたHTMLのみ使用
+- Reactの仮想DOMと実DOMの同期に注意（hydration問題の原因になりうる）
+
+---
+
+### SSRとHydration
+
+#### SSR（サーバーサイドレンダリング）
+
+サーバーでHTMLを生成し、クライアントに送信します。初期表示が速く、SEOに有利です。
+
+#### Hydration
+
+サーバーで生成されたHTMLにReactの機能（イベントハンドラなど）を付与するプロセスです。
+
+```
+サーバー: HTMLを生成して送信
+    ↓
+ブラウザ: HTMLを表示（まだインタラクティブでない）
+    ↓
+JavaScript: hydrationを実行
+    ↓
+ブラウザ: フルインタラクティブに
+```
+
+**hydration時の注意:**
+- サーバーとクライアントで同じHTMLが生成される必要がある
+- `dangerouslySetInnerHTML`で挿入したコンテンツはhydration後に上書きされる可能性がある
+- クライアントのみで実行したい処理は`useEffect`内で行う
+
+本プロジェクトでの対策:
+- `PostContent`コンポーネントを`memo()`でラップ
+- `useMermaidBlocks`フックでhydration完了を検出してからMermaidをレンダリング
+
+---
+
+### 非同期処理
+
+#### async/await
+
+```tsx
+async function fetchData() {
+  try {
+    const response = await fetch('/api/data')
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error:', error)
+  }
+}
+```
+
+#### useEffectでのデータ取得
+
+```tsx
+useEffect(() => {
+  let mounted = true
+
+  const fetchData = async () => {
+    const res = await fetch('/api/posts')
+    const data = await res.json()
+    if (mounted) {
+      setData(data)
+    }
+  }
+
+  fetchData()
+
+  return () => {
+    mounted = false  // クリーンアップ
+  }
+}, [])
+```
+
+---
+
+### Mermaidダイアグラム
+
+本プロジェクトでは、Markdownの`mermaid`コードブロックを自動的にSVGダイアグラムに変換します。
+
+#### 動作フロー
+
+```
+Markdownビルド → HTMLにdata-mermaid属性を埋め込み
+                     ↓
+              PostContentコンポーネント
+                     ↓
+              useMermaidBlocksフック（hydration待機）
+                     ↓
+              renderMermaidBlocks関数
+                     ↓
+              SVGとしてDOMに挿入
+```
+
+#### HTMLの生成（ビルド時）
+
+Markdownの`mermaid`コードブロックは、ビルド時に以下のHTMLに変換されます:
+
+```html
+<div class="mermaid-block" data-mermaid="flowchart TB
+    A --> B
+"></div>
+```
+
+#### hydration対策
+
+Mermaidレンダリングには特別な配慮が必要です:
+
+1. **問題**: Reactのhydration後、親コンポーネントが再レンダリングされるとMermaidのSVGが消える
+2. **原因**: `dangerouslySetInnerHTML`の内容がReactの再レンダリングで上書きされる
+3. **解決策**:
+   - `PostContent`を`memo()`でラップし、不要な再レンダリングを防止
+   - `useMermaidBlocks`でhydration完了を検出してからレンダリング
+
+---
+
+### JavaScript/TypeScript 詳細構文
+
+#### 変数宣言
+
+```typescript
+// const: 再代入不可（基本はこちらを使用）
+const name = 'haroin57'
+const items = [1, 2, 3]
+items.push(4)  // ✅ 配列の中身は変更可能
+
+// let: 再代入可能
+let count = 0
+count++  // ✅ OK
+```
+
+#### アロー関数
+
+```typescript
+// 従来の関数
+function add(a, b) { return a + b }
+
+// アロー関数（同じ意味）
+const add = (a, b) => a + b
+
+// 引数が1つなら括弧省略可
+const double = x => x * 2
+```
+
+#### 分割代入
+
+```typescript
+// 配列
+const [first, second] = ['a', 'b']
+const [count, setCount] = useState(0)
+
+// オブジェクト
+const { name, age } = { name: 'Alice', age: 25 }
+
+// 関数の引数で直接分割
+function Greeting({ name }: { name: string }) {
+  return <p>Hello, {name}!</p>
+}
+```
+
+#### スプレッド構文
+
+```typescript
+// 配列の展開
+const combined = [...arr1, ...arr2]
+
+// オブジェクトのコピーと上書き
+const updated = { ...user, age: 26 }
+```
+
+#### テンプレートリテラル
+
+```typescript
+const message = `Hello, ${name}!`
+const url = `${API_ENDPOINT}/posts/${id}`
+```
+
+#### Null合体演算子とオプショナルチェーン
+
+```typescript
+// ?? : nullかundefinedの場合のみ右辺を返す
+const value = input ?? 'default'
+
+// ?. : プロパティがない場合はundefinedを返す
+const name = user?.profile?.name
+```
+
+---
+
+### 配列メソッド
+
+```typescript
+// map: 各要素を変換
+[1, 2, 3].map(n => n * 2)  // [2, 4, 6]
+
+// filter: 条件に合う要素を抽出
+[1, 2, 3, 4].filter(n => n > 2)  // [3, 4]
+
+// find: 条件に合う最初の要素
+users.find(u => u.id === 1)
+
+// some/every: 条件判定
+[1, 2, 3].some(n => n > 2)   // true
+[1, 2, 3].every(n => n > 0)  // true
+
+// reduce: 集約
+[1, 2, 3].reduce((sum, n) => sum + n, 0)  // 6
+```
+
+---
+
+### Web API
+
+```typescript
+// fetch: HTTPリクエスト
+const res = await fetch('/api/posts')
+const data = await res.json()
+
+// POST
+await fetch('/api/posts', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ title, content })
+})
+
+// localStorage: ブラウザにデータ保存
+localStorage.setItem('key', 'value')
+localStorage.getItem('key')  // 'value' or null
+```
+
+---
+
+### Tailwind CSS 詳細
+
+#### よく使うクラス
+
+| カテゴリ | クラス例 | 説明 |
+|---------|---------|------|
+| レイアウト | `flex`, `grid`, `block`, `hidden` | 表示方法 |
+| 配置 | `items-center`, `justify-between` | Flex配置 |
+| サイズ | `w-full`, `h-screen`, `max-w-4xl` | 幅・高さ |
+| 余白 | `p-4`, `m-2`, `px-6`, `mt-8` | パディング・マージン |
+| 色 | `bg-black`, `text-white`, `bg-black/50` | 背景・文字色 |
+| テキスト | `text-lg`, `font-bold`, `text-center` | フォント |
+| 角丸 | `rounded`, `rounded-lg`, `rounded-full` | 角の丸み |
+| 影 | `shadow`, `shadow-lg` | ボックスシャドウ |
+
+#### レスポンシブ
+
+```typescript
+// モバイルファースト: 基本スタイル → 大画面で上書き
+<div className="text-sm md:text-base lg:text-lg">
+// sm: 640px+, md: 768px+, lg: 1024px+
+```
+
+#### 状態
+
+```typescript
+<button className="hover:bg-blue-600 focus:ring-2 disabled:opacity-50">
+```

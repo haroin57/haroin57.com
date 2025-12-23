@@ -7,6 +7,7 @@ import PostDetail from '../routes/PostDetail'
 import Products from '../routes/Products'
 import ProductDetail from '../routes/ProductDetail'
 import Photos from '../routes/Photos'
+import About from '../routes/About'
 import BBSList from '../routes/BBSList'
 import BBSThread from '../routes/BBSThread'
 
@@ -24,6 +25,7 @@ function ServerRoutes() {
           <Route path="/products" element={<Products />} />
           <Route path="/products/:slug" element={<ProductDetail />} />
           <Route path="/photos" element={<Photos />} />
+          <Route path="/about" element={<About />} />
           <Route path="/bbs" element={<BBSList />} />
           <Route path="/bbs/:threadId" element={<BBSThread />} />
         </Routes>

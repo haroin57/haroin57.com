@@ -7,6 +7,7 @@
     "tags": ["React", "Vite", "Tailwind CSS", "Cloudflare Pages"],
     "url": "https://github.com/haroin57/haroin57.com",
     "demo": "https://haroin57.com",
+    "createdAt": "2025-12-01",
     "content": {
       "overview": "React 19とViteで構築したポートフォリオサイトです。パフォーマンスとユーザー体験を重視し、Cloudflare Pagesにデプロイしています。",
       "features": [
@@ -33,6 +34,7 @@
     "language": "Python",
     "tags": ["LINE", "Bot", "GPT", "OpenAI"],
     "url": "https://github.com/haroin57/timetable-bot",
+    "createdAt": "2025-10-15",
     "content": {
       "overview": "GPTを活用したLINE時間割管理Botです。自然言語でメッセージを送るだけで時間割の登録・表示・リマインダー設定ができます。画像からの時間割抽出にも対応。",
       "features": [
@@ -56,6 +58,7 @@
     "language": "Java",
     "tags": ["Distributed Computing", "Microservices"],
     "url": "https://github.com/haroin57/distoributed-system",
+    "createdAt": "2025-08-20",
     "content": {
       "overview": "分散システムの学習を目的としたJava実装です。分散合意アルゴリズムやマイクロサービスアーキテクチャの基礎を実装しています。",
       "features": [

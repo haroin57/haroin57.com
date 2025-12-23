@@ -22,6 +22,9 @@
   --ui-surface: rgba(0, 0, 0, 0.35);
   --ui-surface-hover: rgba(0, 0, 0, 0.45);
 
+  /* ナビゲーションボタン */
+  --nav-button-bg: rgba(0, 0, 0, 0.5);
+
   /* トランジション用変数 */
   --ui-fade-opacity: 1;
 
@@ -401,23 +404,29 @@ img {
 .prose h2,
 .prose h3,
 .prose h4 {
-  margin: 1.2rem 0 0.6rem;
+  margin: 1.5rem 0 0.5rem;
   font-weight: 600;
   color: var(--fg-strong);
   /* iOS/日本語フォントで太字が表示されない問題を修正 */
   font-synthesis: weight;
+  line-height: 1.4;
 }
 
+/* 本文17pxに合わせた見出しサイズ */
 .prose h1 {
-  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-size: 1.5rem; /* 24px */
 }
 
 .prose h2 {
-  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+  font-size: 1.25rem; /* 20px */
 }
 
 .prose h3 {
-  font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+  font-size: 1.125rem; /* 18px */
+}
+
+.prose h4 {
+  font-size: 1.0625rem; /* 17px - 本文と同じ */
 }
 
 .prose a {

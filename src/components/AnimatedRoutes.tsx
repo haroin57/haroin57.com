@@ -19,6 +19,7 @@ const loadHome = preload(() => import('../routes/Home'))
 const loadPosts = preload(() => import('../routes/Posts'))
 const loadProducts = preload(() => import('../routes/Products'))
 const loadPhotos = preload(() => import('../routes/Photos'))
+const loadAbout = preload(() => import('../routes/About'))
 
 // 低優先度: サブページ（アイドル時にプリフェッチ）
 const loadBBSList = prefetch(() => import('../routes/BBSList'))
@@ -38,6 +39,7 @@ const PostDetail = lazyWithPreload(loadPostDetail)
 const Products = lazyWithPreload(loadProducts)
 const ProductDetail = lazyWithPreload(loadProductDetail)
 const Photos = lazyWithPreload(loadPhotos)
+const About = lazyWithPreload(loadAbout)
 const BBSList = lazyWithPreload(loadBBSList)
 const BBSThread = lazyWithPreload(loadBBSThread)
 const PostEditor = lazyWithPreload(loadPostEditor)
@@ -45,11 +47,12 @@ const ProductEditor = lazyWithPreload(loadProductEditor)
 
 // 遷移時に関連ルートをプリロード（詳細ページは除外 - 大きなJSONを含むため）
 const routeLoaders: Record<string, Array<() => Promise<unknown>>> = {
-  '/': [loadHome, loadPosts, loadProducts, loadPhotos],
-  '/home': [loadPosts, loadProducts, loadPhotos],
+  '/': [loadHome, loadPosts, loadProducts, loadPhotos, loadAbout],
+  '/home': [loadPosts, loadProducts, loadPhotos, loadAbout],
   '/posts': [loadHome],
   '/products': [loadHome],
   '/photos': [loadHome],
+  '/about': [loadHome],
   '/bbs': [loadHome, loadBBSThread],
 }
 
@@ -102,6 +105,10 @@ export async function preloadRoutesForPath(pathname: string): Promise<void> {
   }
   if (first === 'bbs') {
     await BBSList.preload()
+    return
+  }
+  if (first === 'about') {
+    await About.preload()
   }
 }
 
@@ -138,6 +145,7 @@ function AnimatedRoutes() {
           <Route path="/products" element={<Products />} />
           <Route path="/products/:slug" element={<ProductDetail />} />
           <Route path="/photos" element={<Photos />} />
+          <Route path="/about" element={<About />} />
           <Route path="/bbs" element={<BBSList />} />
           <Route path="/bbs/:threadId" element={<BBSThread />} />
           {/* 管理者ルート */}

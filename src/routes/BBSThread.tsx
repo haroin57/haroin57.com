@@ -227,21 +227,23 @@ function BBSThread() {
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
-        className="relative z-10 mx-auto min-h-screen max-w-4xl px-4 pt-16 pb-10 space-y-6 page-fade sm:px-6 sm:pt-20 sm:pb-12"
+        className="relative z-10 min-h-screen flex flex-col page-fade"
         style={MAIN_TEXT_STYLE}
       >
-        <header
-          className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
-          style={MAIN_FONT_STYLE}
-        >
-          <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
-            Home
-          </PrefetchLink>
-          <span className="opacity-50">/</span>
-          <PrefetchLink to="/bbs" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
-            BBS
-          </PrefetchLink>
-        </header>
+        <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
+          <div className="mx-auto w-full max-w-2xl space-y-6">
+            <header
+              className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
+              style={MAIN_FONT_STYLE}
+            >
+              <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+                Home
+              </PrefetchLink>
+              <span className="opacity-50">/</span>
+              <PrefetchLink to="/bbs" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+                BBS
+              </PrefetchLink>
+            </header>
 
         {isLoading ? (
           <div className="reveal text-[color:var(--fg)] opacity-70 py-8 text-center">読み込み中...</div>
@@ -359,9 +361,11 @@ function BBSThread() {
             </section>
           </article>
         ) : null}
-      </main>
+          </div>
+        </div>
 
-      <SiteFooter />
+        <SiteFooter />
+      </main>
 
       <style>{`
         .bbs-highlight {

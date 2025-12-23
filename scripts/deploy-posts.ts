@@ -87,6 +87,7 @@ interface PostData {
   tags: string[]
   status: 'draft' | 'published'
   createdAt?: string
+  updatedAt?: string
 }
 
 // コマンドライン引数をパース
@@ -627,6 +628,7 @@ async function parseMarkdownFile(filePath: string, options: DeployOptions): Prom
     tags,
     status,
     createdAt: data.date || undefined,
+    updatedAt: data.updated || data.updatedAt || undefined,
   }
 }
 
@@ -720,6 +722,8 @@ async function generatePostsJson(options: DeployOptions): Promise<void> {
     title: string
     summary: string
     createdAt: string | null
+    updatedAt: string | null
+    status: 'draft' | 'published'
     tags: string[]
     html: string
   }[] = []
@@ -730,11 +734,18 @@ async function generatePostsJson(options: DeployOptions): Promise<void> {
 
     try {
       const post = await parseMarkdownFile(file, options)
+      // publishedのみJSONに含める（draftは除外）
+      if (post.status === 'draft') {
+        console.log(`  ⊘ ${post.slug} (skipped: draft)`)
+        continue
+      }
       posts.push({
         slug: post.slug,
         title: post.title,
         summary: post.summary,
         createdAt: post.createdAt || null,
+        updatedAt: post.updatedAt || null,
+        status: post.status,
         tags: post.tags,
         html: post.html,
       })

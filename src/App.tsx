@@ -49,7 +49,8 @@ function App() {
           <button
             type="button"
             onClick={handleNavigate}
-            className="group absolute bottom-10 left-1/2 z-30 -translate-x-1/2 inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-neutral-950 font-medium text-neutral-200 active:scale-95 transition-transform"
+            className="group absolute bottom-10 left-1/2 z-30 -translate-x-1/2 inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full font-medium text-neutral-200 active:scale-95 transition-transform"
+            style={{ backgroundColor: 'var(--nav-button-bg)' }}
           >
             <div className="transition-transform duration-300 group-hover:translate-y-[300%]">
               <ArrowRightIcon className="h-5 w-5 rotate-90" />

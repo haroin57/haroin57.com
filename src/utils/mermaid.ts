@@ -106,42 +106,30 @@ export async function loadMermaid(): Promise<MermaidAPI> {
 
 export async function renderMermaidBlocks(root: ParentNode): Promise<void> {
   const blocks = Array.from(root.querySelectorAll<HTMLElement>('.mermaid-block'))
-  console.log('[Mermaid] Found blocks:', blocks.length)
   if (blocks.length === 0) return
 
   let api: MermaidAPI
   try {
     api = await loadMermaid()
-  } catch (err) {
-    console.error('Mermaid loading error:', err)
+  } catch {
     blocks.forEach(setMermaidError)
     return
   }
 
   for (const block of blocks) {
     const code = block.getAttribute('data-mermaid')
-    console.log('[Mermaid] Block code:', code?.slice(0, 100))
-    if (!code || block.querySelector('svg')) {
-      console.log('[Mermaid] Skipping block - no code or already rendered')
-      continue
-    }
+    if (!code || block.querySelector('svg')) continue
 
     const normalizedCode = normalizeMermaidCode(code)
-    if (!normalizedCode.trim()) {
-      console.log('[Mermaid] Skipping block - empty after normalization')
-      continue
-    }
+    if (!normalizedCode.trim()) continue
 
     try {
       const id = `mermaid-${Math.random().toString(36).slice(2, 11)}`
-      console.log('[Mermaid] Rendering with id:', id)
       const { svg, bindFunctions } = await api.render(id, normalizedCode)
-      console.log('[Mermaid] Render success, svg length:', svg.length)
       block.innerHTML = svg
       block.classList.add('mermaid-rendered')
       bindFunctions?.(block)
-    } catch (err) {
-      console.error('[Mermaid] Rendering error:', err)
+    } catch {
       setMermaidError(block)
     }
   }

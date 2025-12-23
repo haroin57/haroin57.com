@@ -146,7 +146,7 @@ function Products() {
                         </Link>
                       )}
                     </div>
-                    <h2 className="text-lg sm:text-2xl text-[color:var(--fg-strong,inherit)]">
+                    <h2 className="text-base sm:text-xl text-[color:var(--fg-strong,inherit)]">
                       <PrefetchLink
                         to={`/products/${product.slug}`}
                         className="underline-thin hover:text-accent"
@@ -155,7 +155,7 @@ function Products() {
                         {product.name}
                       </PrefetchLink>
                     </h2>
-                    <p className="text-xs sm:text-base text-[color:var(--fg,inherit)] opacity-80">{product.description}</p>
+                    <p className="text-xs sm:text-sm text-[color:var(--fg,inherit)] opacity-80">{product.description}</p>
                     {product.tags && product.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2 text-[11px] sm:text-sm">
                         {product.tags.map((tag) => (

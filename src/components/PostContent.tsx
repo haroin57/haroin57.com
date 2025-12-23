@@ -22,7 +22,7 @@ const PostContent = memo(function PostContent({
   return (
     <div
       ref={proseRef}
-      className="prose prose-invert font-medium font-a-otf-gothic text-sm sm:text-[19px] w-full"
+      className="prose prose-invert font-medium font-a-otf-gothic text-sm sm:text-[17px] w-full"
       style={{ color: 'var(--fg-strong)' }}
       dangerouslySetInnerHTML={{ __html: html }}
     />

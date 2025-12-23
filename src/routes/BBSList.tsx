@@ -175,19 +175,21 @@ function BBSList() {
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
-        className="relative z-10 mx-auto min-h-screen max-w-4xl px-4 pt-16 pb-10 space-y-6 page-fade sm:px-6 sm:pt-20 sm:pb-12"
+        className="relative z-10 min-h-screen flex flex-col page-fade"
         style={MAIN_TEXT_STYLE}
       >
-        <header
-          className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
-          style={MAIN_FONT_STYLE}
-        >
-          <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
-            Home
-          </PrefetchLink>
-        </header>
+        <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
+          <div className="mx-auto w-full max-w-2xl space-y-6">
+            <header
+              className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
+              style={MAIN_FONT_STYLE}
+            >
+              <PrefetchLink to="/home" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+                Home
+              </PrefetchLink>
+            </header>
 
-        <article className="reveal space-y-4 w-full">
+            <article className="reveal space-y-4 w-full">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
               haroin57 BBSスレッド
@@ -335,19 +337,21 @@ function BBSList() {
           </div>
 
           {/* 戻るリンク */}
-          <section className="mt-6 flex justify-start">
-            <Link
-              to="/home"
-              className="font-morisawa-dragothic underline-thin hover:text-accent text-base sm:text-lg"
-              style={{ color: 'var(--fg)' }}
-            >
-              ← Homeへ
-            </Link>
-          </section>
-        </article>
-      </main>
+            <section className="mt-6 flex justify-start">
+              <Link
+                to="/home"
+                className="font-morisawa-dragothic underline-thin hover:text-accent text-base sm:text-lg"
+                style={{ color: 'var(--fg)' }}
+              >
+                ← Homeへ
+              </Link>
+            </section>
+          </article>
+          </div>
+        </div>
 
-      <SiteFooter />
+        <SiteFooter />
+      </main>
     </div>
   )
 }

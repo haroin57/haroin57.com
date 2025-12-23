@@ -258,7 +258,8 @@ function ProductDetail() {
         className="relative z-10 min-h-screen flex flex-col page-fade"
         style={MAIN_TEXT_STYLE}
       >
-        <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 space-y-6 sm:px-6 sm:pt-20 sm:pb-12">
+        <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
+          <div className="mx-auto w-full max-w-2xl space-y-6">
             <header
               className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
               style={MAIN_FONT_STYLE}
@@ -290,7 +291,7 @@ function ProductDetail() {
                     </span>
                   </div>
 
-                  <p className="text-base sm:text-lg opacity-85">{product.description}</p>
+                  <p className="text-sm sm:text-base opacity-85">{product.description}</p>
 
                   {product.tags && product.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
@@ -359,22 +360,22 @@ function ProductDetail() {
                 ) : product.content && (
                   <>
                     <section className="reveal space-y-3">
-                      <h2 className="text-lg sm:text-2xl font-semibold text-[color:var(--fg-strong)]">
+                      <h2 className="text-base sm:text-xl font-semibold text-[color:var(--fg-strong)]">
                         Overview
                       </h2>
                       <div className="glass-panel p-4 sm:p-6">
-                        <p className="text-sm sm:text-lg leading-relaxed font-a-otf-gothic">
+                        <p className="text-sm sm:text-[17px] leading-relaxed font-a-otf-gothic">
                           {product.content.overview}
                         </p>
                       </div>
                     </section>
 
                     <section className="reveal space-y-3">
-                      <h2 className="text-lg sm:text-2xl font-semibold text-[color:var(--fg-strong)]">
+                      <h2 className="text-base sm:text-xl font-semibold text-[color:var(--fg-strong)]">
                         Features
                       </h2>
                       <div className="glass-panel p-4 sm:p-6">
-                        <ul className="space-y-2 text-sm sm:text-lg font-a-otf-gothic">
+                        <ul className="space-y-2 text-sm sm:text-[17px] font-a-otf-gothic">
                           {product.content.features.map((feature, idx) => (
                             <li key={idx} className="flex items-start gap-2">
                               <span className="mt-1.5 sm:mt-2 h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-current opacity-60 shrink-0" />
@@ -386,7 +387,7 @@ function ProductDetail() {
                     </section>
 
                     <section className="reveal space-y-3">
-                      <h2 className="text-lg sm:text-2xl font-semibold text-[color:var(--fg-strong)]">
+                      <h2 className="text-base sm:text-xl font-semibold text-[color:var(--fg-strong)]">
                         Tech Stack
                       </h2>
                       <div className="glass-panel p-4 sm:p-6">
@@ -400,7 +401,7 @@ function ProductDetail() {
                                 {stack.items.map((item) => (
                                   <span
                                     key={item}
-                                    className="px-3 py-1.5 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-sm sm:text-base"
+                                    className="px-3 py-1.5 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-xs sm:text-sm"
                                   >
                                     {item}
                                   </span>
@@ -425,6 +426,7 @@ function ProductDetail() {
                 </section>
               </article>
             )}
+          </div>
         </div>
 
         <SiteFooter />

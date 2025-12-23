@@ -17,15 +17,11 @@ export function useMermaidBlocks<T extends HTMLElement>(
     if (!hydrated) return
 
     const root = ref.current
-    console.log('[useMermaidBlocks] Effect triggered, root:', root ? 'exists' : 'null', 'hydrated:', hydrated)
     if (!root) return
 
     // DOMが更新された後にMermaidをレンダリング
     // requestIdleCallbackでブラウザがアイドル状態になってからレンダリング
     const render = () => {
-      console.log('[useMermaidBlocks] Calling renderMermaidBlocks')
-      console.log('[useMermaidBlocks] root.innerHTML length:', root.innerHTML.length)
-      console.log('[useMermaidBlocks] mermaid-block count:', root.querySelectorAll('.mermaid-block').length)
       void renderMermaidBlocks(root)
     }
 
