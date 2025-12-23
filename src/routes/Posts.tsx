@@ -17,7 +17,7 @@ type Post = {
   html?: string
   summary?: string
   createdAt?: string
-  updatedAt?: string
+  updatedAt?: string | null
   tags?: string[]
   status?: 'draft' | 'published'
 }
