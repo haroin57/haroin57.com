@@ -60,11 +60,10 @@ body.top-page .p5-bg {
   mix-blend-mode: normal;
 }
 
-/* 背景画像のトランジション強化 */
+/* 背景画像のトランジション */
 .pointer-events-none.fixed img {
   transition:
     filter 300ms var(--ease-out-quart),
-    transform 400ms var(--ease-out-expo),
     opacity 400ms var(--ease-out-quart);
 }
 
@@ -111,7 +110,6 @@ body.top-page .p5-bg {
   height: 100dvh;
   animation: bgScroll 100s linear infinite;
   animation-play-state: var(--bg-animation-state, running);
-  will-change: transform;
 }
 
 .scrolling-bg-image {
@@ -146,6 +144,7 @@ body.top-page .p5-bg {
   }
 }
 
+/* ハイパーキューブ */
 .p5-bg {
   position: absolute;
   inset: 0;
@@ -158,6 +157,60 @@ body.top-page .p5-bg {
 }
 
 .p5-bg canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* タイトルとバイクモデルのコンテナ */
+.title-with-model {
+  position: relative;
+}
+
+/* 3Dモデル（タイトル左上・Topページ専用） */
+.motorcycle-model-top {
+  position: absolute;
+  /* タイトルの左端から左にオフセット */
+  right: 100%;
+  /* タイトルの上端を基準に配置 */
+  top: 50%;
+  transform: translateY(-85%) translateX(280px);
+  width: 120px;
+  height: 120px;
+  z-index: 5;
+  margin-right: 8px;
+}
+
+@media (min-width: 640px) {
+  .motorcycle-model-top {
+    width: 180px;
+    height: 180px;
+    margin-right: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .motorcycle-model-top {
+    width: 400px;
+    height: 400px;
+    margin-right: 24px;
+  }
+}
+
+.motorcycle-model-top .motorcycle-model {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.motorcycle-model {
+  z-index: 1;
+  pointer-events: none;
+  width: 500px;
+  height: 500px;
+}
+
+.motorcycle-model canvas {
   display: block;
   width: 100% !important;
   height: 100% !important;
@@ -177,53 +230,49 @@ body {
 @keyframes pageFadeIn {
   from {
     opacity: 0;
-    transform: translate3d(0, 6px, 0);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: translateY(0);
   }
 }
 
-/* Collapse - 滑らかな開閉 */
+/* Collapse - シンプルな開閉アニメーション */
 .collapse {
   overflow: hidden;
   transition:
-    max-height 400ms var(--ease-out-expo),
-    opacity 300ms var(--ease-out-quart),
-    visibility 400ms;
+    max-height 300ms ease-out,
+    opacity 200ms ease-out;
 }
 
 .collapse.open {
-  max-height: 2000px;
-  opacity: 1;
-  visibility: visible;
+  max-height: 1000px !important;
+  opacity: 1 !important;
+}
+
+.collapse.open > * {
+  visibility: visible !important;
+  color: inherit;
 }
 
 .collapse.closed {
-  max-height: 0;
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    max-height 300ms var(--ease-in-out-smooth),
-    opacity 200ms ease-out,
-    visibility 300ms;
+  max-height: 0 !important;
+  opacity: 0 !important;
 }
 
-/* Reveal アニメーション - GPU accelerated, 高速化 */
+/* Reveal アニメーション */
 .reveal {
   opacity: 0;
-  transform: translate3d(0, 8px, 0);
+  transform: translateY(8px);
   transition:
     opacity 200ms var(--ease-out-expo),
     transform 200ms var(--ease-out-expo);
-  will-change: opacity, transform;
-  backface-visibility: hidden;
 }
 
 .reveal.is-visible {
   opacity: 1;
-  transform: translate3d(0, 0, 0);
+  transform: translateY(0);
 }
 
 /* スタガーアニメーション用 */
@@ -245,7 +294,6 @@ body {
     transform 120ms var(--ease-out-quart),
     opacity 120ms var(--ease-out-quart),
     filter 100ms linear;
-  will-change: transform, opacity, filter;
 }
 
 /* reduced motion 対応 */
@@ -1052,7 +1100,7 @@ img {
 
 @layer components {
   .glass-panel {
-    @apply rounded-2xl border backdrop-blur-md shadow-lg;
+    @apply rounded border backdrop-blur-md shadow-lg;
     border-color: var(--ui-border);
     background-color: var(--ui-surface);
   }

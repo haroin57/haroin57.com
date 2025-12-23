@@ -54,7 +54,7 @@ export default function GlobalBackground() {
   return (
     <div className="global-bg-container">
       <ScrollingBackground baseOpacity={baseOpacity} />
-      {/* p5アニメーション（z-index: 1、CSSで設定） */}
+      {/* p5アニメーション */}
       <P5HypercubeBackground />
     </div>
   )

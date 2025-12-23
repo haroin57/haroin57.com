@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import productsData from '../data/products.json' with { type: 'json' }
-import ArrowRightIcon from '../components/icons/ArrowRightIcon'
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
@@ -127,61 +126,47 @@ function Products() {
             {isLoading ? (
               <div className="reveal py-8 text-center opacity-70">読み込み中...</div>
             ) : (
-              <ul className="reveal space-y-4">
+              <ul className="reveal font-vdl-logomaru posts-divider">
                 {products.map((product) => (
-                  <li key={product.slug} className="group relative">
-                    <PrefetchLink
-                      to={`/products/${product.slug}`}
-                      className="glass-panel block p-4 sm:p-6 transition-colors hover:bg-[color:var(--ui-surface-hover)]"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <h2 className="text-lg sm:text-2xl font-semibold text-[color:var(--fg-strong)]">
-                              {product.name}
-                            </h2>
-                            <ArrowRightIcon className="h-4 w-4 opacity-60" />
-                          </div>
-                          <p className="text-sm sm:text-base opacity-80">{product.description}</p>
-                          <div className="flex flex-wrap items-center gap-3 pt-1">
-                            <span className="flex items-center gap-1.5 text-xs sm:text-sm">
-                              <span
-                                className="h-3 w-3 rounded-full"
-                                style={{ backgroundColor: languageColors[product.language] || '#6e7681' }}
-                              />
-                              {product.language}
-                            </span>
-                            {product.tags && product.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5">
-                                {product.tags.map((tag) => (
-                                  <span
-                                    key={tag}
-                                    className="px-2 py-0.5 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[10px] sm:text-xs"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                  <li key={product.slug} className="space-y-2 py-4 group">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-[color:var(--fg,inherit)] opacity-75">
+                        <span
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: languageColors[product.language] || '#6e7681' }}
+                        />
+                        {product.language}
                       </div>
-                      {product.demo && (
-                        <div className="mt-3 pt-3 border-t border-[color:var(--ui-border)]">
-                          <span className="text-xs sm:text-sm opacity-70">Demo: </span>
-                          <span className="text-xs sm:text-sm underline-thin">{product.demo}</span>
-                        </div>
+                      {isAdmin && (
+                        <Link
+                          to={`/admin/products/${product.slug}/edit`}
+                          className="px-2 py-0.5 rounded border border-blue-500/50 bg-blue-500/10 text-blue-400 text-xs font-semibold transition-all opacity-0 group-hover:opacity-100 hover:bg-blue-500/20"
+                        >
+                          編集
+                        </Link>
                       )}
-                    </PrefetchLink>
-                    {/* 管理者用編集ボタン */}
-                    {isAdmin && (
-                      <Link
-                        to={`/admin/products/${product.slug}/edit`}
-                        className="absolute top-4 right-4 px-2 py-0.5 rounded border border-blue-500/50 bg-blue-500/10 text-blue-400 text-xs font-semibold transition-all opacity-0 group-hover:opacity-100 hover:bg-blue-500/20 z-10"
-                        onClick={(e) => e.stopPropagation()}
+                    </div>
+                    <h2 className="text-lg sm:text-2xl text-[color:var(--fg-strong,inherit)]">
+                      <PrefetchLink
+                        to={`/products/${product.slug}`}
+                        className="underline-thin hover:text-accent"
+                        style={{ color: 'inherit' }}
                       >
-                        編集
-                      </Link>
+                        {product.name}
+                      </PrefetchLink>
+                    </h2>
+                    <p className="text-xs sm:text-base text-[color:var(--fg,inherit)] opacity-80">{product.description}</p>
+                    {product.tags && product.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 text-[11px] sm:text-sm">
+                        {product.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-2 py-1 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)]"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </li>
                 ))}

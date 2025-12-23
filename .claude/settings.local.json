@@ -44,7 +44,8 @@
       "Bash(del \"c:\\\\Users\\\\harut\\\\haroin57-web\\\\temp_post.json\")",
       "Bash(npx wrangler d1 execute:*)",
       "Bash(npx wrangler deploy:*)",
-      "Bash(npx sharp-cli:*)"
+      "Bash(npx sharp-cli:*)",
+      "Bash(unzip:*)"
     ]
   }
 }

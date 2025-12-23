@@ -55,7 +55,7 @@ const project3D = (v: Vec3, distance: number): Vec3 => {
   return [v[0] * scale, v[1] * scale, v[2]]
 }
 
-const TARGET_FPS = 60
+const TARGET_FPS = 120
 const MIN_CANVAS_WIDTH = 320
 const MIN_CANVAS_HEIGHT = 240
 
