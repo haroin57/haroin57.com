@@ -109,17 +109,29 @@ body.top-page .p5-bg {
 
 /* モバイル縦型画面用のレスポンシブ対応 */
 @media (max-width: 768px) and (orientation: portrait) {
+  .scrolling-bg {
+    /* 縦型画面では各画像が画面全体を覆うように幅を計算 */
+    /* 4枚の画像 × 100vw = 400vw、半分でループなので-200vwまで移動 */
+    width: 400vw;
+    animation-duration: 80s;
+  }
+
   .scrolling-bg-image {
-    /* 縦型画面では画像の最小幅を確保して十分に表示 */
-    min-width: 100vw;
+    /* 各画像が画面幅いっぱいに表示 */
+    width: 100vw;
     height: 100vh;
     object-fit: cover;
     object-position: center;
   }
 
-  .scrolling-bg {
-    /* アニメーション速度を調整（画像が大きくなるため） */
-    animation-duration: 180s;
+  @keyframes bgScroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      /* 4枚中2枚分（50%）移動でループ */
+      transform: translateX(-50%);
+    }
   }
 }
 
