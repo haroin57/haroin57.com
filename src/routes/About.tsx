@@ -74,7 +74,7 @@ function About() {
                   このサイトでは、技術ブログや制作物の紹介、写真などを公開しています。
                 </p>
                 <p className="text-sm sm:text-base leading-relaxed text-[color:var(--fg)]">
-                　趣味でバイクツーリングとDTM、個人開発、写真撮影、読書、映像作品鑑賞を楽しんでいます。
+                  趣味でバイクツーリングとDTM、個人開発、写真撮影、読書、映像作品鑑賞を楽しんでいます。
                 </p>
               </div>
 
