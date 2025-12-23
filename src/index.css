@@ -94,6 +94,9 @@ body.top-page .p5-bg {
   inset: 0;
   z-index: 0;
   overflow: hidden;
+  /* モバイルブラウザの動的ビューポートに対応 */
+  height: 100vh;
+  height: 100dvh;
 }
 
 .scrolling-bg-track {
@@ -103,7 +106,9 @@ body.top-page .p5-bg {
   display: flex;
   flex-direction: row;
   width: max-content;
-  height: 100%;
+  /* 動的ビューポート高さを使用 */
+  height: 100vh;
+  height: 100dvh;
   animation: bgScroll 100s linear infinite;
   animation-play-state: var(--bg-animation-state, running);
   will-change: transform;
@@ -111,7 +116,9 @@ body.top-page .p5-bg {
 
 .scrolling-bg-image {
   flex-shrink: 0;
-  height: 100%;
+  /* 動的ビューポート高さを使用 */
+  height: 100vh;
+  height: 100dvh;
   width: auto;
   max-width: none;
   object-fit: cover;
@@ -119,14 +126,7 @@ body.top-page .p5-bg {
 
 @media (max-aspect-ratio: 4/3) {
   .scrolling-bg-track {
-    height: 100vh;
-    height: 100svh;
     animation-duration: 80s;
-  }
-
-  .scrolling-bg-image {
-    height: 100%;
-    width: auto;
   }
 }
 
