@@ -88,25 +88,26 @@ body.top-page .p5-bg {
   transition: opacity 600ms var(--ease-out-quart);
 }
 
-/* 縦型画面用: 横スクロール背景 */
-.portrait-bg-scroll {
+/* 横スクロール背景（PC/スマホ共通） */
+.scrolling-bg {
   position: absolute;
   inset: 0;
   z-index: 0;
   display: flex;
   flex-direction: row;
   height: 100vh;
-  animation: portraitScroll 30s linear infinite;
+  animation: bgScroll 100s linear infinite;
+  animation-play-state: var(--bg-animation-state, running);
 }
 
-.portrait-bg-image {
+.scrolling-bg-image {
   flex-shrink: 0;
   height: 100%;
   width: auto;
   object-fit: cover;
 }
 
-@keyframes portraitScroll {
+@keyframes bgScroll {
   0% {
     transform: translateX(0);
   }

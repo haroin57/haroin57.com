@@ -142,6 +142,9 @@ function ProductDetail() {
       body.style.setProperty('--bg-scale', scale.toFixed(4))
       body.style.setProperty('--bg-wash', wash.toFixed(3))
       body.style.setProperty('--bg-opacity', opacity.toFixed(3))
+
+      // スクロールが進んだらアニメーションを停止
+      body.style.setProperty('--bg-animation-state', t > 0.1 ? 'paused' : 'running')
     }
 
     const onScroll = () => {
@@ -194,6 +197,7 @@ function ProductDetail() {
         body.style.removeProperty('--bg-scale')
         body.style.removeProperty('--bg-wash')
         body.style.removeProperty('--bg-opacity')
+        body.style.removeProperty('--bg-animation-state')
       }
 
       window.requestAnimationFrame(tick)
