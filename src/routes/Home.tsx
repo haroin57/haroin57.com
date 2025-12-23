@@ -252,27 +252,25 @@ function Home() {
               Contents
             </h1>
 
-            <nav className="reveal flex flex-wrap items-start justify-start gap-6 sm:gap-8 border-t border-white/20 pt-6">
+            <nav className="reveal flex flex-wrap items-start justify-center gap-4 sm:gap-8 border-t border-white/20 pt-6">
               {navItems.map((item) => (
                 <PrefetchLink
                   key={item.to}
                   to={item.to}
-                  className="group flex flex-col items-center gap-2"
+                  className="group flex flex-col items-center gap-1.5 sm:gap-2"
                 >
                   <div
-                    className="relative flex items-center justify-center overflow-hidden rounded-full border border-white/20 transition-all duration-300 group-hover:border-white/40 group-hover:scale-105 group-active:scale-95 text-[#d3d3d3]"
+                    className="relative flex items-center justify-center overflow-hidden rounded-full border border-white/20 transition-all duration-300 group-hover:border-white/40 group-hover:scale-105 group-active:scale-95 text-[#d3d3d3] w-[42px] h-[42px] sm:w-16 sm:h-16"
                     style={{
-                      width: 64,
-                      height: 64,
                       backgroundColor: 'transparent',
                     }}
                   >
                     <div className="transition-transform duration-500 group-hover:scale-110">
-                      <NavIcon type={item.type} className="w-7 h-7" />
+                      <NavIcon type={item.type} className="w-[18px] h-[18px] sm:w-7 sm:h-7" />
                     </div>
                     <div className="absolute inset-0 bg-black/10 transition-opacity duration-300 group-hover:bg-black/0" />
                   </div>
-                  <span className="text-xs sm:text-sm font-medium text-[color:var(--fg)] opacity-70 transition-opacity duration-300 group-hover:opacity-100">
+                  <span className="text-[10px] sm:text-sm font-medium text-[color:var(--fg)] opacity-70 transition-opacity duration-300 group-hover:opacity-100">
                     {item.label}
                   </span>
                 </PrefetchLink>
