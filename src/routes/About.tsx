@@ -10,9 +10,9 @@ function About() {
   const pageRef = useRef<HTMLDivElement | null>(null)
 
   usePageMeta({
-    title: 'About | haroin57 web',
+    title: 'About',
     description: 'haroinについて',
-    ogTitle: 'About | haroin57 web',
+    ogTitle: 'About',
     ogDescription: 'haroinについて',
   })
 
@@ -67,11 +67,14 @@ function About() {
               {/* 自己紹介 */}
               <div className="glass-panel p-4 sm:p-6 space-y-4">
                 <p className="text-sm sm:text-base leading-relaxed text-[color:var(--fg)]">
-                  北海道在住のソフトウェア開発者です。
+                  長野在住のソフトウェア開発者です。
                   Webフロントエンド・バックエンド開発を中心に、様々な技術に興味を持っています。
                 </p>
                 <p className="text-sm sm:text-base leading-relaxed text-[color:var(--fg)]">
                   このサイトでは、技術ブログや制作物の紹介、写真などを公開しています。
+                </p>
+                <p className="text-sm sm:text-base leading-relaxed text-[color:var(--fg)]">
+                　趣味でバイクツーリングとDTM、個人開発、写真撮影、読書、映像作品鑑賞を楽しんでいます。
                 </p>
               </div>
 
