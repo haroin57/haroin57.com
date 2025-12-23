@@ -165,35 +165,54 @@ body.top-page .p5-bg {
 /* タイトルとバイクモデルのコンテナ */
 .title-with-model {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* 3Dモデル（タイトル左上・Topページ専用） */
 .motorcycle-model-top {
-  position: absolute;
-  /* タイトルの左端から左にオフセット */
-  right: 100%;
-  /* タイトルの上端を基準に配置 */
-  top: 50%;
-  transform: translateY(-85%) translateX(280px);
-  width: 120px;
-  height: 120px;
+  /* モバイル: タイトルの上に配置（フロー内） */
+  position: relative;
+  width: 160px;
+  height: 160px;
   z-index: 5;
-  margin-right: 8px;
+  margin-bottom: -20px;
 }
 
+/* タブレット: タイトルの右上に絶対配置 */
 @media (min-width: 640px) {
+  .title-with-model {
+    display: block;
+  }
   .motorcycle-model-top {
-    width: 180px;
-    height: 180px;
-    margin-right: 16px;
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-60%);
+    width: 220px;
+    height: 220px;
+    margin-left: -40px;
+    margin-bottom: 0;
   }
 }
 
+/* デスクトップ: より大きく */
 @media (min-width: 768px) {
+  .motorcycle-model-top {
+    width: 320px;
+    height: 320px;
+    margin-left: -60px;
+    transform: translateY(-55%);
+  }
+}
+
+/* 大画面: さらに大きく */
+@media (min-width: 1024px) {
   .motorcycle-model-top {
     width: 400px;
     height: 400px;
-    margin-right: 24px;
+    margin-left: -80px;
   }
 }
 
