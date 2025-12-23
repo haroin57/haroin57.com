@@ -99,6 +99,8 @@ function P5HypercubeBackground() {
           window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
         let renderScale = getOptimalRenderScale()
+        let animationTime = 0
+        let lastFrameTime = 0
 
         p.setup = () => {
           const w = Math.max(MIN_CANVAS_WIDTH, Math.floor(p.windowWidth * renderScale))
@@ -122,7 +124,18 @@ function P5HypercubeBackground() {
         }
 
         p.draw = () => {
-          const t = p.millis() * 0.00009
+          // デルタタイムを使用して時間ジャンプを防ぐ
+          const currentTime = p.millis()
+          let deltaTime = currentTime - lastFrameTime
+          lastFrameTime = currentTime
+
+          // タブ非アクティブ後などの大きなジャンプを制限（最大100ms）
+          if (deltaTime > 100) {
+            deltaTime = 16.67 // 60fpsの1フレーム分として扱う
+          }
+
+          animationTime += deltaTime * 0.00009
+          const t = animationTime
           const angleA = t * 1.0
           const angleB = t * 0.7
           const angleC = t * 0.55
