@@ -247,8 +247,15 @@ function Home() {
         style={MAIN_TEXT_STYLE}
       >
         <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
+          {/* Contents見出し */}
+          <div className="mx-auto w-full max-w-2xl mb-8">
+            <h1 className="reveal text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
+              Contents
+            </h1>
+          </div>
+
           {/* ナビゲーションボタン - サイト全体で中央配置 */}
-          <nav className="reveal flex flex-wrap items-start justify-center gap-4 sm:gap-8 mb-8">
+          <nav className="reveal flex flex-wrap items-start justify-center gap-4 sm:gap-8 mb-8 border-t border-white/20 pt-6">
             {navItems.map((item) => (
               <PrefetchLink
                 key={item.to}
