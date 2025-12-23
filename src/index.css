@@ -107,6 +107,22 @@ body.top-page .p5-bg {
   object-fit: cover;
 }
 
+/* モバイル縦型画面用のレスポンシブ対応 */
+@media (max-width: 768px) and (orientation: portrait) {
+  .scrolling-bg-image {
+    /* 縦型画面では画像の最小幅を確保して十分に表示 */
+    min-width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .scrolling-bg {
+    /* アニメーション速度を調整（画像が大きくなるため） */
+    animation-duration: 180s;
+  }
+}
+
 @keyframes bgScroll {
   0% {
     transform: translateX(0);

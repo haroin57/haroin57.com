@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import PrefetchLink from '../components/PrefetchLink'
+import ArrowRightIcon from '../components/icons/ArrowRightIcon'
 import SiteFooter from '../components/SiteFooter'
 import postsData from '../data/posts.json' with { type: 'json' }
 import { usePageMeta } from '../hooks/usePageMeta'
@@ -30,6 +32,11 @@ function Home() {
   const [openInterests, setOpenInterests] = useState(false)
   const [latestPosts, setLatestPosts] = useState<PostMeta[]>(initialLatestPosts)
   const pageRef = useRef<HTMLDivElement | null>(null)
+  const navigate = useNavigate()
+
+  const handleBack = useCallback(() => {
+    navigate('/')
+  }, [navigate])
 
   // ホームページはデフォルトのメタタグを使用
   usePageMeta()
@@ -63,6 +70,20 @@ function Home() {
 
   return (
     <div ref={pageRef} className="relative overflow-hidden">
+      {/* 戻るボタン */}
+      <button
+        type="button"
+        onClick={handleBack}
+        className="group fixed left-1/2 top-6 z-30 -translate-x-1/2 inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-neutral-950 font-medium text-neutral-200 active:scale-95 transition-transform"
+      >
+        <div className="transition-transform duration-300 group-hover:-translate-y-[300%]">
+          <ArrowRightIcon className="h-5 w-5 -rotate-90" />
+        </div>
+        <div className="absolute translate-y-[300%] transition-transform duration-300 group-hover:translate-y-0">
+          <ArrowRightIcon className="h-5 w-5 -rotate-90" />
+        </div>
+      </button>
+
       <main
         className="relative z-10 min-h-screen flex flex-col page-fade"
         style={MAIN_TEXT_STYLE}
