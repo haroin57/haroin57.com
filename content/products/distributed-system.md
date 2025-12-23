@@ -178,7 +178,7 @@ public class RaftNode {
 
 #### なぜランダムタイムアウトか
 
-選挙タイムアウトを150-300msの範囲でランダムに設定することで、複数ノードが同時にCandidateになる確率を下げています。これにより**Split Vote（票の分散）**を回避できます。
+選挙タイムアウトを150-300msの範囲でランダムに設定することで、複数ノードが同時にCandidateになる確率を下げています。これにより<strong>Split Vote(票の分散)</strong>を回避できます。
 
 ```java
 private static final int ELECTION_TIMEOUT_MIN_MS = 150;
@@ -515,7 +515,7 @@ public class RaftKeyValueStore implements KeyValueStore {
 
 分散システムでは「一貫性（Consistency）」「可用性（Availability）」「分断耐性（Partition Tolerance）」のうち2つしか同時に満たせません。
 
-Raftは**CP（一貫性 + 分断耐性）**を選択しています：
+Raftは<strong>CP(一貫性 + 分断耐性)</strong>を選択しています：
 
 - 過半数のノードが利用不可 → 書き込み停止
 - データの一貫性は常に保証

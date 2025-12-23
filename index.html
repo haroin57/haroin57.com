@@ -23,15 +23,14 @@
       content="分散システム、Web開発、デスクトップ音楽のメモやブログをまとめたharoinの個人サイト。"
     />
     <meta name="twitter:image" content="/background.png" />
-    <!-- 背景画像は低優先度でプリロード（JS/フォントと競合しないよう） -->
-    <link rel="preload" as="image" href="/background-1920.webp" imagesrcset="/background-1280.webp 1280w, /background-1920.webp 1920w, /background-2560.webp 2560w, /background-3840.webp 3840w" imagesizes="100vw" type="image/webp" fetchpriority="low" />
+    <!-- 背景画像は prefetch で低優先度読み込み（preload警告を回避） -->
+    <link rel="prefetch" as="image" href="/background-1920.webp" type="image/webp" />
     <!-- フォント読み込み高速化 -->
     <link rel="preconnect" href="https://use.typekit.net" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="dns-prefetch" href="https://use.typekit.net" />
     <!-- Google Fonts - 非ブロッキング読み込み -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
     <title>haroin57 web</title>
     <!-- Adobe Fonts (bc-barell, AB-countryroad など) -->

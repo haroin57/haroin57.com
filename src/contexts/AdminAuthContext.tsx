@@ -117,7 +117,16 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     const hasStoredSession = localStorage.getItem('firebase:authUser:' + import.meta.env.VITE_FIREBASE_API_KEY + ':[DEFAULT]')
     const hasPendingRedirect = sessionStorage.getItem(REDIRECT_PENDING_KEY) === '1'
 
+    // デバッグログ
+    console.log('[AdminAuth] Init check:', {
+      isAdminPage,
+      hasStoredSession: !!hasStoredSession,
+      hasPendingRedirect,
+      pathname: window.location.pathname,
+    })
+
     if (!isAdminPage && !hasStoredSession && !hasPendingRedirect) {
+      console.log('[AdminAuth] Skipping Firebase init - not admin page and no session/redirect')
       setIsLoading(false)
       return
     }
@@ -133,33 +142,50 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
         // リダイレクト認証の結果を取得
         const { getRedirectResult, signOut, onAuthStateChanged } = await import('firebase/auth')
+        console.log('[AdminAuth] Checking redirect result...')
         try {
           const result = await getRedirectResult(auth)
+          console.log('[AdminAuth] Redirect result:', {
+            hasUser: !!result?.user,
+            email: result?.user?.email,
+          })
           if (result?.user) {
             // 管理者メールかチェック
+            console.log('[AdminAuth] Checking admin email:', {
+              userEmail: result.user.email?.toLowerCase(),
+              adminEmails: ADMIN_EMAILS,
+            })
             if (!result.user.email || !ADMIN_EMAILS.includes(result.user.email.toLowerCase())) {
               // 管理者ではない場合はサインアウト
+              console.log('[AdminAuth] Not admin - signing out')
               await signOut(auth)
               alert('このアカウントには管理者権限がありません。')
             } else {
+              console.log('[AdminAuth] Admin verified - starting session')
               // セッションタイムアウトを開始
               startSessionTimeoutRef.current()
             }
           }
         } catch (redirectError) {
-          console.error('Redirect result error:', redirectError)
+          console.error('[AdminAuth] Redirect result error:', redirectError)
         } finally {
           sessionStorage.removeItem(REDIRECT_PENDING_KEY)
         }
 
         // Firebase認証状態の監視
         unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+          console.log('[AdminAuth] Auth state changed:', {
+            hasUser: !!firebaseUser,
+            email: firebaseUser?.email,
+          })
           setUser(firebaseUser)
           if (firebaseUser) {
             const token = await firebaseUser.getIdToken()
             setIdToken(token)
+            console.log('[AdminAuth] ID token obtained')
           } else {
             setIdToken(null)
+            console.log('[AdminAuth] No user - cleared token')
           }
           setIsLoading(false)
         })
@@ -195,11 +221,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval)
   }, [user])
 
-  // Googleでログイン（リダイレクト方式）
+  // Googleでログイン（ポップアップ方式）
   const loginWithGoogle = useCallback(async (): Promise<boolean> => {
     try {
-      sessionStorage.setItem(REDIRECT_PENDING_KEY, '1')
-
       // Firebaseがまだ初期化されていない場合は初期化
       if (!cachedAuth || !cachedGoogleProvider) {
         const { auth, googleProvider } = await initializeFirebase()
@@ -208,17 +232,43 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         setFirebaseReady(true)
       }
 
-      const { signInWithRedirect } = await import('firebase/auth')
+      const { signInWithPopup, signOut } = await import('firebase/auth')
       setIsRedirecting(true)
-      await signInWithRedirect(cachedAuth, cachedGoogleProvider)
-      // リダイレクト後は戻ってこないので、ここには到達しない
+
+      const result = await signInWithPopup(cachedAuth, cachedGoogleProvider)
+      console.log('[AdminAuth] Popup login result:', {
+        hasUser: !!result?.user,
+        email: result?.user?.email,
+      })
+
+      if (result?.user) {
+        // 管理者メールかチェック
+        if (!result.user.email || !ADMIN_EMAILS.includes(result.user.email.toLowerCase())) {
+          console.log('[AdminAuth] Not admin - signing out')
+          await signOut(cachedAuth)
+          alert('このアカウントには管理者権限がありません。')
+          setIsRedirecting(false)
+          return false
+        }
+        console.log('[AdminAuth] Admin verified via popup')
+
+        // ポップアップ認証成功後、直接stateを更新（onAuthStateChangedが未設定の場合に対応）
+        setUser(result.user)
+        const token = await result.user.getIdToken()
+        setIdToken(token)
+        console.log('[AdminAuth] User and token set directly after popup')
+
+        startSessionTimeout()
+      }
+
+      setIsRedirecting(false)
       return true
     } catch (error) {
-      console.error('Google login failed:', error)
+      console.error('[AdminAuth] Google login failed:', error)
       setIsRedirecting(false)
       return false
     }
-  }, [])
+  }, [startSessionTimeout])
 
   // ページリロード時もセッションを維持（ただしリロード時から1時間）
   useEffect(() => {
