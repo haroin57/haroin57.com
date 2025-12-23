@@ -4,7 +4,7 @@ import postsData from '../data/posts.json' with { type: 'json' }
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
 import ClientOnly from '../components/ClientOnly'
-import { useMermaidBlocks } from '../hooks/useMermaidBlocks'
+import PostContent from '../components/PostContent'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
 import { CMS_ENDPOINT, GOOD_ENDPOINT } from '../lib/endpoints'
@@ -100,8 +100,11 @@ function PostDetail() {
   // 即座にreveal要素を表示（遅延なし）
   // postが変更されたときにも再実行
   useReveal(pageRef, [post])
-  // Mermaidブロックをレンダリング
-  useMermaidBlocks(proseRef, [post?.html])
+
+  // proseRefのコールバック（PostContentから受け取る）
+  const handleProseRef = useCallback((el: HTMLDivElement | null) => {
+    proseRef.current = el
+  }, [])
 
   const siteOrigin = (import.meta.env.VITE_SITE_ORIGIN || 'https://haroin57.com').replace(/\/$/, '')
 
@@ -399,12 +402,7 @@ function PostDetail() {
                 ) : null}
               </div>
               {post.html ? (
-                <div
-                  ref={proseRef}
-                  className="prose prose-invert font-medium font-a-otf-gothic text-sm sm:text-[19px] w-full"
-                  style={{ color: 'var(--fg-strong)' }}
-                  dangerouslySetInnerHTML={{ __html: post.html }}
-                />
+                <PostContent html={post.html} onProseRef={handleProseRef} />
               ) : null}
             </article>
             <ClientOnly>

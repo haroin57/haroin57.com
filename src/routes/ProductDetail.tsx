@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import productsData from '../data/products.json' with { type: 'json' }
 import productPostsData from '../data/product-posts.json' with { type: 'json' }
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
-import { useMermaidBlocks } from '../hooks/useMermaidBlocks'
+import PostContent from '../components/PostContent'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
@@ -99,8 +99,11 @@ function ProductDetail() {
 
   // 即座にreveal要素を表示（遅延なし）
   useReveal(pageRef)
-  // Mermaidブロックをレンダリング
-  useMermaidBlocks(proseRef, [productPost?.html])
+
+  // proseRefのコールバック（PostContentから受け取る）
+  const handleProseRef = useCallback((el: HTMLDivElement | null) => {
+    proseRef.current = el
+  }, [])
 
   // プロダクト詳細ページのメタタグ
   usePageMeta(
@@ -351,12 +354,7 @@ function ProductDetail() {
                 {/* Markdown記事がある場合はそれを表示、なければJSON contentを表示 */}
                 {productPost?.html ? (
                   <section className="reveal space-y-4">
-                    <div
-                      ref={proseRef}
-                      className="prose prose-invert font-medium font-a-otf-gothic text-sm sm:text-[19px] w-full"
-                      style={{ color: 'var(--fg-strong)' }}
-                      dangerouslySetInnerHTML={{ __html: productPost.html }}
-                    />
+                    <PostContent html={productPost.html} onProseRef={handleProseRef} />
                   </section>
                 ) : product.content && (
                   <>

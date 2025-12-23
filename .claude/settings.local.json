@@ -46,7 +46,9 @@
       "Bash(npx wrangler deploy:*)",
       "Bash(npx sharp-cli:*)",
       "Bash(unzip:*)",
-      "Bash(del \"c:\\\\Users\\\\harut\\\\haroin57-web\\\\src\\\\components\\\\MotorcycleModel.tsx\")"
+      "Bash(del \"c:\\\\Users\\\\harut\\\\haroin57-web\\\\src\\\\components\\\\MotorcycleModel.tsx\")",
+      "Bash(git fetch:*)",
+      "Bash(npx wrangler pages deployment list:*)"
     ]
   }
 }
