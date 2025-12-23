@@ -8,6 +8,7 @@
     "url": "https://github.com/haroin57/haroin57.com",
     "demo": "https://haroin57.com",
     "createdAt": "2025-12-01",
+    "updatedAt": "2025-12-24",
     "content": {
       "overview": "React 19とViteで構築したポートフォリオサイトです。パフォーマンスとユーザー体験を重視し、Cloudflare Pagesにデプロイしています。",
       "features": [
@@ -24,7 +25,83 @@
         { "category": "Build", "items": ["Vite 7", "Rolldown", "React Compiler"] },
         { "category": "Deploy", "items": ["Cloudflare Pages", "Wrangler"] },
         { "category": "Other", "items": ["remark/rehype", "KaTeX", "shiki"] }
-      ]
+      ],
+      "designReferences": {
+        "title": "UI/UX設計のリファレンス",
+        "description": "このサイトのUI/UX設計では、以下のサイトを参考にしました。",
+        "references": [
+          {
+            "name": "catnose氏のプロダクト群",
+            "sites": ["Zenn", "catnose.me"],
+            "insights": [
+              "デザインとエンジニアリングを分離せず、動作とデザインを一致させる思想を参考にした",
+              "ボタン押下時のページ遷移やローディング表示など、違和感のないインタラクション設計",
+              "ミニマリストでありながら要所で視覚的アクセントを入れる手法",
+              "余白を活かしたシンプルな構造、タイムライン形式のコンテンツ配置",
+              "システムフォントをベースにした可読性重視のタイポグラフィ"
+            ]
+          },
+          {
+            "name": "namachan10777.dev",
+            "sites": ["namachan10777.dev"],
+            "insights": [
+              "OKLch色空間を使った洗練された配色システムの採用アイデア",
+              "CSSグリッドによる中央集約型レイアウト（max-width制限）",
+              "clamp()を活用した流動的なフォントサイズ調整",
+              "シンプルなナビゲーション構造とソーシャルリンクの配置"
+            ]
+          }
+        ]
+      },
+      "uiuxImprovements": {
+        "title": "UI/UX改善の詳細",
+        "sections": [
+          {
+            "category": "インタラクション設計",
+            "items": [
+              "touch-action: manipulationによるタッチ応答性の向上（INP最適化）",
+              "GPU アクセラレーション（transform: translateZ(0)）によるスムーズなホバーアニメーション",
+              "active:scale-*によるボタン押下時の即時フィードバック",
+              "will-change: autoからホバー時にwill-change: transform, opacityへ動的切り替え"
+            ]
+          },
+          {
+            "category": "アニメーション",
+            "items": [
+              "cubic-bezier(0.16, 1, 0.3, 1)（ease-out-expo）による自然な減速アニメーション",
+              "revealクラスによるスタガードフェードインアニメーション",
+              "prefers-reduced-motion対応でアクセシビリティを確保",
+              "p5.jsによるハイパーキューブ背景アニメーション（mix-blend-mode: screen）"
+            ]
+          },
+          {
+            "category": "レイアウト・タイポグラフィ",
+            "items": [
+              "max-w-4xl（896px）を基本とした読みやすいコンテンツ幅",
+              "Adobe Fonts（ab-countryroad, vdl-logomaru）による日本語タイポグラフィ",
+              "CSS変数による一貫したデザイントークン管理（--fg, --ui-border等）",
+              "glass-panelコンポーネントによる統一されたカード表現"
+            ]
+          },
+          {
+            "category": "パフォーマンス最適化",
+            "items": [
+              "content-visibility: autoによる画面外要素のレンダリング遅延",
+              "contain: layout styleによるレイアウト計算の最適化",
+              "startTransitionを使ったノンブロッキングな状態更新",
+              "フォント読み込み中のレイアウトシフト防止（font-synthesis: none）"
+            ]
+          },
+          {
+            "category": "ダークテーマ設計",
+            "items": [
+              "背景オーバーレイ（body::before）による一貫した暗さの制御",
+              "rgba()による透過を活かしたUI要素（--ui-surface: rgba(0, 0, 0, 0.35)）",
+              "::selectionカラーのカスタマイズ（teal系アクセント）"
+            ]
+          }
+        ]
+      }
     }
   },
   {

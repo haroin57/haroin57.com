@@ -15,10 +15,34 @@ type TechStackItem = {
   items: string[]
 }
 
+type DesignReference = {
+  name: string
+  sites: string[]
+  insights: string[]
+}
+
+type DesignReferences = {
+  title: string
+  description: string
+  references: DesignReference[]
+}
+
+type UIUXSection = {
+  category: string
+  items: string[]
+}
+
+type UIUXImprovements = {
+  title: string
+  sections: UIUXSection[]
+}
+
 type ProductContent = {
   overview: string
   features: string[]
   techStack: TechStackItem[]
+  designReferences?: DesignReferences
+  uiuxImprovements?: UIUXImprovements
 }
 
 type Product = {
@@ -412,6 +436,73 @@ function ProductDetail() {
                         </div>
                       </div>
                     </section>
+
+                    {/* Design References */}
+                    {product.content.designReferences && (
+                      <section className="reveal space-y-3">
+                        <h2 className="text-base sm:text-xl font-semibold text-[color:var(--fg-strong)]">
+                          {product.content.designReferences.title}
+                        </h2>
+                        <p className="text-sm sm:text-base opacity-80 font-a-otf-gothic">
+                          {product.content.designReferences.description}
+                        </p>
+                        <div className="space-y-4">
+                          {product.content.designReferences.references.map((ref) => (
+                            <div key={ref.name} className="glass-panel p-4 sm:p-6 space-y-3">
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <h3 className="text-sm sm:text-base font-semibold text-[color:var(--fg-strong)]">
+                                  {ref.name}
+                                </h3>
+                                <div className="flex flex-wrap gap-2">
+                                  {ref.sites.map((site) => (
+                                    <span
+                                      key={site}
+                                      className="px-2 py-0.5 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-xs opacity-70"
+                                    >
+                                      {site}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <ul className="space-y-1.5 text-sm sm:text-[15px] font-a-otf-gothic">
+                                {ref.insights.map((insight, idx) => (
+                                  <li key={idx} className="flex items-start gap-2">
+                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-current opacity-50 shrink-0" />
+                                    <span className="opacity-90">{insight}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {/* UI/UX Improvements */}
+                    {product.content.uiuxImprovements && (
+                      <section className="reveal space-y-3">
+                        <h2 className="text-base sm:text-xl font-semibold text-[color:var(--fg-strong)]">
+                          {product.content.uiuxImprovements.title}
+                        </h2>
+                        <div className="space-y-4">
+                          {product.content.uiuxImprovements.sections.map((section) => (
+                            <div key={section.category} className="glass-panel p-4 sm:p-6 space-y-3">
+                              <h3 className="text-sm sm:text-base font-semibold text-[color:var(--fg-strong)]">
+                                {section.category}
+                              </h3>
+                              <ul className="space-y-1.5 text-sm sm:text-[15px] font-a-otf-gothic">
+                                {section.items.map((item, idx) => (
+                                  <li key={idx} className="flex items-start gap-2">
+                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-current opacity-50 shrink-0" />
+                                    <span className="opacity-90">{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    )}
                   </>
                 )}
 
