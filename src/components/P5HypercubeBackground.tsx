@@ -55,10 +55,32 @@ const project3D = (v: Vec3, distance: number): Vec3 => {
   return [v[0] * scale, v[1] * scale, v[2]]
 }
 
-const RENDER_SCALE = 0.72
-const TARGET_FPS = 24
+const TARGET_FPS = 60
 const MIN_CANVAS_WIDTH = 320
 const MIN_CANVAS_HEIGHT = 240
+
+// デバイスに応じた最適なレンダースケールを計算
+const getOptimalRenderScale = (): number => {
+  if (typeof window === 'undefined') return 1
+
+  const dpr = window.devicePixelRatio || 1
+  const screenArea = window.innerWidth * window.innerHeight
+
+  // 高解像度・大画面デバイスではフルスケール
+  // 低解像度・小画面デバイスでは軽量化
+  if (dpr >= 2 && screenArea > 1000000) {
+    // Retina + 大画面: 高画質
+    return 1.0
+  } else if (dpr >= 2 || screenArea > 800000) {
+    // Retina または 中画面: 中画質
+    return 0.9
+  } else if (screenArea > 400000) {
+    // 中小画面: やや軽量
+    return 0.85
+  }
+  // 小画面: 軽量
+  return 0.8
+}
 
 function P5HypercubeBackground() {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -76,12 +98,16 @@ function P5HypercubeBackground() {
           typeof window !== 'undefined' &&
           window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+        let renderScale = getOptimalRenderScale()
+
         p.setup = () => {
-          const w = Math.max(MIN_CANVAS_WIDTH, Math.floor(p.windowWidth * RENDER_SCALE))
-          const h = Math.max(MIN_CANVAS_HEIGHT, Math.floor(p.windowHeight * RENDER_SCALE))
-          p.setAttributes('antialias', false)
+          const w = Math.max(MIN_CANVAS_WIDTH, Math.floor(p.windowWidth * renderScale))
+          const h = Math.max(MIN_CANVAS_HEIGHT, Math.floor(p.windowHeight * renderScale))
+          p.setAttributes('antialias', true)
           p.createCanvas(w, h, p.WEBGL)
-          p.pixelDensity(1)
+          // デバイスピクセル比を考慮（高解像度ディスプレイで鮮明に）
+          const dpr = Math.min(window.devicePixelRatio || 1, 2)
+          p.pixelDensity(dpr)
           p.frameRate(TARGET_FPS)
           p.noFill()
           p.smooth()
@@ -89,8 +115,9 @@ function P5HypercubeBackground() {
         }
 
         p.windowResized = () => {
-          const w = Math.max(MIN_CANVAS_WIDTH, Math.floor(p.windowWidth * RENDER_SCALE))
-          const h = Math.max(MIN_CANVAS_HEIGHT, Math.floor(p.windowHeight * RENDER_SCALE))
+          renderScale = getOptimalRenderScale()
+          const w = Math.max(MIN_CANVAS_WIDTH, Math.floor(p.windowWidth * renderScale))
+          const h = Math.max(MIN_CANVAS_HEIGHT, Math.floor(p.windowHeight * renderScale))
           p.resizeCanvas(w, h)
         }
 
