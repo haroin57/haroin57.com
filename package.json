@@ -12,8 +12,6 @@
     "products:gen": "node --experimental-strip-types scripts/gen-product-posts.ts"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.4.2",
     "@uiw/react-md-editor": "^4.0.11",
     "better-sqlite3": "^12.4.6",
     "claude": "^0.1.1",
@@ -42,8 +40,7 @@
     "remark-rehype": "^11.1.2",
     "remark-slug": "^7.0.1",
     "remark-toc": "^9.0.0",
-    "sqlite3": "^5.1.7",
-    "three": "^0.182.0"
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@dotenvx/dotenvx": "^1.51.2",
@@ -51,7 +48,6 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
-    "@types/three": "^0.182.0",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.22",
     "babel-plugin-react-compiler": "^1.0.0",

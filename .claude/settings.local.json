@@ -45,7 +45,8 @@
       "Bash(npx wrangler d1 execute:*)",
       "Bash(npx wrangler deploy:*)",
       "Bash(npx sharp-cli:*)",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "Bash(del \"c:\\\\Users\\\\harut\\\\haroin57-web\\\\src\\\\components\\\\MotorcycleModel.tsx\")"
     ]
   }
 }

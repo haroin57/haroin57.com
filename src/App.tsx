@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, lazy, Suspense } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePageMeta } from './hooks/usePageMeta'
 import { useReveal } from './hooks/useReveal'
@@ -6,7 +6,6 @@ import { useScrollToTop } from './hooks/useScrollToTop'
 import ArrowRightIcon from './components/icons/ArrowRightIcon'
 import { MAIN_TEXT_STYLE } from './styles/typography'
 
-const MotorcycleModel = lazy(() => import('./components/MotorcycleModel'))
 
 function App() {
   const navigate = useNavigate()
@@ -39,18 +38,9 @@ function App() {
       >
         <section className="home-hero relative flex min-h-[100svh] flex-col items-center justify-center text-center">
           <div className="space-y-6">
-            {/* タイトルとバイクモデルのコンテナ */}
-            <div className="title-with-model relative">
-              <h1 className="reveal text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong)] sm:text-5xl md:text-6xl">
-                haroin57 web
-              </h1>
-              {/* 3Dモデル（タイトル左上） */}
-              <div className="motorcycle-model-top">
-                <Suspense fallback={null}>
-                  <MotorcycleModel />
-                </Suspense>
-              </div>
-            </div>
+            <h1 className="reveal text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong)] sm:text-5xl md:text-6xl">
+              haroin57 web
+            </h1>
             <p className="reveal mx-auto max-w-2xl text-base leading-relaxed opacity-90 sm:text-lg md:text-xl">
               I&apos;m haroin, an engineering student belonging to Shinshu University, interested in distributed systems, web
               development, and desktop music.
