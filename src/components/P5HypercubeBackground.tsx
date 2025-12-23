@@ -94,7 +94,7 @@ function P5HypercubeBackground() {
         }
 
         p.draw = () => {
-          const t = p.millis() * 0.00012
+          const t = p.millis() * 0.00009
           const angleA = t * 1.0
           const angleB = t * 0.7
           const angleC = t * 0.55
@@ -131,7 +131,7 @@ function P5HypercubeBackground() {
             const pa = points[a]
             const pb = points[b]
             const depth = (pa.z + pb.z) * 0.5
-            const alpha = Math.max(50, Math.min(170, 120 + depth * 60))
+            const alpha = Math.max(80, Math.min(255, 180 + depth * 80))
             p.stroke(255, 255, 255, alpha)
             const zA = pa.z * size * 0.4
             const zB = pb.z * size * 0.4

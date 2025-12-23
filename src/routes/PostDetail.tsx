@@ -220,19 +220,22 @@ function PostDetail() {
     const startPx = 48
     const rangePx = 420
     const maxBlurPx = 12
-    const maxExtraWash = 0.25
+    const maxExtraWash = 0.2
+    const minOpacity = 0.65
 
     let rafId = 0
     const update = () => {
       const y = window.scrollY || 0
       const t = Math.max(0, Math.min(1, (y - startPx) / rangePx))
       const blur = t * maxBlurPx
-      const wash = Math.min(0.9, baseWash + t * maxExtraWash)
+      const wash = Math.min(0.6, baseWash + t * maxExtraWash)
       const scale = 1 + blur / 140
+      const opacity = 1 - t * (1 - minOpacity)
 
       body.style.setProperty('--bg-blur', `${blur.toFixed(2)}px`)
       body.style.setProperty('--bg-scale', scale.toFixed(4))
       body.style.setProperty('--bg-wash', wash.toFixed(3))
+      body.style.setProperty('--bg-opacity', opacity.toFixed(3))
     }
 
     const onScroll = () => {
@@ -257,6 +260,7 @@ function PostDetail() {
       const startBlur = parseNumber(body.style.getPropertyValue('--bg-blur'), 0)
       const startScale = parseNumber(body.style.getPropertyValue('--bg-scale'), 1)
       const startWash = parseNumber(body.style.getPropertyValue('--bg-wash'), baseWash)
+      const startOpacity = parseNumber(body.style.getPropertyValue('--bg-opacity'), 1)
       const durationMs = 120
       const startedAt = performance.now()
 
@@ -267,10 +271,12 @@ function PostDetail() {
         const blur = startBlur * (1 - k)
         const scale = startScale + (1 - startScale) * k
         const wash = startWash + (baseWash - startWash) * k
+        const opacity = startOpacity + (1 - startOpacity) * k
 
         body.style.setProperty('--bg-blur', `${blur.toFixed(2)}px`)
         body.style.setProperty('--bg-scale', scale.toFixed(4))
         body.style.setProperty('--bg-wash', wash.toFixed(3))
+        body.style.setProperty('--bg-opacity', opacity.toFixed(3))
 
         if (t < 1) {
           window.requestAnimationFrame(tick)
@@ -281,6 +287,7 @@ function PostDetail() {
         body.style.removeProperty('--bg-blur')
         body.style.removeProperty('--bg-scale')
         body.style.removeProperty('--bg-wash')
+        body.style.removeProperty('--bg-opacity')
       }
 
       window.requestAnimationFrame(tick)

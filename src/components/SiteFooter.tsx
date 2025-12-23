@@ -12,7 +12,7 @@ function SiteFooter() {
         <ClientOnly>
           <AccessCounter />
         </ClientOnly>
-        <span>c haroin</span>
+        <span>© haroin</span>
       </div>
       <div className="flex items-center gap-4">
         <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
