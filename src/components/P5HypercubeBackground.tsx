@@ -79,7 +79,7 @@ function P5HypercubeBackground() {
         p.setup = () => {
           const w = Math.max(MIN_CANVAS_WIDTH, Math.floor(p.windowWidth * RENDER_SCALE))
           const h = Math.max(MIN_CANVAS_HEIGHT, Math.floor(p.windowHeight * RENDER_SCALE))
-          p.setAttributes('antialias', true)
+          p.setAttributes('antialias', false)
           p.createCanvas(w, h, p.WEBGL)
           p.pixelDensity(1)
           p.frameRate(TARGET_FPS)

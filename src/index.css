@@ -11,7 +11,7 @@
   scrollbar-gutter: stable;
   --fg: #e2e8f0;
   --fg-strong: #ffffff;
-  --bg-wash: 0.25;
+  --bg-wash: 0.20;
   --bg-wash-color: #000;
   --p5-opacity: 0.3;
   --home-progress: 0;
@@ -141,7 +141,8 @@ body.top-page .p5-bg {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-50%);
+    /* CSS変数があれば固定値を使用、なければ50%（フォールバック） */
+    transform: translateX(calc(-1 * var(--scroll-width, 50%)));
   }
 }
 
