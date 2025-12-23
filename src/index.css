@@ -275,24 +275,12 @@ body {
   font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
 }
 
-/* Local project font: a-otf-gothic-mb101-pr6n
-   Place the font files in `public/fonts/` with names:
-   - a-otf-gothic-mb101-pr6n.woff2
-   - a-otf-gothic-mb101-pr6n.woff
-   - a-otf-gothic-mb101-pr6n.otf
+/* Adobe Fonts: A-OTF ゴシックMB101 Pr6N
+   Adobe Fonts kitに "a-otf-gothic-mb101-pr6n" を追加してください
+   https://fonts.adobe.com/fonts/a-otf-gothic-mb101-pr6n
 */
-@font-face {
-  font-family: 'a-otf-gothic-mb101-pr6n';
-  src: url('/fonts/a-otf-gothic-mb101-pr6n.woff2') format('woff2'),
-       url('/fonts/a-otf-gothic-mb101-pr6n.woff') format('woff'),
-       url('/fonts/a-otf-gothic-mb101-pr6n.otf') format('opentype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
 .font-a-otf-gothic {
-  font-family: 'a-otf-gothic-mb101-pr6n', sans-serif;
+  font-family: a-otf-gothic-mb101-pr6n, "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
   font-weight: 300;
   font-style: normal;
 }
