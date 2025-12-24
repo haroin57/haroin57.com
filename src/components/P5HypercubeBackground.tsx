@@ -101,10 +101,10 @@ const getOptimalRenderScale = (): number => {
 
 // デバイスに応じた目標FPSを取得
 const getTargetFPS = (): number => {
-  if (typeof window === 'undefined') return 30
+  if (typeof window === 'undefined') return 60
   const isLowPerf = isLowPerformanceDevice()
-  // 低性能デバイスでは30fps、それ以外は30fps（120fpsは過剰）
-  return isLowPerf ? 30 : 30
+  // 低性能デバイスでは30fps、それ以外は60fps
+  return isLowPerf ? 30 : 60
 }
 
 function P5HypercubeBackground() {
@@ -163,8 +163,10 @@ function P5HypercubeBackground() {
 
         p.draw = () => {
           // blur時はアニメーションを停止（CSS変数を確認）
-          const p5State = document.body.style.getPropertyValue('--p5-animation-state')
-          if (p5State === 'paused') {
+          const bodyStyle = document.body.style
+          const p5State = bodyStyle.getPropertyValue('--p5-animation-state')
+          const p5RouteState = bodyStyle.getPropertyValue('--p5-animation-route')
+          if (p5State === 'paused' || p5RouteState === 'paused') {
             return
           }
 

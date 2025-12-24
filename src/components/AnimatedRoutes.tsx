@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { Suspense } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 import App from '../App'
 import { lazyWithPreload } from '../lib/lazyWithPreload'
 
@@ -74,6 +74,40 @@ export async function preloadRoutesForPath(pathname: string): Promise<void> {
 
 function AnimatedRoutes() {
   const location = useLocation()
+  const didMountRef = useRef(false)
+  const resumeTimerRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true
+      return
+    }
+
+    const body = document.body
+
+    // ページ遷移中は背景アニメーションを一時停止して、メインスレッド負荷を下げる
+    body.style.setProperty('--bg-animation-route', 'paused')
+    body.style.setProperty('--p5-animation-route', 'paused')
+
+    if (resumeTimerRef.current !== null) {
+      window.clearTimeout(resumeTimerRef.current)
+    }
+
+    resumeTimerRef.current = window.setTimeout(() => {
+      body.style.removeProperty('--bg-animation-route')
+      body.style.removeProperty('--p5-animation-route')
+      resumeTimerRef.current = null
+    }, 260)
+
+    return () => {
+      if (resumeTimerRef.current !== null) {
+        window.clearTimeout(resumeTimerRef.current)
+        resumeTimerRef.current = null
+      }
+      body.style.removeProperty('--bg-animation-route')
+      body.style.removeProperty('--p5-animation-route')
+    }
+  }, [location.pathname])
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>

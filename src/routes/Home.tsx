@@ -129,11 +129,6 @@ function NavIcon({ type, className = "w-4 h-4" }: { type: NavIconType; className
   }
 }
 
-/** タイムラインアイコン（NavIconのエイリアス） */
-function TimelineIcon({ type }: { type: TimelineItem['type'] }) {
-  return <NavIcon type={type} className="w-4 h-4" />
-}
-
 function Home() {
   const pageRef = useRef<HTMLDivElement | null>(null)
   const navigate = useNavigate()
@@ -288,55 +283,48 @@ function Home() {
 
             {/* タイムライン */}
             {timelineItems.length > 0 && (
-              <section className="reveal space-y-6 !mt-5">
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium text-[color:var(--fg-strong,inherit)] pt-2">
-                  <br />
+              <section className="reveal space-y-3 !mt-8">
+                <h2 className="text-base sm:text-lg font-ab-countryroad font-medium text-[color:var(--fg-strong,inherit)] opacity-70">
                   サイト更新ログ
                 </h2>
 
-                <div className="space-y-8">
+                <div className="space-y-4">
                   {years.map((year) => (
-                    <div key={year} className="space-y-4">
-                      <h3 className="text-sm font-semibold text-[color:var(--fg)] opacity-50">
+                    <div key={year} className="space-y-2">
+                      <h3 className="text-[10px] font-semibold text-[color:var(--fg)] opacity-40">
                         {year}
                       </h3>
 
                       <div className="relative">
                         {/* タイムラインの縦線 */}
-                        <div className="absolute left-[7px] top-2 bottom-2 w-px bg-white/10" />
+                        <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-white/10" />
 
-                        <ul className="space-y-4">
+                        <ul className="space-y-2">
                           {groupedByYear[year].map((item, index) => (
-                            <li key={`${item.type}-${item.slug || item.title}-${index}`} className="relative pl-8 group">
+                            <li key={`${item.type}-${item.slug || item.title}-${index}`} className="relative pl-5 group">
                               {/* タイムラインのドット */}
-                              <div className="absolute left-0 top-1.5 w-[15px] h-[15px] rounded-full border-2 border-white/20 bg-neutral-950 flex items-center justify-center transition-colors group-hover:border-white/40">
-                                <div className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-white/60 transition-colors" />
+                              <div className="absolute left-0 top-1 w-[11px] h-[11px] rounded-full border border-white/20 bg-neutral-950 flex items-center justify-center transition-colors group-hover:border-white/40">
+                                <div className="w-1 h-1 rounded-full bg-white/40 group-hover:bg-white/60 transition-colors" />
                               </div>
 
                               <PrefetchLink
                                 to={getItemLink(item)}
-                                className="block space-y-1 transition-opacity hover:opacity-80"
+                                className="block space-y-0.5 transition-opacity hover:opacity-80"
                               >
-                                <div className="flex items-center gap-2 text-xs text-[color:var(--fg)] opacity-50">
-                                  <TimelineIcon type={item.type} />
+                                <div className="flex items-center gap-1.5 text-[10px] text-[color:var(--fg)] opacity-40">
                                   <span>{getTypeLabel(item.type)}</span>
                                   {item.isUpdate && (
                                     <>
                                       <span>·</span>
-                                      <span className="text-teal-400/80">Updated</span>
+                                      <span className="text-teal-400/70">Updated</span>
                                     </>
                                   )}
                                   <span>·</span>
                                   <span>{formatRelativeDate(item.date)}</span>
                                 </div>
-                                <h4 className="text-sm sm:text-base font-medium text-[color:var(--fg-strong,inherit)] group-hover:text-[color:var(--accent,inherit)] transition-colors">
+                                <h4 className="text-xs sm:text-sm font-medium text-[color:var(--fg-strong,inherit)] opacity-80 group-hover:text-[color:var(--accent,inherit)] group-hover:opacity-100 transition-colors">
                                   {item.title}
                                 </h4>
-                                {item.summary && (
-                                  <p className="text-xs sm:text-sm text-[color:var(--fg)] opacity-60 line-clamp-2">
-                                    {item.summary}
-                                  </p>
-                                )}
                               </PrefetchLink>
                             </li>
                           ))}
