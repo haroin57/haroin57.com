@@ -108,7 +108,7 @@ function About() {
                 </h3>
                 <div className="flex flex-wrap gap-4">
                   <a
-                    href="https://x.com/catnose99"
+                    href="https://x.com/haroin57"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-sm sm:text-base text-[color:var(--fg)] opacity-80 hover:opacity-100 transition-opacity"

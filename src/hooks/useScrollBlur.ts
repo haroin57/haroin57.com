@@ -70,8 +70,8 @@ export function useScrollBlur(options: ScrollBlurOptions = {}) {
       const y = window.scrollY || 0
       const t = Math.max(0, Math.min(1, (y - startPx) / rangePx))
 
-      // t値が変わっていない場合はスキップ（0.01単位で丸める）
-      const roundedT = Math.round(t * 100) / 100
+      // 更新頻度を下げてメインスレッド負荷を軽減（0.05単位で丸める）
+      const roundedT = Math.round(t * 20) / 20
       if (roundedT === lastT) return
       lastT = roundedT
 
@@ -81,17 +81,28 @@ export function useScrollBlur(options: ScrollBlurOptions = {}) {
       const opacity = 1 - t * (1 - minOpacity)
 
       // CSSカスタムプロパティを更新
-      if (effectiveMaxBlur > 0) {
-        body.style.setProperty('--bg-blur', `${blur.toFixed(1)}px`)
+      if (effectiveMaxBlur > 0 && blur >= 0.05) {
+        const blurValue = `${blur.toFixed(1)}px`
+        body.style.setProperty('--bg-filter', `blur(${blurValue})`)
+        body.style.setProperty('--bg-blur', blurValue)
+      } else {
+        body.style.removeProperty('--bg-filter')
+        body.style.removeProperty('--bg-blur')
       }
-      if (enableScale) {
+
+      if (enableScale && Math.abs(scale - 1) >= 0.001) {
         body.style.setProperty('--bg-scale', scale.toFixed(3))
+      } else {
+        body.style.removeProperty('--bg-scale')
       }
+
       body.style.setProperty('--bg-wash', wash.toFixed(2))
       body.style.setProperty('--bg-opacity', opacity.toFixed(2))
 
       // スクロールが進んだらアニメーションを停止
-      body.style.setProperty('--bg-animation-state', t > 0.1 ? 'paused' : 'running')
+      const shouldPause = t > 0.05
+      body.style.setProperty('--bg-animation-state', shouldPause ? 'paused' : 'running')
+      body.style.setProperty('--p5-animation-state', shouldPause ? 'paused' : 'running')
     }
 
     const onScroll = () => {
@@ -109,58 +120,15 @@ export function useScrollBlur(options: ScrollBlurOptions = {}) {
       window.removeEventListener('scroll', onScroll)
       if (rafId) window.cancelAnimationFrame(rafId)
 
-      // クリーンアップ時のアニメーション
-      // 低性能デバイスではアニメーションなしで即時リセット
-      if (isLowPerf) {
-        body.classList.remove('post-detail-page')
-        body.style.removeProperty('--bg-blur')
-        body.style.removeProperty('--bg-scale')
-        body.style.removeProperty('--bg-wash')
-        body.style.removeProperty('--bg-opacity')
-        body.style.removeProperty('--bg-animation-state')
-        return
-      }
-
-      const parseNumber = (value: string, fallback: number) => {
-        const n = Number.parseFloat(value)
-        return Number.isFinite(n) ? n : fallback
-      }
-
-      const startBlur = parseNumber(body.style.getPropertyValue('--bg-blur'), 0)
-      const startScale = parseNumber(body.style.getPropertyValue('--bg-scale'), 1)
-      const startWash = parseNumber(body.style.getPropertyValue('--bg-wash'), baseWash)
-      const startOpacity = parseNumber(body.style.getPropertyValue('--bg-opacity'), 1)
-      const durationMs = 120
-      const startedAt = performance.now()
-
-      const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
-      const tick = (now: number) => {
-        const t = Math.min(1, (now - startedAt) / durationMs)
-        const k = easeOutCubic(t)
-        const blur = startBlur * (1 - k)
-        const scale = startScale + (1 - startScale) * k
-        const wash = startWash + (baseWash - startWash) * k
-        const opacity = startOpacity + (1 - startOpacity) * k
-
-        body.style.setProperty('--bg-blur', `${blur.toFixed(1)}px`)
-        body.style.setProperty('--bg-scale', scale.toFixed(3))
-        body.style.setProperty('--bg-wash', wash.toFixed(2))
-        body.style.setProperty('--bg-opacity', opacity.toFixed(2))
-
-        if (t < 1) {
-          window.requestAnimationFrame(tick)
-          return
-        }
-
-        body.classList.remove('post-detail-page')
-        body.style.removeProperty('--bg-blur')
-        body.style.removeProperty('--bg-scale')
-        body.style.removeProperty('--bg-wash')
-        body.style.removeProperty('--bg-opacity')
-        body.style.removeProperty('--bg-animation-state')
-      }
-
-      window.requestAnimationFrame(tick)
+      // transitionなしの状態で先にCSS変数をリセット（ページ遷移時の負荷を抑える）
+      body.style.removeProperty('--bg-filter')
+      body.style.removeProperty('--bg-blur')
+      body.style.removeProperty('--bg-scale')
+      body.style.removeProperty('--bg-wash')
+      body.style.removeProperty('--bg-opacity')
+      body.style.removeProperty('--bg-animation-state')
+      body.style.removeProperty('--p5-animation-state')
+      body.classList.remove('post-detail-page')
     }
   }, [startPx, rangePx, maxBlurPx, maxExtraWash, minOpacity])
 }

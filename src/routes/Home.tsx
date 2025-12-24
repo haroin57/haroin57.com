@@ -269,13 +269,13 @@ function Home() {
                   className="group flex flex-col items-center gap-1.5 sm:gap-2"
                 >
                   <div
-                    className="relative flex items-center justify-center overflow-hidden rounded-full border border-white/20 transition-all duration-300 group-hover:border-white/40 group-hover:scale-105 group-active:scale-95 text-[#d3d3d3] w-[42px] h-[42px] sm:w-16 sm:h-16"
+                    className="relative flex items-center justify-center overflow-hidden rounded-full border border-white/20 transition-all duration-300 group-hover:border-white/40 group-hover:scale-105 group-active:scale-95 text-[#d3d3d3] w-14 h-14 sm:w-20 sm:h-20"
                     style={{
                       backgroundColor: 'transparent',
                     }}
                   >
                     <div className="transition-transform duration-500 group-hover:scale-110">
-                      <NavIcon type={item.type} className="w-[18px] h-[18px] sm:w-7 sm:h-7" />
+                      <NavIcon type={item.type} className="w-6 h-6 sm:w-9 sm:h-9" />
                     </div>
                     <div className="absolute inset-0 bg-black/10 transition-opacity duration-300 group-hover:bg-black/0" />
                   </div>

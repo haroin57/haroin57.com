@@ -22,10 +22,8 @@ function ScrollingBackground({ baseOpacity }: { baseOpacity: number }) {
     <div
       className="scrolling-bg"
       style={{
-        opacity: `calc(${baseOpacity} * var(--bg-opacity, 1))`,
-        filter: 'blur(var(--bg-blur, 0px))',
-        transform: 'scale(var(--bg-scale, 1))',
-      }}
+        '--bg-base-opacity': baseOpacity,
+      } as React.CSSProperties}
     >
       <div
         className="scrolling-bg-track"

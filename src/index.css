@@ -55,6 +55,11 @@ body::before {
   transition: opacity 200ms ease-out;
 }
 
+/* スクロール中に頻繁に更新するため、detailページではtransitionを無効化 */
+body.post-detail-page::before {
+  transition: none;
+}
+
 /* Topページ（/）: オーバーレイなし、p5を強調 */
 body.top-page {
   --p5-opacity: 1;
@@ -103,10 +108,12 @@ body.top-page .p5-bg {
   /* デスクトップ: vhで動的対応 */
   height: 100vh;
   height: 100svh;
+  opacity: calc(var(--bg-base-opacity, 1) * var(--bg-opacity, 1));
+  filter: var(--bg-filter, none);
   /* GPUレイヤー化でスクロール時のパフォーマンス向上 */
-  transform: translateZ(0);
+  transform: translateZ(0) scale(var(--bg-scale, 1));
   will-change: opacity, transform;
-  /* blurを外してパフォーマンス向上 */
+  /* ちらつき防止 */
   backface-visibility: hidden;
 }
 
@@ -121,7 +128,8 @@ body.top-page .p5-bg {
   height: 100vh;
   height: 100svh;
   animation: bgScroll 100s linear infinite;
-  animation-play-state: var(--bg-animation-state, running);
+  animation-play-state: var(--bg-animation-route, var(--bg-animation-state, running));
+  will-change: transform;
 }
 
 .scrolling-bg-image {
@@ -157,11 +165,11 @@ body.top-page .p5-bg {
 
 @keyframes bgScroll {
   0% {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
   100% {
     /* CSS変数があれば固定値を使用、なければ50%（フォールバック） */
-    transform: translateX(calc(-1 * var(--scroll-width, 50%)));
+    transform: translate3d(calc(-1 * var(--scroll-width, 50%)), 0, 0);
   }
 }
 
@@ -1116,13 +1124,6 @@ textarea {
   contain: layout style;
 }
 
-/* GPU accelerated hover/active states */
-.glass-panel,
-[class*="hover:"]:not(button):not(button *) {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
 .footer-logo {
   transition: filter 200ms ease;
   height: 1.75rem;
@@ -1145,17 +1146,6 @@ a:active,
 [role="button"]:not(button):active {
   transform: scale(0.98);
   transition: transform 50ms ease-out;
-}
-
-/* INP最適化: ホバー状態のGPUアクセラレーション */
-button,
-a {
-  will-change: auto;
-}
-
-button:hover,
-a:hover {
-  will-change: transform, opacity;
 }
 
 /* レイアウトシフト防止 */
