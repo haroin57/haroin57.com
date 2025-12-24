@@ -38,6 +38,62 @@ type MdastBlockquote = { type: 'blockquote'; children: MdastNode[]; data?: Recor
 type MdastCode = { type: 'code'; lang?: string; meta?: string; value: string; data?: Record<string, unknown> }
 type MdastParent = { type: string; children: MdastNode[] }
 
+type TocItem = {
+  id: string
+  text: string
+  level: number
+}
+
+/** HTMLから見出しを抽出（tocがない場合のフォールバック用） */
+function extractHeadingsFromHtml(html: string): TocItem[] {
+  const items: TocItem[] = []
+  const regex = /<h([234])[^>]*\sid="([^"]+)"[^>]*>([\s\S]*?)<\/h\1>/gi
+  let match: RegExpExecArray | null
+
+  while ((match = regex.exec(html)) !== null) {
+    const level = parseInt(match[1], 10)
+    const id = match[2]
+    const text = match[3].replace(/<[^>]+>/g, '').trim()
+    if (text && text !== '目次') {
+      items.push({ id, text, level })
+    }
+  }
+
+  return items
+}
+
+// Markdownから手動で記述した目次を抽出
+function extractTocFromMarkdown(markdown: string): TocItem[] {
+  const items: TocItem[] = []
+  const lines = markdown.split('\n')
+
+  let inTocSection = false
+
+  for (const line of lines) {
+    if (/^##\s+目次\s*$/.test(line)) {
+      inTocSection = true
+      continue
+    }
+
+    if (inTocSection && /^##\s+/.test(line) && !/^##\s+目次\s*$/.test(line)) {
+      break
+    }
+
+    if (!inTocSection) continue
+
+    const match = line.match(/^(\s*)-\s+\[([^\]]+)\]\(#([^)]+)\)/)
+    if (match) {
+      const indent = match[1].length
+      const text = match[2].replace(/`/g, '')
+      const id = match[3]
+      const level = Math.min(4, 2 + Math.floor(indent / 2))
+      items.push({ id, text, level })
+    }
+  }
+
+  return items
+}
+
 async function main() {
   const files = await fg('**/*.md', { cwd: PRODUCTS_DIR })
   const productPosts = []
@@ -236,6 +292,64 @@ async function main() {
           return SKIP
         }
       })
+    }
+  }
+
+  // 本文中の「## 目次」セクションをHTMLから除去（サイドバーのTableOfContentsで表示するため）
+  const removeTocSection = () => {
+    return (tree: HastRoot) => {
+      let tocHeadingIndex: number | undefined
+      let tocContentIndex: number | undefined
+
+      for (let i = 0; i < tree.children.length; i++) {
+        const node = tree.children[i]
+        if (node.type !== 'element') continue
+        const el = node as HastElement
+
+        if (el.tagName === 'h2' && tocHeadingIndex === undefined) {
+          const textContent = (el.children || [])
+            .filter((child) => child.type === 'text')
+            .map((child) => (child as { type: 'text'; value: string }).value || '')
+            .join('')
+            .trim()
+
+          if (textContent === '目次') {
+            tocHeadingIndex = i
+            continue
+          }
+        }
+
+        if (tocHeadingIndex !== undefined && tocContentIndex === undefined) {
+          if (el.tagName === 'div') {
+            const className = normalizeClassName(el.properties?.className)
+            if (className.includes('toc-box')) {
+              tocContentIndex = i
+              break
+            }
+          }
+
+          if (el.tagName === 'ul') {
+            tocContentIndex = i
+            break
+          }
+        }
+      }
+
+      if (tocHeadingIndex === undefined) return
+
+      const indices = [tocHeadingIndex]
+      if (tocContentIndex !== undefined) indices.push(tocContentIndex)
+      indices.sort((a, b) => b - a).forEach((idx) => tree.children.splice(idx, 1))
+
+      // 直後の改行だけ残りやすいので削除
+      const start = tocHeadingIndex
+      while (true) {
+        const next = tree.children[start]
+        if (!next || next.type !== 'element') break
+        const el = next as HastElement
+        if (el.tagName !== 'br') break
+        tree.children.splice(start, 1)
+      }
     }
   }
 
@@ -549,6 +663,7 @@ async function main() {
       })
       .use(rehypeMdnCodeHeaders)
       .use(rehypeRaw)
+      .use(removeTocSection)
       .use(wrapTocInDiv)
       .use(wrapTablesForResponsive)
       .use(rehypeStringify, { allowDangerousHtml: true })
@@ -564,6 +679,10 @@ async function main() {
               .filter(Boolean)
           : []
 
+    const html = processed.toString()
+    const tocFromMarkdown = extractTocFromMarkdown(content)
+    const toc = tocFromMarkdown.length > 0 ? tocFromMarkdown : extractHeadingsFromHtml(html)
+
     // slugはファイル名から取得（products.jsonのslugと一致させる）
     const slug = file.replace(/\.md$/, '')
 
@@ -574,7 +693,8 @@ async function main() {
       summary: data.summary || '',
       createdAt: data.date || null,
       tags,
-      html: processed.toString(),
+      toc,
+      html,
     })
   }
 

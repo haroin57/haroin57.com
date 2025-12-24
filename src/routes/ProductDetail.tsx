@@ -5,9 +5,11 @@ import productPostsData from '../data/product-posts.json' with { type: 'json' }
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
 import PostContent from '../components/PostContent'
+import TableOfContents from '../components/TableOfContents'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
+import { useScrollBlur } from '../hooks/useScrollBlur'
 import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 
 type TechStackItem = {
@@ -15,34 +17,10 @@ type TechStackItem = {
   items: string[]
 }
 
-type DesignReference = {
-  name: string
-  sites: string[]
-  insights: string[]
-}
-
-type DesignReferences = {
-  title: string
-  description: string
-  references: DesignReference[]
-}
-
-type UIUXSection = {
-  category: string
-  items: string[]
-}
-
-type UIUXImprovements = {
-  title: string
-  sections: UIUXSection[]
-}
-
 type ProductContent = {
   overview: string
   features: string[]
   techStack: TechStackItem[]
-  designReferences?: DesignReferences
-  uiuxImprovements?: UIUXImprovements
 }
 
 type Product = {
@@ -56,6 +34,8 @@ type Product = {
   content?: ProductContent
 }
 
+type TocItem = { id: string; text: string; level: number }
+
 type ProductPost = {
   slug: string
   productSlug: string
@@ -63,6 +43,7 @@ type ProductPost = {
   summary: string
   createdAt: string | null
   tags: string[]
+  toc?: TocItem[]
   html: string
 }
 
@@ -141,95 +122,8 @@ function ProductDetail() {
       : {}
   )
 
-  // スクロール時の背景ぼかしエフェクト
-  useEffect(() => {
-    const body = document.body
-    body.classList.add('post-detail-page')
-
-    const rootStyle = window.getComputedStyle(document.documentElement)
-    const baseWashRaw = rootStyle.getPropertyValue('--bg-wash').trim()
-    const baseWash = Number.isFinite(Number.parseFloat(baseWashRaw)) ? Number.parseFloat(baseWashRaw) : 0
-
-    const startPx = 48
-    const rangePx = 420
-    const maxBlurPx = 12
-    const maxExtraWash = 0.2
-    const minOpacity = 0.65
-
-    let rafId = 0
-    const update = () => {
-      const y = window.scrollY || 0
-      const t = Math.max(0, Math.min(1, (y - startPx) / rangePx))
-      const blur = t * maxBlurPx
-      const wash = Math.min(0.6, baseWash + t * maxExtraWash)
-      const scale = 1 + blur / 140
-      const opacity = 1 - t * (1 - minOpacity)
-
-      body.style.setProperty('--bg-blur', `${blur.toFixed(2)}px`)
-      body.style.setProperty('--bg-scale', scale.toFixed(4))
-      body.style.setProperty('--bg-wash', wash.toFixed(3))
-      body.style.setProperty('--bg-opacity', opacity.toFixed(3))
-
-      // スクロールが進んだらアニメーションを停止
-      body.style.setProperty('--bg-animation-state', t > 0.1 ? 'paused' : 'running')
-    }
-
-    const onScroll = () => {
-      if (rafId) return
-      rafId = window.requestAnimationFrame(() => {
-        rafId = 0
-        update()
-      })
-    }
-
-    update()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      if (rafId) window.cancelAnimationFrame(rafId)
-
-      const parseNumber = (value: string, fallback: number) => {
-        const n = Number.parseFloat(value)
-        return Number.isFinite(n) ? n : fallback
-      }
-
-      const startBlur = parseNumber(body.style.getPropertyValue('--bg-blur'), 0)
-      const startScale = parseNumber(body.style.getPropertyValue('--bg-scale'), 1)
-      const startWash = parseNumber(body.style.getPropertyValue('--bg-wash'), baseWash)
-      const startOpacity = parseNumber(body.style.getPropertyValue('--bg-opacity'), 1)
-      const durationMs = 120
-      const startedAt = performance.now()
-
-      const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
-      const tick = (now: number) => {
-        const t = Math.min(1, (now - startedAt) / durationMs)
-        const k = easeOutCubic(t)
-        const blur = startBlur * (1 - k)
-        const scale = startScale + (1 - startScale) * k
-        const wash = startWash + (baseWash - startWash) * k
-        const opacity = startOpacity + (1 - startOpacity) * k
-
-        body.style.setProperty('--bg-blur', `${blur.toFixed(2)}px`)
-        body.style.setProperty('--bg-scale', scale.toFixed(4))
-        body.style.setProperty('--bg-wash', wash.toFixed(3))
-        body.style.setProperty('--bg-opacity', opacity.toFixed(3))
-
-        if (t < 1) {
-          window.requestAnimationFrame(tick)
-          return
-        }
-
-        body.classList.remove('post-detail-page')
-        body.style.removeProperty('--bg-blur')
-        body.style.removeProperty('--bg-scale')
-        body.style.removeProperty('--bg-wash')
-        body.style.removeProperty('--bg-opacity')
-        body.style.removeProperty('--bg-animation-state')
-      }
-
-      window.requestAnimationFrame(tick)
-    }
-  }, [])
+  // スクロール時の背景ブラーエフェクト（モバイル最適化済み）
+  useScrollBlur()
 
   // コードブロックのコピーボタン用イベントハンドラ
   useEffect(() => {
@@ -277,7 +171,7 @@ function ProductDetail() {
   }, [productPost?.html])
 
   return (
-    <div ref={pageRef} className="relative overflow-hidden">
+    <div ref={pageRef} className="relative">
       <main
         className="relative z-10 min-h-screen flex flex-col page-fade"
         style={MAIN_TEXT_STYLE}
@@ -436,73 +330,6 @@ function ProductDetail() {
                         </div>
                       </div>
                     </section>
-
-                    {/* Design References */}
-                    {product.content.designReferences && (
-                      <section className="reveal space-y-3">
-                        <h2 className="text-base sm:text-xl font-semibold text-[color:var(--fg-strong)]">
-                          {product.content.designReferences.title}
-                        </h2>
-                        <p className="text-sm sm:text-base opacity-80 font-a-otf-gothic">
-                          {product.content.designReferences.description}
-                        </p>
-                        <div className="space-y-4">
-                          {product.content.designReferences.references.map((ref) => (
-                            <div key={ref.name} className="glass-panel p-4 sm:p-6 space-y-3">
-                              <div className="flex items-center gap-3 flex-wrap">
-                                <h3 className="text-sm sm:text-base font-semibold text-[color:var(--fg-strong)]">
-                                  {ref.name}
-                                </h3>
-                                <div className="flex flex-wrap gap-2">
-                                  {ref.sites.map((site) => (
-                                    <span
-                                      key={site}
-                                      className="px-2 py-0.5 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-xs opacity-70"
-                                    >
-                                      {site}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                              <ul className="space-y-1.5 text-sm sm:text-[15px] font-a-otf-gothic">
-                                {ref.insights.map((insight, idx) => (
-                                  <li key={idx} className="flex items-start gap-2">
-                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-current opacity-50 shrink-0" />
-                                    <span className="opacity-90">{insight}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    )}
-
-                    {/* UI/UX Improvements */}
-                    {product.content.uiuxImprovements && (
-                      <section className="reveal space-y-3">
-                        <h2 className="text-base sm:text-xl font-semibold text-[color:var(--fg-strong)]">
-                          {product.content.uiuxImprovements.title}
-                        </h2>
-                        <div className="space-y-4">
-                          {product.content.uiuxImprovements.sections.map((section) => (
-                            <div key={section.category} className="glass-panel p-4 sm:p-6 space-y-3">
-                              <h3 className="text-sm sm:text-base font-semibold text-[color:var(--fg-strong)]">
-                                {section.category}
-                              </h3>
-                              <ul className="space-y-1.5 text-sm sm:text-[15px] font-a-otf-gothic">
-                                {section.items.map((item, idx) => (
-                                  <li key={idx} className="flex items-start gap-2">
-                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-current opacity-50 shrink-0" />
-                                    <span className="opacity-90">{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    )}
                   </>
                 )}
 
@@ -518,6 +345,7 @@ function ProductDetail() {
               </article>
             )}
           </div>
+          {productPost?.html ? <TableOfContents toc={productPost.toc} html={productPost.html} /> : null}
         </div>
 
         <SiteFooter />

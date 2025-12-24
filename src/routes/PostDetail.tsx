@@ -5,13 +5,16 @@ import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
 import ClientOnly from '../components/ClientOnly'
 import PostContent from '../components/PostContent'
+import TableOfContents from '../components/TableOfContents'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
+import { useScrollBlur } from '../hooks/useScrollBlur'
 import { CMS_ENDPOINT, GOOD_ENDPOINT } from '../lib/endpoints'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 
-type Post = { slug?: string; title?: string; summary?: string; html?: string; createdAt?: string }
+type TocItem = { id: string; text: string; level: number }
+type Post = { slug?: string; title?: string; summary?: string; html?: string; createdAt?: string; toc?: TocItem[] }
 // tagsはgen-postsで配列化される前提
 type TaggedPost = Post & { tags?: string[] }
 
@@ -212,94 +215,8 @@ function PostDetail() {
     }
   }, [post?.html])
 
-  useEffect(() => {
-    const body = document.body
-    body.classList.add('post-detail-page')
-
-    const rootStyle = window.getComputedStyle(document.documentElement)
-    const baseWashRaw = rootStyle.getPropertyValue('--bg-wash').trim()
-    const baseWash = Number.isFinite(Number.parseFloat(baseWashRaw)) ? Number.parseFloat(baseWashRaw) : 0
-
-    const startPx = 48
-    const rangePx = 420
-    const maxBlurPx = 12
-    const maxExtraWash = 0.2
-    const minOpacity = 0.65
-
-    let rafId = 0
-    const update = () => {
-      const y = window.scrollY || 0
-      const t = Math.max(0, Math.min(1, (y - startPx) / rangePx))
-      const blur = t * maxBlurPx
-      const wash = Math.min(0.6, baseWash + t * maxExtraWash)
-      const scale = 1 + blur / 140
-      const opacity = 1 - t * (1 - minOpacity)
-
-      body.style.setProperty('--bg-blur', `${blur.toFixed(2)}px`)
-      body.style.setProperty('--bg-scale', scale.toFixed(4))
-      body.style.setProperty('--bg-wash', wash.toFixed(3))
-      body.style.setProperty('--bg-opacity', opacity.toFixed(3))
-
-      // スクロールが進んだらアニメーションを停止
-      body.style.setProperty('--bg-animation-state', t > 0.1 ? 'paused' : 'running')
-    }
-
-    const onScroll = () => {
-      if (rafId) return
-      rafId = window.requestAnimationFrame(() => {
-        rafId = 0
-        update()
-      })
-    }
-
-    update()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      if (rafId) window.cancelAnimationFrame(rafId)
-
-      const parseNumber = (value: string, fallback: number) => {
-        const n = Number.parseFloat(value)
-        return Number.isFinite(n) ? n : fallback
-      }
-
-      const startBlur = parseNumber(body.style.getPropertyValue('--bg-blur'), 0)
-      const startScale = parseNumber(body.style.getPropertyValue('--bg-scale'), 1)
-      const startWash = parseNumber(body.style.getPropertyValue('--bg-wash'), baseWash)
-      const startOpacity = parseNumber(body.style.getPropertyValue('--bg-opacity'), 1)
-      const durationMs = 120
-      const startedAt = performance.now()
-
-      const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
-      const tick = (now: number) => {
-        const t = Math.min(1, (now - startedAt) / durationMs)
-        const k = easeOutCubic(t)
-        const blur = startBlur * (1 - k)
-        const scale = startScale + (1 - startScale) * k
-        const wash = startWash + (baseWash - startWash) * k
-        const opacity = startOpacity + (1 - startOpacity) * k
-
-        body.style.setProperty('--bg-blur', `${blur.toFixed(2)}px`)
-        body.style.setProperty('--bg-scale', scale.toFixed(4))
-        body.style.setProperty('--bg-wash', wash.toFixed(3))
-        body.style.setProperty('--bg-opacity', opacity.toFixed(3))
-
-        if (t < 1) {
-          window.requestAnimationFrame(tick)
-          return
-        }
-
-        body.classList.remove('post-detail-page')
-        body.style.removeProperty('--bg-blur')
-        body.style.removeProperty('--bg-scale')
-        body.style.removeProperty('--bg-wash')
-        body.style.removeProperty('--bg-opacity')
-        body.style.removeProperty('--bg-animation-state')
-      }
-
-      window.requestAnimationFrame(tick)
-    }
-  }, [])
+  // スクロール時の背景ブラーエフェクト（モバイル最適化済み）
+  useScrollBlur()
 
   const handleGood = useCallback(async () => {
     if (!slug || isVoting) return
@@ -353,13 +270,13 @@ function PostDetail() {
   }, [slug, isVoting, hasVoted, goodCount])
 
   return (
-    <div ref={pageRef} className="relative overflow-hidden">
+    <div ref={pageRef} className="relative">
       <main
         className="relative z-10 min-h-screen flex flex-col page-fade"
         style={MAIN_TEXT_STYLE}
       >
         <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
-          <div className="mx-auto w-full max-w-2xl space-y-6">
+          <div className="mx-auto w-full max-w-2xl space-y-6 relative">
             <header
               className="reveal flex items-center gap-4 text-lg sm:text-xl font-semibold"
               style={MAIN_FONT_STYLE}
@@ -452,6 +369,7 @@ function PostDetail() {
           </>
         )}
           </div>
+          {post?.html ? <TableOfContents toc={post.toc} html={post.html} /> : null}
         </div>
 
         <SiteFooter />

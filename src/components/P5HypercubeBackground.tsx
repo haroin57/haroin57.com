@@ -55,9 +55,20 @@ const project3D = (v: Vec3, distance: number): Vec3 => {
   return [v[0] * scale, v[1] * scale, v[2]]
 }
 
-const TARGET_FPS = 120
 const MIN_CANVAS_WIDTH = 320
 const MIN_CANVAS_HEIGHT = 240
+
+// モバイル/低性能デバイス判定
+const isLowPerformanceDevice = (): boolean => {
+  if (typeof window === 'undefined') return false
+  const ua = navigator.userAgent.toLowerCase()
+  const isAndroid = /android/i.test(ua)
+  const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua)
+  const lowConcurrency = (navigator.hardwareConcurrency || 4) <= 4
+  const lowMemory = (navigator as any).deviceMemory !== undefined && (navigator as any).deviceMemory < 4
+  // Androidは特に重いのでより厳しく判定
+  return isAndroid || (isMobile && (lowConcurrency || lowMemory))
+}
 
 // デバイスに応じた最適なレンダースケールを計算
 const getOptimalRenderScale = (): number => {
@@ -65,6 +76,12 @@ const getOptimalRenderScale = (): number => {
 
   const dpr = window.devicePixelRatio || 1
   const screenArea = window.innerWidth * window.innerHeight
+  const isLowPerf = isLowPerformanceDevice()
+
+  // 低性能デバイスでは大幅に軽量化
+  if (isLowPerf) {
+    return 0.5
+  }
 
   // 高解像度・大画面デバイスではフルスケール
   // 低解像度・小画面デバイスでは軽量化
@@ -76,10 +93,18 @@ const getOptimalRenderScale = (): number => {
     return 0.9
   } else if (screenArea > 400000) {
     // 中小画面: やや軽量
-    return 0.85
+    return 0.75
   }
   // 小画面: 軽量
-  return 0.8
+  return 0.6
+}
+
+// デバイスに応じた目標FPSを取得
+const getTargetFPS = (): number => {
+  if (typeof window === 'undefined') return 30
+  const isLowPerf = isLowPerformanceDevice()
+  // 低性能デバイスでは30fps、それ以外は30fps（120fpsは過剰）
+  return isLowPerf ? 30 : 30
 }
 
 function P5HypercubeBackground() {
@@ -110,7 +135,7 @@ function P5HypercubeBackground() {
           // デバイスピクセル比を考慮（高解像度ディスプレイで鮮明に）
           const dpr = Math.min(window.devicePixelRatio || 1, 2)
           p.pixelDensity(dpr)
-          p.frameRate(TARGET_FPS)
+          p.frameRate(getTargetFPS())
           p.noFill()
           p.smooth()
           if (prefersReduced) p.noLoop()

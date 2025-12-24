@@ -78,6 +78,12 @@ interface DeployOptions {
   genJson: boolean
 }
 
+interface TocItem {
+  id: string
+  text: string
+  level: number
+}
+
 interface PostData {
   slug: string
   title: string
@@ -85,6 +91,7 @@ interface PostData {
   markdown: string
   html: string
   tags: string[]
+  toc: TocItem[]
   status: 'draft' | 'published'
   createdAt?: string
   updatedAt?: string
@@ -243,40 +250,79 @@ const injectToc = () => {
   }
 }
 
-const wrapTocInDiv = () => {
+// Markdownから手動で記述した目次を抽出
+// 形式: - [テキスト](#id) のリンクをパース
+function extractTocFromMarkdown(markdown: string): TocItem[] {
+  const items: TocItem[] = []
+  const lines = markdown.split('\n')
+
+  let inTocSection = false
+
+  for (const line of lines) {
+    // ## 目次 セクションを検出
+    if (/^##\s+目次\s*$/.test(line)) {
+      inTocSection = true
+      continue
+    }
+
+    // 目次セクション中で、次の見出しが来たら終了
+    if (inTocSection && /^##\s+/.test(line) && !/^##\s+目次\s*$/.test(line)) {
+      break
+    }
+
+    if (!inTocSection) continue
+
+    // - [テキスト](#id) 形式をパース
+    // インデントの深さでレベルを決定（スペース2つ = 1レベル）
+    const match = line.match(/^(\s*)-\s+\[([^\]]+)\]\(#([^)]+)\)/)
+    if (match) {
+      const indent = match[1].length
+      const text = match[2].replace(/`/g, '') // バッククォートを除去
+      const id = match[3]
+      // インデントなし = level 2, 2スペース = level 3, 4スペース = level 4
+      const level = Math.min(4, 2 + Math.floor(indent / 2))
+      items.push({ id, text, level })
+    }
+  }
+
+  return items
+}
+
+// 手動で記述した「## 目次」セクションをHTMLから除去
+// サイドバーのTableOfContentsコンポーネントで表示するため
+const removeTocSection = () => {
   return (tree: HastRoot) => {
-    let foundTocHeading = false
-    visit(tree, 'element', (node: HastElement, index: number | undefined, parent: HastNode | undefined) => {
-      if (!foundTocHeading && node.tagName === 'h2') {
-        const children = node.children || []
-        const textContent = children
+    let tocHeadingIndex: number | undefined
+    let tocListIndex: number | undefined
+
+    // まず目次のh2とulのインデックスを探す
+    for (let i = 0; i < tree.children.length; i++) {
+      const node = tree.children[i]
+      if (node.type !== 'element') continue
+      const el = node as HastElement
+
+      if (el.tagName === 'h2' && tocHeadingIndex === undefined) {
+        const textContent = (el.children || [])
           .filter((child) => child.type === 'text')
-          .map((child) => {
-            const textNode = child as { type: 'text'; value: string }
-            return textNode.value || ''
-          })
+          .map((child) => (child as { type: 'text'; value: string }).value || '')
           .join('')
           .trim()
 
         if (textContent === '目次') {
-          foundTocHeading = true
-          return
+          tocHeadingIndex = i
         }
+      } else if (tocHeadingIndex !== undefined && el.tagName === 'ul' && tocListIndex === undefined) {
+        tocListIndex = i
+        break
       }
+    }
 
-      if (foundTocHeading && node.tagName === 'ul' && parent && parent.type === 'root' && index !== undefined) {
-        const parentRoot = parent as HastRoot
-        const wrapper: HastElement = {
-          type: 'element',
-          tagName: 'div',
-          properties: { className: ['toc-box'] },
-          children: [node],
-        }
-        parentRoot.children[index] = wrapper
-        foundTocHeading = false
-        return SKIP
-      }
-    })
+    // 目次セクションを削除
+    if (tocHeadingIndex !== undefined && tocListIndex !== undefined) {
+      // ulを先に削除してからh2を削除（インデックスがずれるため）
+      tree.children.splice(tocListIndex, 1)
+      tree.children.splice(tocHeadingIndex, 1)
+    }
   }
 }
 
@@ -585,7 +631,7 @@ async function convertMarkdownToHtml(content: string): Promise<string> {
     })
     .use(rehypeMdnCodeHeaders)
     .use(rehypeRaw)
-    .use(wrapTocInDiv)
+    .use(removeTocSection)
     .use(wrapTablesForResponsive)
     .use(rehypeStringify, { allowDangerousHtml: true })
     .process(content)
@@ -600,6 +646,7 @@ async function parseMarkdownFile(filePath: string, options: DeployOptions): Prom
 
   const slug = path.basename(filePath, '.md')
   const html = await convertMarkdownToHtml(content)
+  const toc = extractTocFromMarkdown(content)
 
   const tags =
     Array.isArray(data.tags) && data.tags.length > 0
@@ -626,6 +673,7 @@ async function parseMarkdownFile(filePath: string, options: DeployOptions): Prom
     markdown: content,
     html,
     tags,
+    toc,
     status,
     createdAt: data.date || undefined,
     updatedAt: data.updated || data.updatedAt || undefined,
@@ -725,6 +773,7 @@ async function generatePostsJson(options: DeployOptions): Promise<void> {
     updatedAt: string | null
     status: 'draft' | 'published'
     tags: string[]
+    toc: TocItem[]
     html: string
   }[] = []
 
@@ -747,6 +796,7 @@ async function generatePostsJson(options: DeployOptions): Promise<void> {
         updatedAt: post.updatedAt || null,
         status: post.status,
         tags: post.tags,
+        toc: post.toc,
         html: post.html,
       })
       console.log(`  ✓ ${post.slug}`)

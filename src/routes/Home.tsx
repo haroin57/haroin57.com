@@ -41,13 +41,20 @@ const navItems: NavItem[] = [
 
 /** 日付を相対表記に変換（例: "3 days ago"） */
 function formatRelativeDate(dateStr: string): string {
-  const date = new Date(dateStr)
+  // 日付のみを比較（時間は無視）してタイムゾーン問題を回避
+  const datePart = dateStr.split('T')[0] // "2025-12-24" 形式
+  const [year, month, day] = datePart.split('-').map(Number)
+  const targetDate = new Date(year, month - 1, day) // ローカルタイムで作成
+
   const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  const diffMs = today.getTime() - targetDate.getTime()
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
 
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 0) return 'Today' // 未来の日付は「Today」として扱う
   if (diffDays < 7) return `${diffDays} days ago`
   if (diffDays < 30) {
     const weeks = Math.floor(diffDays / 7)
@@ -254,7 +261,7 @@ function Home() {
             </h1>
 
             {/* ナビゲーションボタン - 中央配置 */}
-            <nav className="reveal flex flex-wrap items-start justify-center gap-4 sm:gap-8 border-t border-white/20 pt-6">
+            <nav className="reveal flex flex-wrap items-start justify-center gap-4 sm:gap-8 pt-6">
               {navItems.map((item) => (
                 <PrefetchLink
                   key={item.to}
@@ -282,7 +289,7 @@ function Home() {
             {/* タイムライン */}
             {timelineItems.length > 0 && (
               <section className="reveal space-y-6 !mt-5">
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium text-[color:var(--fg-strong,inherit)] border-t border-white/20 pt-2">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium text-[color:var(--fg-strong,inherit)] pt-2">
                   <br />
                   サイト更新ログ
                 </h2>
@@ -313,6 +320,12 @@ function Home() {
                                 <div className="flex items-center gap-2 text-xs text-[color:var(--fg)] opacity-50">
                                   <TimelineIcon type={item.type} />
                                   <span>{getTypeLabel(item.type)}</span>
+                                  {item.isUpdate && (
+                                    <>
+                                      <span>·</span>
+                                      <span className="text-teal-400/80">Updated</span>
+                                    </>
+                                  )}
                                   <span>·</span>
                                   <span>{formatRelativeDate(item.date)}</span>
                                 </div>

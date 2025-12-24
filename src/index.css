@@ -96,9 +96,13 @@ body.top-page .p5-bg {
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  /* モバイルブラウザの動的ビューポートに対応 */
+  /* モバイル: svh（最小ビューポート）で固定してチラつき防止 */
+  /* デスクトップ: vhで動的対応 */
   height: 100vh;
-  height: 100dvh;
+  height: 100svh;
+  /* GPUレイヤー化でスクロール時のパフォーマンス向上 */
+  transform: translateZ(0);
+  will-change: opacity;
 }
 
 .scrolling-bg-track {
@@ -108,21 +112,30 @@ body.top-page .p5-bg {
   display: flex;
   flex-direction: row;
   width: max-content;
-  /* 動的ビューポート高さを使用 */
+  /* モバイル: svh（最小ビューポート）で固定 */
   height: 100vh;
-  height: 100dvh;
+  height: 100svh;
   animation: bgScroll 100s linear infinite;
   animation-play-state: var(--bg-animation-state, running);
 }
 
 .scrolling-bg-image {
   flex-shrink: 0;
-  /* 動的ビューポート高さを使用 */
+  /* モバイル: svh（最小ビューポート）で固定 */
   height: 100vh;
-  height: 100dvh;
+  height: 100svh;
   width: auto;
   max-width: none;
   object-fit: cover;
+}
+
+/* デスクトップではウィンドウリサイズに動的対応 */
+@media (hover: hover) and (pointer: fine) {
+  .scrolling-bg,
+  .scrolling-bg-track,
+  .scrolling-bg-image {
+    height: 100vh;
+  }
 }
 
 @media (max-aspect-ratio: 4/3) {
@@ -157,6 +170,9 @@ body.top-page .p5-bg {
   filter: blur(var(--bg-blur, 0px));
   pointer-events: none;
   transition: opacity 200ms ease-out;
+  /* GPUレイヤー化 */
+  transform: translateZ(0);
+  contain: strict;
 }
 
 .p5-bg canvas {
@@ -267,6 +283,35 @@ body {
   .photo-stamp {
     animation: none;
   }
+
+  /* P5.jsアニメーションを非表示 */
+  .p5-bg {
+    display: none;
+  }
+
+  /* スクロールブラーを無効化 */
+  .scrolling-bg {
+    filter: none !important;
+  }
+}
+
+/* モバイル向けパフォーマンス最適化 */
+@media (max-width: 768px) {
+  /* モバイルではP5.jsの不透明度を下げてGPU負荷を軽減 */
+  :root {
+    --p5-opacity: 0.2;
+  }
+
+  /* モバイルではblurをより軽量なグラデーションオーバーレイで代替 */
+  .scrolling-bg {
+    /* filterの代わりにopacityで軽量にフェード */
+    filter: none;
+  }
+
+  /* 背景アニメーションを遅くして負荷軽減 */
+  .scrolling-bg-track {
+    animation-duration: 150s;
+  }
 }
 
 /* Adobe Fonts (Typekit) applied to English text when kit loads */
@@ -329,8 +374,16 @@ img {
 }
 
 .prose li {
-  margin-top: 0.15rem;
-  margin-bottom: 0.15rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+  line-height: 1.7;
+}
+
+/* ネストされた箇条書き */
+.prose li > ul,
+.prose li > ol {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }
 
 .prose strong {
@@ -338,7 +391,9 @@ img {
   color: var(--fg-strong);
   /* iOS/日本語フォントで太字が表示されない問題を修正 */
   font-synthesis: weight;
-  -webkit-text-stroke: 0.3px currentColor;
+  /* text-strokeは日本語フォントで文字が潰れるため、text-shadowで代替 */
+  text-shadow: 0 0 0.5px currentColor;
+  letter-spacing: 0.01em;
 }
 
 .prose em {
@@ -380,6 +435,7 @@ img {
 .prose table td {
   padding: 0.65rem 1rem;
   border-bottom: 1px solid var(--ui-border);
+  line-height: 1.6;
 }
 
 .prose table tbody tr:last-child td {
@@ -410,6 +466,8 @@ img {
   /* iOS/日本語フォントで太字が表示されない問題を修正 */
   font-synthesis: weight;
   line-height: 1.4;
+  /* 日本語フォントで太字が潰れないようにする */
+  letter-spacing: 0.02em;
 }
 
 /* 本文17pxに合わせた見出しサイズ */
@@ -595,30 +653,6 @@ img {
 .prose .remark-code-title + pre {
   margin-top: 0;
   border-radius: 0;
-}
-
-/* TOC */
-.prose .toc-box {
-  border: 1px solid var(--ui-border);
-  background: var(--ui-surface);
-  padding: 1.3rem 1.5rem 1.3rem 2.4rem;
-  margin: 1.5rem 0 1.5rem;
-  border-radius: 10px;
-}
-
-.prose .toc-box ul {
-  margin: 0;
-  padding-left: 1.4rem;
-  list-style-position: outside;
-}
-
-.prose .toc-box li {
-  margin: 0.3rem 0;
-}
-
-.prose .toc-box a {
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 /* MDN-style callouts / admonitions */
@@ -1341,5 +1375,356 @@ body {
   /* リンクのタップターゲット */
   .prose a {
     padding: 2px 0;
+  }
+
+  /* 箇条書きのインデント調整 */
+  .prose ul,
+  .prose ol {
+    padding-left: 1.25rem;
+  }
+}
+
+/* ======================
+   目次コンポーネント
+   ====================== */
+
+/* 共通スタイル */
+.toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.toc-item {
+  --toc-indent: 1.5rem;
+  --toc-pad-block: 0.4rem;
+  position: relative;
+  margin: 0;
+  padding: var(--toc-pad-block) 0 var(--toc-pad-block) var(--toc-indent);
+}
+
+/* タイムラインの縦線 */
+.toc-list::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* タイムラインのドット */
+.toc-item::before {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: #171717;
+  transition: border-color 200ms ease, background-color 200ms ease;
+}
+
+/* ドットの内側の点 */
+.toc-item::after {
+  content: '';
+  position: absolute;
+  z-index: 3;
+  left: 3.5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background-color 200ms ease;
+}
+
+/* ===== 階層構造（明確なネストインデント） ===== */
+
+/* h3: 1段階目のインデント */
+.toc-item--level-3 {
+  --toc-indent: 1.25rem;
+}
+
+.toc-item--level-3::before {
+  width: 9px;
+  height: 9px;
+}
+
+.toc-item--level-3::after {
+  left: 2.5px;
+  width: 3px;
+  height: 3px;
+}
+
+/* h4: 2段階目のインデント（h3 + 追加インデント） */
+.toc-item--level-4 {
+  --toc-indent: 2.5rem;
+}
+
+.toc-item--level-4::before {
+  width: 7px;
+  height: 7px;
+}
+
+.toc-item--level-4::after {
+  left: 2px;
+  width: 2px;
+  height: 2px;
+}
+
+/* アクティブ状態 */
+.toc-item--active::before {
+  border-color: rgba(94, 234, 212, 1);
+  box-shadow: 0 0 6px rgba(94, 234, 212, 0.6);
+}
+
+.toc-item--active::after {
+  background: rgba(94, 234, 212, 1);
+}
+
+.toc-item--active .toc-link {
+  color: rgba(94, 234, 212, 1);
+  opacity: 1;
+  font-weight: 600;
+}
+
+/* ホバー状態 */
+.toc-item:hover::before {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.toc-item:hover::after {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.toc-link {
+  position: relative;
+  display: block;
+  background: none;
+  border: none;
+  margin: calc(-1 * var(--toc-pad-block)) 0 calc(-1 * var(--toc-pad-block)) calc(-1 * var(--toc-indent));
+  padding: var(--toc-pad-block) 0.9rem var(--toc-pad-block) var(--toc-indent);
+  border-radius: 10px;
+  text-align: left;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--fg);
+  opacity: 0.7;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 200ms ease, opacity 200ms ease, background-color 200ms ease;
+}
+
+.toc-link::after {
+  content: '#';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  opacity: 0;
+  transform: translate(-4px, -50%);
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 600;
+  transition: opacity 200ms ease, transform 200ms ease, color 200ms ease;
+}
+
+.toc-link:hover {
+  color: var(--fg-strong);
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(94, 234, 212, 0.55);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.toc-link:hover::after,
+.toc-link:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, -50%);
+  color: rgba(94, 234, 212, 0.7);
+}
+
+.toc-link:focus-visible {
+  outline: 2px solid rgba(94, 234, 212, 0.35);
+  outline-offset: 4px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ======================
+   モバイル版目次
+   ====================== */
+.toc-mobile {
+  margin-bottom: 1.5rem;
+}
+
+.toc-mobile-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  color: var(--fg);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+
+.toc-mobile-toggle:hover {
+  background: var(--ui-surface-hover);
+  border-color: var(--ui-border-strong);
+}
+
+.toc-mobile-icon {
+  transition: transform 200ms ease;
+}
+
+.toc-mobile-icon--open {
+  transform: rotate(90deg);
+}
+
+.toc-mobile-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 300ms ease-out;
+}
+
+.toc-mobile-content--open {
+  max-height: 500px;
+}
+
+.toc-mobile-content nav {
+  padding: 1rem 0;
+}
+
+.toc-mobile-content .toc-list {
+  position: relative;
+}
+
+/* ======================
+   PC版サイドバー目次
+   ====================== */
+.toc-sidebar {
+  position: fixed;
+  left: calc(50% + 380px);
+  top: 100px;
+  width: 160px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  padding: 0.75rem 0.75rem 0.6rem;
+  border-radius: 14px;
+  background: rgba(23, 23, 23, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.toc-sidebar-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg);
+  opacity: 0.4;
+  margin-bottom: 0.75rem;
+}
+
+.toc-sidebar .toc-link {
+  font-size: 0.7rem;
+  line-height: 1.3;
+}
+
+.toc-sidebar .toc-list {
+  position: relative;
+}
+
+/* サイドバー用縦線：ドットの中心（2.5px）に合わせる */
+.toc-sidebar .toc-list::before {
+  left: 2px;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.toc-sidebar .toc-item {
+  --toc-indent: 0.9rem;
+  --toc-pad-block: 0.25rem;
+  padding: var(--toc-pad-block) 0 var(--toc-pad-block) var(--toc-indent);
+}
+
+/* h2レベル: 5pxドット */
+.toc-sidebar .toc-item::before {
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-width: 1px;
+}
+
+.toc-sidebar .toc-item::after {
+  left: 1.5px;
+  width: 2px;
+  height: 2px;
+}
+
+/* サイドバー用: h3（1段階目） - 同じ縦線上に配置 */
+.toc-sidebar .toc-item--level-3 {
+  --toc-indent: 0.9rem;
+}
+
+.toc-sidebar .toc-item--level-3::before {
+  left: 0;
+  width: 5px;
+  height: 5px;
+}
+
+.toc-sidebar .toc-item--level-3::after {
+  left: 1.5px;
+  width: 2px;
+  height: 2px;
+}
+
+/* サイドバー用: h4（2段階目） - 同じ縦線上に配置 */
+.toc-sidebar .toc-item--level-4 {
+  --toc-indent: 0.9rem;
+}
+
+.toc-sidebar .toc-item--level-4::before {
+  left: 0;
+  width: 5px;
+  height: 5px;
+}
+
+.toc-sidebar .toc-item--level-4::after {
+  left: 1.5px;
+  width: 2px;
+  height: 2px;
+}
+
+/* スクロールバー非表示 */
+.toc-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.toc-sidebar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 画面幅が狭い場合は非表示 */
+@media (max-width: 900px) {
+  .toc-sidebar {
+    display: none;
   }
 }
