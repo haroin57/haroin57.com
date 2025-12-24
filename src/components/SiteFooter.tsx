@@ -1,5 +1,6 @@
 import AccessCounter from './AccessCounter'
 import ClientOnly from './ClientOnly'
+import { GitHubIcon, XLogoIcon } from './SvgIcons'
 import { MAIN_TEXT_STYLE } from '../styles/typography'
 
 function SiteFooter() {
@@ -15,11 +16,23 @@ function SiteFooter() {
         <span>© haroin</span>
       </div>
       <div className="flex items-center gap-4">
-        <a href="https://x.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-          <img src="/X_logo.svg" alt="X profile" className="footer-logo" />
+        <a
+          href="https://x.com/haroin57"
+          target="_blank"
+          rel="noreferrer"
+          className="hover:opacity-100 opacity-80"
+          aria-label="X profile"
+        >
+          <XLogoIcon className="footer-logo" aria-hidden="true" focusable="false" />
         </a>
-        <a href="https://github.com/haroin57" target="_blank" rel="noreferrer" className="hover:opacity-100 opacity-80">
-          <img src="/github.svg" alt="GitHub profile" className="footer-logo" />
+        <a
+          href="https://github.com/haroin57"
+          target="_blank"
+          rel="noreferrer"
+          className="hover:opacity-100 opacity-80"
+          aria-label="GitHub profile"
+        >
+          <GitHubIcon className="footer-logo" aria-hidden="true" focusable="false" />
         </a>
       </div>
     </footer>

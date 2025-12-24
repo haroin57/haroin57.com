@@ -6,12 +6,14 @@ import SiteFooter from '../components/SiteFooter'
 import ClientOnly from '../components/ClientOnly'
 import PostContent from '../components/PostContent'
 import TableOfContents from '../components/TableOfContents'
+import { GoodIcon, XLogoIcon } from '../components/SvgIcons'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
 import { useScrollBlur } from '../hooks/useScrollBlur'
 import { CMS_ENDPOINT, GOOD_ENDPOINT } from '../lib/endpoints'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
+import { extractCodeText, writeToClipboard } from '../utils/clipboard'
 
 type TocItem = { id: string; text: string; level: number }
 type Post = { slug?: string; title?: string; summary?: string; html?: string; createdAt?: string; toc?: TocItem[] }
@@ -20,40 +22,6 @@ type TaggedPost = Post & { tags?: string[] }
 
 const staticPosts: TaggedPost[] = Array.isArray(postsData) ? (postsData as TaggedPost[]) : []
 const SERVER_APPLY_DELAY_MS = 350
-
-function extractCodeText(codeElement: HTMLElement): string {
-  const lineElements = codeElement.querySelectorAll('[data-line]')
-  if (lineElements.length === 0) return codeElement.textContent ?? ''
-  return Array.from(lineElements)
-    .map((el) => el.textContent ?? '')
-    .join('\n')
-}
-
-async function writeToClipboard(text: string): Promise<boolean> {
-  if (!text) return false
-  try {
-    await navigator.clipboard.writeText(text)
-    return true
-  } catch {
-    try {
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      textarea.setAttribute('readonly', '')
-      textarea.style.position = 'fixed'
-      textarea.style.top = '0'
-      textarea.style.left = '0'
-      textarea.style.opacity = '0'
-      document.body.appendChild(textarea)
-      textarea.focus()
-      textarea.select()
-      const ok = document.execCommand('copy')
-      document.body.removeChild(textarea)
-      return ok
-    } catch {
-      return false
-    }
-  }
-}
 
 function PostDetail() {
   const { slug } = useParams<{ slug: string }>()
@@ -337,7 +305,7 @@ function PostDetail() {
                   }`}
                   style={{ color: 'var(--fg)' }}
                 >
-                  <img src="/good.svg" alt="Good" className="good-icon h-5 w-5" />
+                  <GoodIcon className="good-icon h-5 w-5" aria-hidden="true" focusable="false" />
                   <span className="tracking-wide">{`${hasVoted ? 'Good!' : 'Good'} ${goodCount}`}</span>
                 </button>
               </section>
@@ -353,7 +321,7 @@ function PostDetail() {
                   style={{ color: 'var(--fg)' }}
                 >
                   <span>Share on</span>
-                  <img src="/X_logo.svg" alt="X" className="x-share-icon h-4 w-4" />
+                  <XLogoIcon className="x-share-icon h-4 w-4" aria-hidden="true" focusable="false" />
                 </a>
               </section>
             ) : null}

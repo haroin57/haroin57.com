@@ -23,8 +23,6 @@
       content="分散システム、Web開発、デスクトップ音楽のメモやブログをまとめたharoinの個人サイト。"
     />
     <meta name="twitter:image" content="/background.png" />
-    <!-- 背景画像は prefetch で低優先度読み込み（preload警告を回避） -->
-    <link rel="prefetch" as="image" href="/background-1920.webp" type="image/webp" />
     <!-- フォント読み込み高速化 -->
     <link rel="preconnect" href="https://use.typekit.net" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -32,6 +30,9 @@
     <link rel="dns-prefetch" href="https://use.typekit.net" />
     <!-- Google Fonts - 非ブロッキング読み込み -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" />
+    </noscript>
     <title>haroin57 web</title>
     <!-- Adobe Fonts (bc-barell, AB-countryroad など) -->
     <script>
@@ -67,15 +68,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <!-- INP最適化: 長いタスクを分割するスケジューラー -->
-    <script>
-      // scheduler.yield() ポリフィル（INP改善）
-      if (!('scheduler' in window)) {
-        window.scheduler = {
-          yield: () => new Promise(resolve => setTimeout(resolve, 0))
-        };
-      }
-    </script>
+    <script type="module" src="/src/main.tsx" defer></script>
   </body>
 </html>

@@ -2,7 +2,9 @@ import { useCallback, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import P5HypercubeBackground from './P5HypercubeBackground'
 
-const BACKGROUND_SRC = '/background-strip.webp'
+const BACKGROUND_DEFAULT_SRC = '/background-strip-2560.webp'
+const BACKGROUND_SRC_SET = '/background-strip-1280.webp 1280w, /background-strip-2560.webp 2560w'
+const BACKGROUND_SIZES = '100vw'
 
 // 横スクロール背景（PC/スマホ共通）
 function ScrollingBackground({ baseOpacity }: { baseOpacity: number }) {
@@ -31,16 +33,20 @@ function ScrollingBackground({ baseOpacity }: { baseOpacity: number }) {
       >
         {/* 1枚のストリップ画像を2セット並べて無限ループ */}
         {[0, 1].map((index) => (
-          <img
-            key={index}
-            src={BACKGROUND_SRC}
-            alt=""
-            className="scrolling-bg-image select-none"
-            fetchPriority={index === 0 ? 'high' : 'low'}
-            loading={index === 0 ? 'eager' : 'lazy'}
-            decoding="async"
-            onLoad={index === 0 ? handleImageLoad : undefined}
-          />
+          <picture key={index}>
+            <source media="(max-width: 640px)" srcSet={BACKGROUND_SRC_SET} sizes={BACKGROUND_SIZES} />
+            <img
+              src={BACKGROUND_DEFAULT_SRC}
+              srcSet={BACKGROUND_SRC_SET}
+              sizes={BACKGROUND_SIZES}
+              alt=""
+              className="scrolling-bg-image select-none"
+              fetchPriority={index === 0 ? 'high' : 'low'}
+              loading={index === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+              onLoad={index === 0 ? handleImageLoad : undefined}
+            />
+          </picture>
         ))}
       </div>
     </div>

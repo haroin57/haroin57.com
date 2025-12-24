@@ -4,6 +4,10 @@ type LightboxProps = {
   isOpen: boolean
   onClose: () => void
   imageSrc: string
+  imageSrcSet?: string
+  imageSizes?: string
+  imageWidth?: number
+  imageHeight?: number
   imageAlt: string
   children?: React.ReactNode
 }
@@ -19,7 +23,17 @@ const CloseIcon = () => (
   </svg>
 )
 
-function Lightbox({ isOpen, onClose, imageSrc, imageAlt, children }: LightboxProps) {
+function Lightbox({
+  isOpen,
+  onClose,
+  imageSrc,
+  imageSrcSet,
+  imageSizes,
+  imageWidth,
+  imageHeight,
+  imageAlt,
+  children,
+}: LightboxProps) {
   useEffect(() => {
     if (!isOpen) return
 
@@ -52,8 +66,13 @@ function Lightbox({ isOpen, onClose, imageSrc, imageAlt, children }: LightboxPro
       >
         <img
           src={imageSrc}
+          srcSet={imageSrcSet}
+          sizes={imageSizes}
+          width={imageWidth}
+          height={imageHeight}
           alt={imageAlt}
           className="max-h-[70vh] w-full object-contain"
+          decoding="async"
         />
         {children && (
           <div className="p-4 sm:p-6">

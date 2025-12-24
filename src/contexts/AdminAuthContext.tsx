@@ -32,6 +32,8 @@ let cachedGoogleProvider: GoogleAuthProvider | null = null
 // signInWithRedirect を開始したことを示すフラグ（戻り先で getRedirectResult を確実に走らせる）
 const REDIRECT_PENDING_KEY = 'adminAuth:redirectPending'
 
+const DEBUG_ADMIN_AUTH = import.meta.env.DEV
+
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [idToken, setIdToken] = useState<string | null>(null)
@@ -98,7 +100,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     setSessionExpiresAt(expiresAt)
 
     sessionTimeoutRef.current = setTimeout(async () => {
-      console.log('Session timeout - auto logout')
+      if (DEBUG_ADMIN_AUTH) console.log('Session timeout - auto logout')
       await logout()
       alert('セッションが期限切れになりました。再度ログインしてください。')
     }, SESSION_TIMEOUT_MS)
@@ -118,15 +120,17 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     const hasPendingRedirect = sessionStorage.getItem(REDIRECT_PENDING_KEY) === '1'
 
     // デバッグログ
-    console.log('[AdminAuth] Init check:', {
-      isAdminPage,
-      hasStoredSession: !!hasStoredSession,
-      hasPendingRedirect,
-      pathname: window.location.pathname,
-    })
+    if (DEBUG_ADMIN_AUTH) {
+      console.log('[AdminAuth] Init check:', {
+        isAdminPage,
+        hasStoredSession: !!hasStoredSession,
+        hasPendingRedirect,
+        pathname: window.location.pathname,
+      })
+    }
 
     if (!isAdminPage && !hasStoredSession && !hasPendingRedirect) {
-      console.log('[AdminAuth] Skipping Firebase init - not admin page and no session/redirect')
+      if (DEBUG_ADMIN_AUTH) console.log('[AdminAuth] Skipping Firebase init - not admin page and no session/redirect')
       setIsLoading(false)
       return
     }
@@ -142,26 +146,30 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
         // リダイレクト認証の結果を取得
         const { getRedirectResult, signOut, onAuthStateChanged } = await import('firebase/auth')
-        console.log('[AdminAuth] Checking redirect result...')
+        if (DEBUG_ADMIN_AUTH) console.log('[AdminAuth] Checking redirect result...')
         try {
           const result = await getRedirectResult(auth)
-          console.log('[AdminAuth] Redirect result:', {
-            hasUser: !!result?.user,
-            email: result?.user?.email,
-          })
+          if (DEBUG_ADMIN_AUTH) {
+            console.log('[AdminAuth] Redirect result:', {
+              hasUser: !!result?.user,
+              email: result?.user?.email,
+            })
+          }
           if (result?.user) {
             // 管理者メールかチェック
-            console.log('[AdminAuth] Checking admin email:', {
-              userEmail: result.user.email?.toLowerCase(),
-              adminEmails: ADMIN_EMAILS,
-            })
+            if (DEBUG_ADMIN_AUTH) {
+              console.log('[AdminAuth] Checking admin email:', {
+                userEmail: result.user.email?.toLowerCase(),
+                adminEmails: ADMIN_EMAILS,
+              })
+            }
             if (!result.user.email || !ADMIN_EMAILS.includes(result.user.email.toLowerCase())) {
               // 管理者ではない場合はサインアウト
-              console.log('[AdminAuth] Not admin - signing out')
+              if (DEBUG_ADMIN_AUTH) console.log('[AdminAuth] Not admin - signing out')
               await signOut(auth)
               alert('このアカウントには管理者権限がありません。')
             } else {
-              console.log('[AdminAuth] Admin verified - starting session')
+              if (DEBUG_ADMIN_AUTH) console.log('[AdminAuth] Admin verified - starting session')
               // セッションタイムアウトを開始
               startSessionTimeoutRef.current()
             }
@@ -174,18 +182,20 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
         // Firebase認証状態の監視
         unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-          console.log('[AdminAuth] Auth state changed:', {
-            hasUser: !!firebaseUser,
-            email: firebaseUser?.email,
-          })
+          if (DEBUG_ADMIN_AUTH) {
+            console.log('[AdminAuth] Auth state changed:', {
+              hasUser: !!firebaseUser,
+              email: firebaseUser?.email,
+            })
+          }
           setUser(firebaseUser)
           if (firebaseUser) {
             const token = await firebaseUser.getIdToken()
             setIdToken(token)
-            console.log('[AdminAuth] ID token obtained')
+            if (DEBUG_ADMIN_AUTH) console.log('[AdminAuth] ID token obtained')
           } else {
             setIdToken(null)
-            console.log('[AdminAuth] No user - cleared token')
+            if (DEBUG_ADMIN_AUTH) console.log('[AdminAuth] No user - cleared token')
           }
           setIsLoading(false)
         })
@@ -236,27 +246,29 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       setIsRedirecting(true)
 
       const result = await signInWithPopup(cachedAuth, cachedGoogleProvider)
-      console.log('[AdminAuth] Popup login result:', {
-        hasUser: !!result?.user,
-        email: result?.user?.email,
-      })
+      if (DEBUG_ADMIN_AUTH) {
+        console.log('[AdminAuth] Popup login result:', {
+          hasUser: !!result?.user,
+          email: result?.user?.email,
+        })
+      }
 
       if (result?.user) {
         // 管理者メールかチェック
         if (!result.user.email || !ADMIN_EMAILS.includes(result.user.email.toLowerCase())) {
-          console.log('[AdminAuth] Not admin - signing out')
+          if (DEBUG_ADMIN_AUTH) console.log('[AdminAuth] Not admin - signing out')
           await signOut(cachedAuth)
           alert('このアカウントには管理者権限がありません。')
           setIsRedirecting(false)
           return false
         }
-        console.log('[AdminAuth] Admin verified via popup')
+        if (DEBUG_ADMIN_AUTH) console.log('[AdminAuth] Admin verified via popup')
 
         // ポップアップ認証成功後、直接stateを更新（onAuthStateChangedが未設定の場合に対応）
         setUser(result.user)
         const token = await result.user.getIdToken()
         setIdToken(token)
-        console.log('[AdminAuth] User and token set directly after popup')
+        if (DEBUG_ADMIN_AUTH) console.log('[AdminAuth] User and token set directly after popup')
 
         startSessionTimeout()
       }

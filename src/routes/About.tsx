@@ -47,9 +47,15 @@ function About() {
               <div className="flex justify-center">
                 <div className="relative h-32 w-32 sm:h-40 sm:w-40 overflow-hidden rounded-full border-2 border-white/20">
                   <img
-                    src="/profile.webp"
+                    src="/profile-320.webp"
+                    srcSet="/profile-320.webp 320w, /profile-480.webp 480w"
+                    sizes="(min-width: 640px) 160px, 128px"
+                    width="480"
+                    height="480"
                     alt="haroin"
                     className="h-full w-full object-cover"
+                    decoding="async"
+                    fetchPriority="high"
                   />
                 </div>
               </div>

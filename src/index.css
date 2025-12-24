@@ -11,8 +11,9 @@
   scrollbar-gutter: stable;
   --fg: #e2e8f0;
   --fg-strong: #ffffff;
-  --bg-wash: 0.20;
-  --bg-wash-color: #000;
+  --bg-wash: 0.25;
+  --bg-overlay-color: 0, 0, 0;
+  --bg-overlay-max: 0.65;
   --p5-opacity: 0.3;
   --home-progress: 0;
   --home-wash-start: 0;
@@ -41,12 +42,14 @@
 
 /* 背景オーバーレイ - body上に常に表示（ページ遷移で変化しない） */
 /* レイヤー順: 背景画像(0) < p5アニメーション(1) < オーバーレイ(2) < コンテンツ(10+) */
+/* --bg-overlay-color: RGB値（例: "0, 0, 0" で黒、"20, 10, 30" で紫がかった色） */
+/* --bg-wash: 不透明度（スクロールで動的に変化） */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: var(--bg-wash-color);
+  background: rgb(var(--bg-overlay-color));
   opacity: var(--bg-wash);
   z-index: 2;
   transition: opacity 200ms ease-out;
@@ -102,7 +105,9 @@ body.top-page .p5-bg {
   height: 100svh;
   /* GPUレイヤー化でスクロール時のパフォーマンス向上 */
   transform: translateZ(0);
-  will-change: opacity;
+  will-change: opacity, transform;
+  /* blurを外してパフォーマンス向上 */
+  backface-visibility: hidden;
 }
 
 .scrolling-bg-track {
@@ -189,17 +194,16 @@ body {
 
 /* ページコンテンツのフェードイン */
 .page-fade {
-  animation: pageFadeIn 400ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: pageFadeIn 200ms ease-out both;
+  will-change: opacity;
 }
 
 @keyframes pageFadeIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -226,39 +230,29 @@ body {
   opacity: 0 !important;
 }
 
-/* Reveal アニメーション */
+/* Reveal アニメーション - GPU加速で軽量化 */
 .reveal {
   opacity: 0;
-  transform: translateY(8px);
-  transition:
-    opacity 200ms var(--ease-out-expo),
-    transform 200ms var(--ease-out-expo);
+  transition: opacity 150ms ease-out;
+  will-change: opacity;
 }
 
 .reveal.is-visible {
   opacity: 1;
-  transform: translateY(0);
 }
 
 /* スタガーアニメーション用 */
-.reveal[data-delay="1"] { transition-delay: 100ms; }
-.reveal[data-delay="2"] { transition-delay: 200ms; }
-.reveal[data-delay="3"] { transition-delay: 300ms; }
-.reveal[data-delay="4"] { transition-delay: 400ms; }
-.reveal[data-delay="5"] { transition-delay: 500ms; }
+.reveal[data-delay="1"] { transition-delay: 50ms; }
+.reveal[data-delay="2"] { transition-delay: 100ms; }
+.reveal[data-delay="3"] { transition-delay: 150ms; }
+.reveal[data-delay="4"] { transition-delay: 200ms; }
+.reveal[data-delay="5"] { transition-delay: 250ms; }
 
-/* Home Hero - パララックス風の滑らかな動き */
+/* Home Hero - パララックス風の動き（軽量化） */
 .home-hero {
   --progress: var(--home-progress, 0);
-  transform:
-    translateY(calc(var(--progress) * -32px))
-    scale(calc(1 - var(--progress) * 0.03));
   opacity: clamp(0, calc(1 - var(--progress) * 1.2), 1);
-  filter: blur(calc(var(--progress) * 4px));
-  transition:
-    transform 120ms var(--ease-out-quart),
-    opacity 120ms var(--ease-out-quart),
-    filter 100ms linear;
+  will-change: opacity;
 }
 
 /* reduced motion 対応 */
@@ -1481,18 +1475,19 @@ body {
 
 /* アクティブ状態 */
 .toc-item--active::before {
-  border-color: rgba(94, 234, 212, 1);
-  box-shadow: 0 0 6px rgba(94, 234, 212, 0.6);
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5), 0 0 14px rgba(255, 255, 255, 0.25);
 }
 
 .toc-item--active::after {
-  background: rgba(94, 234, 212, 1);
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .toc-item--active .toc-link {
-  color: rgba(94, 234, 212, 1);
+  color: var(--fg-strong);
   opacity: 1;
   font-weight: 600;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.18);
 }
 
 /* ホバー状態 */
@@ -1542,6 +1537,10 @@ body {
   text-decoration-thickness: 1px;
   text-decoration-color: rgba(94, 234, 212, 0.55);
   background: rgba(255, 255, 255, 0.04);
+}
+
+.toc-item--active .toc-link:hover {
+  color: var(--fg-strong);
 }
 
 .toc-link:hover::after,
@@ -1618,6 +1617,7 @@ body {
   position: fixed;
   left: calc(50% + 380px);
   top: 100px;
+  z-index: 40;
   width: 160px;
   max-height: calc(100vh - 140px);
   overflow-y: auto;

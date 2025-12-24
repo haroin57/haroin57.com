@@ -31,7 +31,8 @@ function extractHeadingsFromHtml(html: string): TocItem[] {
 }
 
 function TableOfContents({ toc, html }: TableOfContentsProps) {
-  const [activeId, setActiveId] = useState<string>('')
+  const [scrollActiveId, setScrollActiveId] = useState<string>('')
+  const [hoveredId, setHoveredId] = useState<string>('')
 
   // tocが渡された場合はそれを使用、なければhtmlから抽出
   const headings = useMemo(() => {
@@ -40,12 +41,26 @@ function TableOfContents({ toc, html }: TableOfContentsProps) {
     return []
   }, [toc, html])
 
+  const activeId = hoveredId || scrollActiveId
+
   // スクロール位置に応じてアクティブな見出しを更新
   useEffect(() => {
     if (headings.length === 0) return
 
     // 初期状態で最初の見出しをアクティブにする
-    setActiveId(headings[0].id)
+    let initialHashId = ''
+    if (window.location.hash) {
+      try {
+        initialHashId = decodeURIComponent(window.location.hash.slice(1))
+      } catch {
+        initialHashId = window.location.hash.slice(1)
+      }
+    }
+    if (initialHashId && headings.some((h) => h.id === initialHashId)) {
+      setScrollActiveId(initialHashId)
+    } else {
+      setScrollActiveId(headings[0].id)
+    }
 
     // スクロール位置に基づいて最も近い見出しを検出
     const handleScroll = () => {
@@ -54,7 +69,7 @@ function TableOfContents({ toc, html }: TableOfContentsProps) {
 
       // ページ最上部付近の場合は最初の見出しをアクティブに
       if (scrollTop < offset) {
-        setActiveId(headings[0].id)
+        setScrollActiveId(headings[0].id)
         return
       }
 
@@ -72,7 +87,7 @@ function TableOfContents({ toc, html }: TableOfContentsProps) {
           }
         }
       }
-      setActiveId(currentHeading)
+      setScrollActiveId(currentHeading)
     }
 
     // 初期実行
@@ -85,6 +100,7 @@ function TableOfContents({ toc, html }: TableOfContentsProps) {
 
   const handleClick = useCallback((event: MouseEvent<HTMLAnchorElement>, id: string) => {
     event.preventDefault()
+    setScrollActiveId(id)
     const element = document.getElementById(id)
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -111,12 +127,16 @@ function TableOfContents({ toc, html }: TableOfContentsProps) {
             <li
               key={heading.id}
               className={`toc-item toc-item--level-${heading.level}${activeId === heading.id ? ' toc-item--active' : ''}`}
+              onMouseEnter={() => setHoveredId(heading.id)}
+              onMouseLeave={() => setHoveredId('')}
             >
               <a
                 href={`#${heading.id}`}
                 onClick={(event) => handleClick(event, heading.id)}
                 className="toc-link"
-                aria-current={activeId === heading.id ? 'location' : undefined}
+                aria-current={scrollActiveId === heading.id ? 'location' : undefined}
+                onFocus={() => setHoveredId(heading.id)}
+                onBlur={() => setHoveredId('')}
               >
                 {heading.text}
               </a>

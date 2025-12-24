@@ -113,6 +113,19 @@ function P5HypercubeBackground() {
 
   useEffect(() => {
     let active = true
+    let cancelScheduledInit: (() => void) | null = null
+
+    const shouldEnable =
+      typeof window !== 'undefined' &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+      !isLowPerformanceDevice()
+
+    if (!shouldEnable) {
+      return () => {
+        active = false
+      }
+    }
+
     const init = async () => {
       if (!containerRef.current) return
       const { default: P5 } = await import('p5')
@@ -149,6 +162,12 @@ function P5HypercubeBackground() {
         }
 
         p.draw = () => {
+          // blur時はアニメーションを停止（CSS変数を確認）
+          const p5State = document.body.style.getPropertyValue('--p5-animation-state')
+          if (p5State === 'paused') {
+            return
+          }
+
           // デルタタイムを使用して時間ジャンプを防ぐ
           const currentTime = p.millis()
           let deltaTime = currentTime - lastFrameTime
@@ -209,9 +228,20 @@ function P5HypercubeBackground() {
       instanceRef.current = new P5(sketch, containerRef.current)
     }
 
-    void init()
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        const win = window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number; cancelIdleCallback: (id: number) => void }
+        const id = win.requestIdleCallback(() => void init(), { timeout: 1500 })
+        cancelScheduledInit = () => win.cancelIdleCallback(id)
+      } else {
+        const timer = setTimeout(() => void init(), 250)
+        cancelScheduledInit = () => clearTimeout(timer)
+      }
+    }
+
     return () => {
       active = false
+      cancelScheduledInit?.()
       if (instanceRef.current) {
         instanceRef.current.remove()
         instanceRef.current = null

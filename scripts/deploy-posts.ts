@@ -355,6 +355,37 @@ const wrapTablesForResponsive = () => {
   }
 }
 
+const rehypeLazyMedia = () => {
+  return (tree: HastRoot) => {
+    let firstImageSeen = false
+
+    visit(tree, 'element', (node: HastElement) => {
+      const props = (node.properties ?? {}) as Record<string, unknown>
+
+      if (node.tagName === 'img') {
+        if (!firstImageSeen) {
+          firstImageSeen = true
+          if (props.loading == null) props.loading = 'eager'
+          if (props.decoding == null) props.decoding = 'async'
+          if (props.fetchPriority == null) props.fetchPriority = 'high'
+        } else {
+          if (props.loading == null) props.loading = 'lazy'
+          if (props.decoding == null) props.decoding = 'async'
+          if (props.fetchPriority == null) props.fetchPriority = 'low'
+        }
+
+        node.properties = props
+        return
+      }
+
+      if (node.tagName === 'iframe') {
+        if (props.loading == null) props.loading = 'lazy'
+        node.properties = props
+      }
+    })
+  }
+}
+
 const mdnAdmonitions = () => {
   const ADMONITION_RE = /^\[!(NOTE|WARNING|CALLOUT)\]\s*(.*)$/i
   const LABELS: Record<string, string> = { note: 'メモ:', warning: '警告:' }
@@ -633,6 +664,7 @@ async function convertMarkdownToHtml(content: string): Promise<string> {
     .use(rehypeRaw)
     .use(removeTocSection)
     .use(wrapTablesForResponsive)
+    .use(rehypeLazyMedia)
     .use(rehypeStringify, { allowDangerousHtml: true })
     .process(content)
 

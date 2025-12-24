@@ -8,6 +8,17 @@ import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
 import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 
+const buildSrcSet = (src: string): string => {
+  const base = src.replace(/\.webp$/i, '')
+  return [
+    `${base}-640.webp 640w`,
+    `${base}-1280.webp 1280w`,
+    `${base}-1920.webp 1920w`,
+  ].join(', ')
+}
+
+const buildVariantSrc = (src: string, width: number): string => src.replace(/\.webp$/i, `-${width}.webp`)
+
 function Photos() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const pageRef = useRef<HTMLDivElement | null>(null)
@@ -58,7 +69,11 @@ function Photos() {
                     >
                       <div className="relative overflow-hidden rounded-lg border border-white/10 bg-black/20 transition-all group-hover:border-white/20">
                         <img
-                          src={photo.src}
+                          src={buildVariantSrc(photo.src, 1280)}
+                          srcSet={buildSrcSet(photo.src)}
+                          sizes="(max-width: 672px) 100vw, 672px"
+                          width={photo.width}
+                          height={photo.height}
                           alt={photo.title}
                           className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
                           loading="lazy"
@@ -83,7 +98,11 @@ function Photos() {
       <Lightbox
         isOpen={selectedPhoto !== null}
         onClose={() => setSelectedPhoto(null)}
-        imageSrc={selectedPhoto?.src ?? ''}
+        imageSrc={selectedPhoto ? buildVariantSrc(selectedPhoto.src, 1920) : ''}
+        imageSrcSet={selectedPhoto ? buildSrcSet(selectedPhoto.src) : undefined}
+        imageSizes="(max-width: 896px) 100vw, 896px"
+        imageWidth={selectedPhoto?.width}
+        imageHeight={selectedPhoto?.height}
         imageAlt={selectedPhoto?.title ?? ''}
       >
         {selectedPhoto && (

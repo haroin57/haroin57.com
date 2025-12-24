@@ -18,6 +18,10 @@
 export type Photo = {
   /** 画像ファイルパス（public/からの相対パス） */
   src: string
+  /** 元画像の幅（px） */
+  width: number
+  /** 元画像の高さ（px） */
+  height: number
   /** 写真タイトル */
   title: string
   /** 撮影場所 */
@@ -41,6 +45,8 @@ export type Photo = {
 export const photos: Photo[] = [
   {
     src: '/Photo/星置の滝.webp',
+    width: 4000,
+    height: 6000,
     title: '星置の滝',
     location: '',
     date: '',
@@ -51,6 +57,8 @@ export const photos: Photo[] = [
   },
   {
     src: '/Photo/美ヶ原.webp',
+    width: 4000,
+    height: 6000,
     title: '美ヶ原',
     location: '',
     date: '',
@@ -61,6 +69,8 @@ export const photos: Photo[] = [
   },
   {
     src: '/Photo/松本城.webp',
+    width: 3913,
+    height: 5640,
     title: '松本城',
     location: '',
     date: '',
@@ -71,6 +81,8 @@ export const photos: Photo[] = [
   },
   {
     src: '/Photo/奈良井宿.webp',
+    width: 4000,
+    height: 6000,
     title: '奈良井宿',
     location: '',
     date: '',
@@ -81,6 +93,8 @@ export const photos: Photo[] = [
   },
   {
     src: '/Photo/折り紙.webp',
+    width: 4000,
+    height: 6000,
     title: '折り紙',
     location: '',
     date: '',
@@ -91,6 +105,8 @@ export const photos: Photo[] = [
   },
   {
     src: '/Photo/プロフィール - コピー.webp',
+    width: 2508,
+    height: 1672,
     title: 'プロフィール',
     location: '',
     date: '',
