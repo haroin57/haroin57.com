@@ -248,47 +248,49 @@ function Home() {
         className="relative z-10 min-h-screen flex flex-col page-fade"
         style={MAIN_TEXT_STYLE}
       >
-        <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
+        <div className="mx-auto w-full max-w-4xl flex-1 px-4 pb-10 sm:px-6 sm:pb-12">
           <div className="mx-auto w-full max-w-2xl space-y-8">
-            {/* Contents見出し */}
-            <h1 className="reveal text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
-              Contents
-            </h1>
+            {/* Contents見出し + ナビゲーション - 画面中央に配置 */}
+            <div className="flex flex-col items-center justify-center min-h-[60vh] sm:min-h-[55vh]">
+              <h1 className="reveal text-2xl sm:text-3xl md:text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)] mb-8 sm:mb-12 self-start">
+                Contents
+              </h1>
 
-            {/* ナビゲーションボタン - 中央配置 */}
-            <nav className="reveal flex flex-wrap items-start justify-center gap-4 sm:gap-8 pt-6">
-              {navItems.map((item) => (
-                <PrefetchLink
-                  key={item.to}
-                  to={item.to}
-                  className="group flex flex-col items-center gap-1.5 sm:gap-2"
-                >
-                  <div
-                    className="relative flex items-center justify-center overflow-hidden rounded-full border border-white/20 transition-all duration-300 group-hover:border-white/40 group-hover:scale-105 group-active:scale-95 text-[#d3d3d3] w-14 h-14 sm:w-20 sm:h-20"
-                    style={{
-                      backgroundColor: 'transparent',
-                    }}
+              {/* ナビゲーションボタン - 中央配置 */}
+              <nav className="reveal flex flex-wrap items-start justify-center gap-6 sm:gap-10">
+                {navItems.map((item) => (
+                  <PrefetchLink
+                    key={item.to}
+                    to={item.to}
+                    className="group flex flex-col items-center gap-2 sm:gap-3"
                   >
-                    <div className="transition-transform duration-500 group-hover:scale-110">
-                      <NavIcon type={item.type} className="w-6 h-6 sm:w-9 sm:h-9" />
+                    <div
+                      className="relative flex items-center justify-center overflow-hidden rounded-full border border-white/20 transition-all duration-300 group-hover:border-white/40 group-hover:scale-105 group-active:scale-95 text-[#d3d3d3] w-16 h-16 sm:w-24 sm:h-24"
+                      style={{
+                        backgroundColor: 'transparent',
+                      }}
+                    >
+                      <div className="transition-transform duration-500 group-hover:scale-110">
+                        <NavIcon type={item.type} className="w-7 h-7 sm:w-11 sm:h-11" />
+                      </div>
+                      <div className="absolute inset-0 bg-black/10 transition-opacity duration-300 group-hover:bg-black/0" />
                     </div>
-                    <div className="absolute inset-0 bg-black/10 transition-opacity duration-300 group-hover:bg-black/0" />
-                  </div>
-                  <span className="text-[10px] sm:text-sm font-medium text-[color:var(--fg)] opacity-70 transition-opacity duration-300 group-hover:opacity-100">
-                    {item.label}
-                  </span>
-                </PrefetchLink>
-              ))}
-            </nav>
+                    <span className="text-xs sm:text-base font-medium text-[color:var(--fg)] opacity-70 transition-opacity duration-300 group-hover:opacity-100">
+                      {item.label}
+                    </span>
+                  </PrefetchLink>
+                ))}
+              </nav>
+            </div>
 
             {/* タイムライン */}
             {timelineItems.length > 0 && (
-              <section className="reveal space-y-3 !mt-8">
+              <section className="reveal space-y-3 !mt-0 flex flex-col items-center">
                 <h2 className="text-base sm:text-lg font-ab-countryroad font-medium text-[color:var(--fg-strong,inherit)] opacity-70">
                   サイト更新ログ
                 </h2>
 
-                <div className="space-y-4">
+                <div className="space-y-4 inline-block">
                   {years.map((year) => (
                     <div key={year} className="space-y-2">
                       <h3 className="text-[10px] font-semibold text-[color:var(--fg)] opacity-40">
