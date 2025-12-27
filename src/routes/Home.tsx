@@ -257,25 +257,25 @@ function Home() {
               </h1>
 
               {/* ナビゲーションボタン - 中央配置 */}
-              <nav className="reveal flex flex-wrap items-start justify-center gap-6 sm:gap-10">
+              <nav className="reveal flex flex-wrap items-start justify-center gap-4 sm:gap-8">
                 {navItems.map((item) => (
                   <PrefetchLink
                     key={item.to}
                     to={item.to}
-                    className="group flex flex-col items-center gap-2 sm:gap-3"
+                    className="group flex flex-col items-center gap-1.5 sm:gap-2"
                   >
                     <div
-                      className="relative flex items-center justify-center overflow-hidden rounded-full border border-white/20 transition-all duration-300 group-hover:border-white/40 group-hover:scale-105 group-active:scale-95 text-[#d3d3d3] w-16 h-16 sm:w-24 sm:h-24"
+                      className="relative flex items-center justify-center overflow-hidden rounded-full border border-white/20 transition-all duration-300 group-hover:border-white/40 group-hover:scale-105 group-active:scale-95 text-[#d3d3d3] w-11 h-11 sm:w-20 sm:h-20"
                       style={{
                         backgroundColor: 'transparent',
                       }}
                     >
                       <div className="transition-transform duration-500 group-hover:scale-110">
-                        <NavIcon type={item.type} className="w-7 h-7 sm:w-11 sm:h-11" />
+                        <NavIcon type={item.type} className="w-5 h-5 sm:w-9 sm:h-9" />
                       </div>
                       <div className="absolute inset-0 bg-black/10 transition-opacity duration-300 group-hover:bg-black/0" />
                     </div>
-                    <span className="text-xs sm:text-base font-medium text-[color:var(--fg)] opacity-70 transition-opacity duration-300 group-hover:opacity-100">
+                    <span className="text-[10px] sm:text-sm font-medium text-[color:var(--fg)] opacity-70 transition-opacity duration-300 group-hover:opacity-100">
                       {item.label}
                     </span>
                   </PrefetchLink>
