@@ -233,6 +233,7 @@ function Home() {
       <button
         type="button"
         onClick={handleBack}
+        aria-label="トップページへ戻る"
         className="group fixed left-1/2 top-6 z-30 -translate-x-1/2 inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full font-medium text-neutral-200 active:scale-95 transition-transform"
         style={{ backgroundColor: 'var(--nav-button-bg)' }}
       >

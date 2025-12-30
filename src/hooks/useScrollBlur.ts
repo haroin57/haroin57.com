@@ -1,28 +1,5 @@
 import { useEffect } from 'react'
-
-// モバイルデバイスかどうかを判定（Android含む低性能デバイス検出）
-const isMobileDevice = (): boolean => {
-  if (typeof window === 'undefined') return false
-  // User-Agentでモバイル判定
-  const ua = navigator.userAgent.toLowerCase()
-  const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua)
-  // 画面サイズでも判定（タッチデバイス対応）
-  const isSmallScreen = window.innerWidth < 768
-  return isMobile || isSmallScreen
-}
-
-// 低性能デバイスかどうかを判定
-const isLowPerformanceDevice = (): boolean => {
-  if (typeof window === 'undefined') return false
-  // Android判定（iOSより一般的にGPU性能が低い）
-  const isAndroid = /android/i.test(navigator.userAgent)
-  // ハードウェア並列度が低い場合（古いデバイス）
-  const lowConcurrency = (navigator.hardwareConcurrency || 4) <= 4
-  // メモリが少ない場合（Chrome/Edge限定）
-  const lowMemory = (navigator as any).deviceMemory !== undefined && (navigator as any).deviceMemory < 4
-
-  return isAndroid || lowConcurrency || lowMemory
-}
+import { isMobileDevice, isLowPerformanceDevice } from '../utils/device'
 
 type ScrollBlurOptions = {
   startPx?: number

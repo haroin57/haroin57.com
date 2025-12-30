@@ -10,25 +10,52 @@ export async function handlePv(
   env: Env,
   corsHeaders: Record<string, string>
 ): Promise<Response> {
-  const ip = req.headers.get('cf-connecting-ip') || 'unknown'
-  const rlKey = `rl:${ip}`
+  try {
+    // リクエストボディからskipCountフラグを取得
+    let skipCount = false
+    try {
+      const body = (await req.json()) as { skipCount?: boolean }
+      skipCount = body.skipCount === true
+    } catch {
+      // bodyがない場合は無視
+    }
 
-  const already = await env.HAROIN_PV.get(rlKey)
-  if (already) {
-    const current = Number((await env.HAROIN_PV.get('total')) ?? '0')
-    return jsonResponse({ total: current }, corsHeaders)
+    const key = 'total'
+
+    // skipCountがtrueの場合（セッション内で既にカウント済み）はカウントをスキップ
+    if (skipCount) {
+      const current = Number((await env.HAROIN_PV.get(key)) ?? '0')
+      return jsonResponse({ total: current }, corsHeaders)
+    }
+
+    const ip = req.headers.get('cf-connecting-ip') || 'unknown'
+    const rlKey = `rl:${ip}`
+
+    // レート制限チェック（IPごと60秒）
+    const already = await env.HAROIN_PV.get(rlKey)
+    if (already) {
+      const current = Number((await env.HAROIN_PV.get(key)) ?? '0')
+      return jsonResponse({ total: current }, corsHeaders)
+    }
+
+    await env.HAROIN_PV.put(rlKey, '1', { expirationTtl: RL_TTL_SECONDS })
+
+    // カウント加算
+    const current = Number((await env.HAROIN_PV.get(key)) ?? '0')
+    const next = Number.isFinite(current) ? current + 1 : 1
+    await env.HAROIN_PV.put(key, String(next))
+
+    return jsonResponse({ total: next }, corsHeaders)
+  } catch (error) {
+    console.error('pv error:', error)
+    // エラー時はキャッシュされた値を返す
+    try {
+      const current = Number((await env.HAROIN_PV.get('total')) ?? '0')
+      return jsonResponse({ total: current }, corsHeaders)
+    } catch {
+      return jsonResponse({ total: 0 }, corsHeaders)
+    }
   }
-
-  await env.HAROIN_PV.put(rlKey, '1', { expirationTtl: RL_TTL_SECONDS })
-
-  const key = 'total'
-  const current = Number((await env.HAROIN_PV.get(key)) ?? '0')
-  const next = Number.isFinite(current) ? current + 1 : 1
-  await env.HAROIN_PV.put(key, String(next))
-
-  console.log('pv ok', { ip, total: next })
-
-  return jsonResponse({ total: next }, corsHeaders)
 }
 
 // Goodボタン

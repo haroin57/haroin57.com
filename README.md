@@ -244,21 +244,20 @@ type AdminAuthContextType = {
 **ルートローダー（例）:**
 
 ```typescript
-const loadHome = preload(() => import('../routes/Home'))         // 高優先度
-const loadBBSList = prefetch(() => import('../routes/BBSList'))  // 低優先度
-const loadPostDetail = lazyLoad(() => import('../routes/PostDetail'))  // ユーザー操作時
+const Home = lazyWithPreload(() => import('../routes/Home'))
+const Posts = lazyWithPreload(() => import('../routes/Posts'))
+const PostDetail = lazyWithPreload(() => import('../routes/PostDetail'))
 ```
 
 **機能:**
-- React.lazy + Suspenseによる全ルートの遅延読み込み（動的import）
-- `preload`/`prefetch`/`lazyLoad` でルートの読み込み優先度を制御
-- 回線状況に応じて、遷移時に関連ルートを順番にプリロード（`shouldPrefetch()`）
+- `lazyWithPreload` による全ルートの遅延読み込み（動的import + preload対応）
+- `preloadRoutesForPath(pathname)` でパスに応じたルートの事前読み込み
+- React.Suspenseによるローディング中のフォールバック
 
 **依存関係:**
 - `react-router-dom`: `Routes`, `Route`, `useLocation`
-- `react`: `lazy`, `Suspense`, `useEffect`
-- `../lib/network`: `shouldPrefetch`
-- `../lib/preload`: `preload`, `prefetch`, `lazyLoad`
+- `react`: `Suspense`
+- `../lib/lazyWithPreload`: `lazyWithPreload`
 
 ---
 
@@ -611,21 +610,34 @@ type MarkdownEditorProps = {
 **型定義:**
 
 ```typescript
-type Interest = { title: string; text: string }
-type PostMeta = { slug?: string; title?: string; createdAt?: string }
+type TimelineItem = {
+  type: 'post' | 'product' | 'photo' | 'about' | 'site'
+  slug?: string
+  title: string
+  date: string
+  summary?: string
+  link?: string
+  isUpdate?: boolean
+}
+
+type NavItem = {
+  to: string
+  label: string
+  type: 'post' | 'product' | 'photo' | 'about' | 'bbs'
+}
 ```
 
 **機能:**
-- Interests（興味分野）の折りたたみ表示
-- 最新記事5件の表示
-- Products, Photos, BBSへのリンク
+- コンテンツ一覧（About, Posts, Products, Photos, BBS）への大きなアイコンボタン
+- サイト更新ログ（タイムライン形式で年ごとにグループ化）
+- 画面中央に配置されたナビゲーションUI
 - フッター（AccessCounter、SNSリンク）
 
 **依存関係:**
-- `react`: `useEffect`, `useRef`, `useState`, `useCallback`
+- `react`: `useRef`, `useCallback`, `useMemo`
 - `react-router-dom`: `useNavigate`
-- `../components/PrefetchLink`, `../components/AccessCounter`
-- `../data/posts.json`
+- `../components/PrefetchLink`, `../components/SiteFooter`
+- `../data/posts.json`, `../data/products.json`, `../data/changelog`
 
 ---
 
@@ -2635,15 +2647,17 @@ import 'katex/dist/katex.min.css'
 
 #### `src/routes/Home.tsx`
 ```typescript
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
-import postsData from '../data/posts.json' with { type: 'json' }
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
-import { CMS_ENDPOINT } from '../lib/endpoints'
 import { MAIN_TEXT_STYLE } from '../styles/typography'
+import postsData from '../data/posts.json' with { type: 'json' }
+import productsData from '../data/products.json' with { type: 'json' }
+import { manualChangelog } from '../data/changelog'
 ```
 
 #### `src/routes/Posts.tsx`

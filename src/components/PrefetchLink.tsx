@@ -1,13 +1,7 @@
 import { Link, type LinkProps } from 'react-router-dom'
 
-interface PrefetchLinkProps extends LinkProps {
-  enablePrefetch?: boolean
-}
-
-function PrefetchLink(props: PrefetchLinkProps) {
-  const { enablePrefetch, ...linkProps } = props
-  void enablePrefetch
-  return <Link {...linkProps} />
+function PrefetchLink(props: LinkProps) {
+  return <Link {...props} />
 }
 
 export default PrefetchLink

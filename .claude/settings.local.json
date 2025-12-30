@@ -49,7 +49,10 @@
       "Bash(del \"c:\\\\Users\\\\harut\\\\haroin57-web\\\\src\\\\components\\\\MotorcycleModel.tsx\")",
       "Bash(git fetch:*)",
       "Bash(npx wrangler pages deployment list:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(del \"c:\\\\Users\\\\harut\\\\haroin57-web\\\\src\\\\pv-worker.ts\")",
+      "Bash(tree:*)",
+      "Bash(^d \")"
     ]
   }
 }

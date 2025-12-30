@@ -76,7 +76,7 @@ function AnimatedRoutes() {
   const location = useLocation()
 
   return (
-    <div style={{ position: 'relative', width: '100%' }}>
+    <div className="relative w-full">
       <Suspense fallback={null}>
         <Routes location={location}>
           <Route path="/" element={<App />} />

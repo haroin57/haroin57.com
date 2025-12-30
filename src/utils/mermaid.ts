@@ -14,7 +14,7 @@ let initialized = false
 const mermaidConfig = {
   startOnLoad: false,
   theme: 'dark',
-  securityLevel: 'loose',
+  securityLevel: 'strict',
   themeVariables: {
     background: 'transparent',
     mainBkg: 'rgba(0, 0, 0, 0.3)',

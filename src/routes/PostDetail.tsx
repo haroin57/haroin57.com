@@ -26,7 +26,7 @@ const SERVER_APPLY_DELAY_MS = 350
 function PostDetail() {
   const { slug } = useParams<{ slug: string }>()
   // 静的データから初期値を取得（フォールバック用）
-  const staticPost = staticPosts.find((p) => p.slug === slug)
+  const staticPost = slug ? staticPosts.find((p) => p.slug === slug) : undefined
   const [post, setPost] = useState<TaggedPost | null>(staticPost ?? null)
   const [isLoading, setIsLoading] = useState(!staticPost)
   const location = useLocation()
