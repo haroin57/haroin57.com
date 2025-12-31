@@ -104,10 +104,10 @@ body.top-page .p5-bg {
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  /* モバイル: svh（最小ビューポート）で固定してチラつき防止 */
+  /* モバイル: lvh（最大ビューポート）で常に画面全体をカバー */
   /* デスクトップ: vhで動的対応 */
   height: 100vh;
-  height: 100svh;
+  height: 100lvh;
   opacity: calc(var(--bg-base-opacity, 1) * var(--bg-opacity, 1));
   filter: var(--bg-filter, none);
   /* GPUレイヤー化でスクロール時のパフォーマンス向上 */
@@ -124,9 +124,9 @@ body.top-page .p5-bg {
   display: flex;
   flex-direction: row;
   width: max-content;
-  /* モバイル: svh（最小ビューポート）で固定 */
+  /* モバイル: lvh（最大ビューポート）で常に画面全体をカバー */
   height: 100vh;
-  height: 100svh;
+  height: 100lvh;
   animation: bgScroll 100s linear infinite;
   animation-play-state: var(--bg-animation-route, var(--bg-animation-state, running));
   will-change: transform;
@@ -134,9 +134,9 @@ body.top-page .p5-bg {
 
 .scrolling-bg-image {
   flex-shrink: 0;
-  /* モバイル: svh（最小ビューポート）で固定 */
+  /* モバイル: lvh（最大ビューポート）で常に画面全体をカバー */
   height: 100vh;
-  height: 100svh;
+  height: 100lvh;
   width: auto;
   max-width: none;
   object-fit: cover;

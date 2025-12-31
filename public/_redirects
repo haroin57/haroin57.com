@@ -1,1 +1,3 @@
+# 静的アセットは除外（Cloudflare Pagesは既存ファイルを優先する）
+# SPAフォールバック: 存在しないパスのみindex.htmlへ
 /*   /index.html   200
