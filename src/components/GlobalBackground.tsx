@@ -2,8 +2,9 @@ import { useCallback, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import P5HypercubeBackground from './P5HypercubeBackground'
 
-const BACKGROUND_DEFAULT_SRC = '/background-strip-2560.webp'
-const BACKGROUND_SRC_SET = '/background-strip-1280.webp 1280w, /background-strip-2560.webp 2560w'
+// 高画質版の背景画像を使用
+const BACKGROUND_DEFAULT_SRC = '/background-strip.webp'
+const BACKGROUND_SRC_SET = '/background-strip-2560.webp 2560w, /background-strip.webp 4096w'
 const BACKGROUND_SIZES = '100vw'
 
 // 横スクロール背景（PC/スマホ共通）
