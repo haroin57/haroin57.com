@@ -34,6 +34,7 @@ import fg from 'fast-glob'
 import matter from 'gray-matter'
 import { remark } from 'remark'
 import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 import remarkSlug from 'remark-slug'
 import remarkMath from 'remark-math'
 import remarkRehype from 'remark-rehype'
@@ -359,7 +360,7 @@ const rehypeLazyMedia = () => {
   return (tree: HastRoot) => {
     let firstImageSeen = false
 
-    visit(tree, 'element', (node: HastElement) => {
+    visit(tree, 'element', (node: HastElement, index: number | undefined, parent: HastNode | undefined) => {
       const props = (node.properties ?? {}) as Record<string, unknown>
 
       if (node.tagName === 'img') {
@@ -375,6 +376,35 @@ const rehypeLazyMedia = () => {
         }
 
         node.properties = props
+
+        // altテキストがある場合、figure + figcaptionでラップする
+        const alt = typeof props.alt === 'string' ? props.alt.trim() : ''
+        if (alt && parent && index !== undefined) {
+          const parentEl = parent as HastRoot | { children: HastNode[] }
+          if (!Array.isArray(parentEl.children)) return
+
+          // 既にfigureでラップされている場合はスキップ
+          const parentNode = parent as HastElement
+          if (parentNode.tagName === 'figure') return
+
+          const figure: HastElement = {
+            type: 'element',
+            tagName: 'figure',
+            properties: { className: ['image-figure'] },
+            children: [
+              node,
+              {
+                type: 'element',
+                tagName: 'figcaption',
+                properties: { className: ['image-caption'] },
+                children: [{ type: 'text', value: alt }],
+              },
+            ],
+          }
+          parentEl.children[index] = figure
+          return SKIP
+        }
+
         return
       }
 
@@ -642,6 +672,7 @@ const mdnCodeHandler = (_state: unknown, node: MdastCode): HastElement => {
 async function convertMarkdownToHtml(content: string): Promise<string> {
   const processed = await remark()
     .use(remarkGfm)
+    .use(remarkBreaks as never)
     .use(remarkSlug)
     .use(remarkMath)
     .use(injectToc)
