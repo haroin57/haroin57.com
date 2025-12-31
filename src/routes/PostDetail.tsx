@@ -1,5 +1,5 @@
 import { useLocation, useParams, Link } from 'react-router-dom'
-import { useEffect, useMemo, useRef, useState, useCallback, startTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback, startTransition, lazy, Suspense } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
@@ -14,9 +14,13 @@ import { CMS_ENDPOINT, GOOD_ENDPOINT } from '../lib/endpoints'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 import { extractCodeText, writeToClipboard } from '../utils/clipboard'
+import { useAdminAuth } from '../contexts/AdminAuthContext'
+
+// 遅延ロード: エディタは管理者のみ使用
+const InlinePostEditor = lazy(() => import('../components/InlinePostEditor'))
 
 type TocItem = { id: string; text: string; level: number }
-type Post = { slug?: string; title?: string; summary?: string; html?: string; createdAt?: string; toc?: TocItem[] }
+type Post = { slug?: string; title?: string; summary?: string; html?: string; markdown?: string; createdAt?: string; toc?: TocItem[] }
 // tagsはgen-postsで配列化される前提
 type TaggedPost = Post & { tags?: string[] }
 
@@ -36,6 +40,11 @@ function PostDetail() {
   const proseRef = useRef<HTMLDivElement | null>(null)
   const pageRef = useRef<HTMLDivElement | null>(null)
 
+  // 編集モード関連
+  const { isAdmin, idToken } = useAdminAuth()
+  const [isEditing, setIsEditing] = useState(false)
+  const [postMarkdown, setPostMarkdown] = useState<string>('')
+
   // CMS APIから記事データを取得
   useEffect(() => {
     if (!slug) return
@@ -52,6 +61,10 @@ function PostDetail() {
         if (!mounted) return
         if (data.post) {
           setPost(data.post)
+          // markdownがある場合は保存
+          if (data.post.markdown) {
+            setPostMarkdown(data.post.markdown)
+          }
         }
       } catch {
         // API失敗時は静的データを使用
@@ -186,6 +199,17 @@ function PostDetail() {
   // スクロール時の背景ブラーエフェクト（モバイル最適化済み）
   useScrollBlur()
 
+  // 編集モードのハンドラ
+  const handleEditSave = useCallback((newMarkdown: string, newHtml: string) => {
+    setPostMarkdown(newMarkdown)
+    setPost((prev) => prev ? { ...prev, html: newHtml, markdown: newMarkdown } : null)
+    setIsEditing(false)
+  }, [])
+
+  const handleEditClose = useCallback(() => {
+    setIsEditing(false)
+  }, [])
+
   const handleGood = useCallback(async () => {
     if (!slug || isVoting) return
     const action = hasVoted ? 'unvote' : 'vote'
@@ -287,6 +311,16 @@ function PostDetail() {
                     ))}
                   </div>
                 ) : null}
+                {/* 管理者のみ編集ボタンを表示 */}
+                {isAdmin && postMarkdown && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="px-3 py-1 text-xs rounded border border-teal-500/50 bg-teal-500/10 hover:bg-teal-500/20 transition-colors text-teal-400"
+                  >
+                    編集
+                  </button>
+                )}
               </div>
               {post.html ? (
                 <PostContent html={post.html} onProseRef={handleProseRef} />
@@ -342,6 +376,23 @@ function PostDetail() {
 
         <SiteFooter />
       </main>
+
+      {/* 編集モーダル */}
+      {isEditing && slug && postMarkdown && (
+        <Suspense fallback={
+          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
+            <div className="text-white">エディタを読み込み中...</div>
+          </div>
+        }>
+          <InlinePostEditor
+            markdown={postMarkdown}
+            slug={slug}
+            idToken={idToken}
+            onSave={handleEditSave}
+            onClose={handleEditClose}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }
