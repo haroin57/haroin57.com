@@ -515,9 +515,19 @@ img {
 }
 
 .prose .image-figure img {
-  max-width: 100%;
+  max-width: 90%;
+  max-height: 70vh;
+  width: auto;
   height: auto;
   border-radius: 8px;
+  object-fit: contain;
+}
+
+/* 縦長画像はさらに制限 */
+.prose .image-figure img[src*=".jpg"],
+.prose .image-figure img[src*=".png"],
+.prose .image-figure img[src*=".webp"] {
+  max-height: 60vh;
 }
 
 .prose .image-caption {

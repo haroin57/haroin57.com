@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "posts:gen": "node --experimental-strip-types scripts/deploy-posts.ts --gen-json",
+    "posts:deploy": "node --experimental-strip-types scripts/deploy-posts.ts",
     "products:gen": "node --experimental-strip-types scripts/gen-product-posts.ts"
   },
   "dependencies": {
