@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo } from 'react'
+import { useEffect, useRef, memo, useCallback } from 'react'
 import { useMermaidBlocks } from '../hooks/useMermaidBlocks'
 
 // Twitter埋め込みウィジェットの型定義
@@ -11,81 +11,106 @@ type TwitterWindow = Window & {
   }
 }
 
+// グローバルでスクリプトのロード状態を管理
+let twitterScriptStatus: 'idle' | 'loading' | 'ready' | 'error' = 'idle'
+const twitterReadyCallbacks: Array<() => void> = []
+
+function onTwitterReady(callback: () => void) {
+  if (twitterScriptStatus === 'ready') {
+    callback()
+  } else {
+    twitterReadyCallbacks.push(callback)
+  }
+}
+
+function notifyTwitterReady() {
+  twitterScriptStatus = 'ready'
+  twitterReadyCallbacks.forEach(cb => cb())
+  twitterReadyCallbacks.length = 0
+}
+
 // Twitter埋め込みウィジェットをロード
 function useTwitterEmbeds(containerRef: React.RefObject<HTMLDivElement | null>, deps: unknown[]) {
+  const loadWidgets = useCallback(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const win = window as TwitterWindow
+    const load = win.twttr?.widgets?.load
+    if (load) {
+      // 複数フレーム待ってからロード（モバイルSafari対応）
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          load(container)
+        })
+      })
+    }
+  }, [containerRef])
+
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
-    // Twitter埋め込みがあるか確認
-    const twitterEmbeds = container.querySelectorAll('.twitter-tweet')
+    // Twitter埋め込みがあるか確認（まだ変換されていないもの）
+    const twitterEmbeds = container.querySelectorAll('blockquote.twitter-tweet')
     if (twitterEmbeds.length === 0) return
 
     const win = window as TwitterWindow
-    let retryCount = 0
-    const maxRetries = 20  // 最大2秒間リトライ
 
-    // ウィジェットをロードする関数
-    const loadWidgets = () => {
-      const load = win.twttr?.widgets?.load
-      if (load) {
-        // モバイルSafari対応: requestAnimationFrameで次のフレームまで待つ
-        requestAnimationFrame(() => {
-          load(container)
-        })
-      }
-    }
-
-    // twttrオブジェクトが準備できるまで待機
-    const waitForTwttr = () => {
-      if (win.twttr?.widgets?.load) {
-        loadWidgets()
-      } else if (retryCount < maxRetries) {
-        retryCount++
-        setTimeout(waitForTwttr, 100)
-      }
-    }
-
-    // window.twttr が既に存在する場合はウィジェットをロード
-    if (win.twttr?.widgets?.load) {
+    // 既にtwttrが準備できている場合
+    if (twitterScriptStatus === 'ready' && win.twttr?.widgets?.load) {
       loadWidgets()
       return
     }
 
-    // スクリプトがまだない場合は追加
-    const existingScript = document.querySelector('script[src*="platform.twitter.com/widgets.js"]')
-    if (!existingScript) {
-      // twttr初期化用のグローバル設定（モバイルSafari対応）
-      ;(window as TwitterWindow & { __twttr_widget_ready?: boolean }).__twttr_widget_ready = false
+    // スクリプトがエラーの場合は再試行
+    if (twitterScriptStatus === 'error') {
+      twitterScriptStatus = 'idle'
+    }
+
+    // スクリプトをロード中または準備完了待ち
+    if (twitterScriptStatus === 'loading') {
+      onTwitterReady(loadWidgets)
+      return
+    }
+
+    // スクリプトがまだロードされていない場合
+    if (twitterScriptStatus === 'idle') {
+      twitterScriptStatus = 'loading'
 
       const script = document.createElement('script')
       script.src = 'https://platform.twitter.com/widgets.js'
       script.async = true
       script.setAttribute('charset', 'utf-8')
 
-      // onloadとonerrorの両方をハンドリング
       script.onload = () => {
-        // スクリプトロード後、twttr.ready を使うか直接ロード
-        if (win.twttr?.ready) {
-          win.twttr.ready(() => {
-            ;(window as TwitterWindow & { __twttr_widget_ready?: boolean }).__twttr_widget_ready = true
+        // twttr.readyを待つか、ポーリングで待機
+        const waitForReady = (retries = 0) => {
+          if (win.twttr?.ready) {
+            win.twttr.ready(() => {
+              notifyTwitterReady()
+              loadWidgets()
+            })
+          } else if (win.twttr?.widgets?.load) {
+            notifyTwitterReady()
             loadWidgets()
-          })
-        } else {
-          // フォールバック: ポーリングでtwttrを待つ
-          waitForTwttr()
+          } else if (retries < 50) {
+            // 最大5秒待機
+            setTimeout(() => waitForReady(retries + 1), 100)
+          } else {
+            twitterScriptStatus = 'error'
+          }
         }
+        waitForReady()
       }
 
       script.onerror = () => {
+        twitterScriptStatus = 'error'
         console.warn('Twitter widget script failed to load')
       }
 
-      // head に追加（モバイルSafariではbodyよりheadの方が安定）
       document.head.appendChild(script)
-    } else {
-      // スクリプトは存在するがまだロード中の場合
-      waitForTwttr()
+      onTwitterReady(loadWidgets)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
