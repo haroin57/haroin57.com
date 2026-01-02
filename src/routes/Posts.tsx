@@ -1,9 +1,10 @@
 import { useSearchParams} from 'react-router-dom'
 import PrefetchLink from '../components/PrefetchLink'
-import { useEffect, useMemo, useRef, useCallback, startTransition, useState } from 'react'
+import { useMemo, useRef, useCallback, startTransition, useState, useEffect } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
 import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../hooks/useAdminAuth'
+import { useFetch } from '../hooks/useFetch'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
 import { formatDraftDate } from '../lib/draftStorage'
@@ -30,10 +31,8 @@ function Posts() {
   const pageRef = useRef<HTMLDivElement | null>(null)
   const { isAdmin, idToken, loginWithGoogle, logout, isLoading: authLoading } = useAdminAuth()
 
-  // 動的に取得した記事一覧
-  const [posts, setPosts] = useState<Post[]>(staticPosts)
-  const [isLoading, setIsLoading] = useState(true)
   // 下書き一覧（管理者のみ・サーバーから取得）
+  // 削除機能があるためローカル状態で管理
   const [drafts, setDrafts] = useState<Post[]>([])
   const [showDrafts, setShowDrafts] = useState(false)
 
@@ -48,24 +47,15 @@ function Posts() {
   useScrollToTop()
 
   // CMS APIから記事一覧を取得（失敗時は静的データにフォールバック）
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const res = await fetch(`${CMS_ENDPOINT}/posts`)
-        if (res.ok) {
-          const data = (await res.json()) as { posts: Post[] }
-          if (data.posts && data.posts.length > 0) {
-            setPosts(data.posts)
-          }
-        }
-      } catch {
-        // API失敗時は静的データを使用
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    fetchPosts()
-  }, [])
+  type PostsResponse = { posts: Post[] }
+  const fetchOptions = useMemo(() => ({
+    fallback: staticPosts,
+    transform: (data: PostsResponse) => data.posts?.length > 0 ? data.posts : staticPosts,
+  }), [])
+  const { data: posts, isLoading } = useFetch<Post[], PostsResponse>(
+    `${CMS_ENDPOINT}/posts`,
+    fetchOptions
+  )
 
   // 管理者の場合、サーバーから下書き一覧を取得
   useEffect(() => {
