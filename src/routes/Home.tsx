@@ -224,7 +224,7 @@ function Home() {
         <div className="mx-auto w-full max-w-4xl flex-1 px-4 pb-10 sm:px-6 sm:pb-12">
           <div className="mx-auto w-full max-w-2xl space-y-8">
             {/* Contents見出し + ナビゲーション - 画面中央に配置 */}
-            <div className="flex flex-col items-center justify-center min-h-[60vh] sm:min-h-[55vh]">
+            <div className="flex flex-col items-center justify-center min-h-[40vh] sm:min-h-[55vh]">
               <h1 className="reveal text-2xl sm:text-3xl md:text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)] mb-8 sm:mb-12 self-start">
                 Contents
               </h1>
