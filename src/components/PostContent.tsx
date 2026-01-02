@@ -31,6 +31,9 @@ function notifyTwitterReady() {
 
 // Twitter埋め込みウィジェットをロード
 function useTwitterEmbeds(containerRef: React.RefObject<HTMLDivElement | null>, html: string) {
+  // HTMLにTwitter埋め込みが含まれていない場合は早期リターン
+  const hasTwitterEmbed = html.includes('twitter-tweet')
+
   const loadWidgets = useCallback(() => {
     const container = containerRef.current
     if (!container) return
@@ -48,10 +51,13 @@ function useTwitterEmbeds(containerRef: React.RefObject<HTMLDivElement | null>, 
   }, [containerRef])
 
   useEffect(() => {
+    // Twitter埋め込みがない場合はスキップ
+    if (!hasTwitterEmbed) return
+
     const container = containerRef.current
     if (!container) return
 
-    // Twitter埋め込みがあるか確認（まだ変換されていないもの）
+    // DOM内に実際にTwitter埋め込みがあるか確認（まだ変換されていないもの）
     const twitterEmbeds = container.querySelectorAll('blockquote.twitter-tweet')
     if (twitterEmbeds.length === 0) return
 
@@ -113,7 +119,7 @@ function useTwitterEmbeds(containerRef: React.RefObject<HTMLDivElement | null>, 
       onTwitterReady(loadWidgets)
     }
     
-  }, [containerRef, html, loadWidgets])
+  }, [containerRef, hasTwitterEmbed, loadWidgets])
 }
 
 // HTMLコンテンツをメモ化したコンポーネント
