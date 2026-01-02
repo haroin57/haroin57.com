@@ -47,10 +47,12 @@ function Posts() {
   useScrollToTop()
 
   // CMS APIから記事一覧を取得（失敗時は静的データにフォールバック）
+  // SSRハイドレーション時は静的データを使用し、初回APIフェッチをスキップ
   type PostsResponse = { posts: Post[] }
   const fetchOptions = useMemo(() => ({
     fallback: staticPosts,
     transform: (data: PostsResponse) => data.posts?.length > 0 ? data.posts : staticPosts,
+    skipInitialFetch: true,
   }), [])
   const { data: posts, isLoading } = useFetch<Post[], PostsResponse>(
     `${CMS_ENDPOINT}/posts`,

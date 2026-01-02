@@ -46,10 +46,12 @@ function Products() {
   useScrollToTop()
 
   // CMS APIからプロダクト一覧を取得（失敗時は静的データにフォールバック）
+  // SSRハイドレーション時は静的データを使用し、初回APIフェッチをスキップ
   type ProductsResponse = { products: Product[] }
   const fetchOptions = useMemo(() => ({
     fallback: staticProducts,
     transform: (data: ProductsResponse) => data.products?.length > 0 ? data.products : staticProducts,
+    skipInitialFetch: true,
   }), [])
   const { data: products, isLoading } = useFetch<Product[], ProductsResponse>(
     `${CMS_ENDPOINT}/products`,

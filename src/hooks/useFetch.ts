@@ -11,6 +11,8 @@ export type FetchOptions<T, R = unknown> = {
   headers?: Record<string, string>
   fallback?: T
   transform?: (data: R) => T
+  /** SSRハイドレーション時に初回フェッチをスキップ（フォールバックデータを使用） */
+  skipInitialFetch?: boolean
 }
 
 /**
@@ -23,10 +25,13 @@ export function useFetch<T, R = unknown>(
   options?: FetchOptions<T, R>
 ): FetchState<T> {
   const fallback = options?.fallback as T
+  const skipInitial = options?.skipInitialFetch ?? false
+  // skipInitialFetchの場合は最初からロード完了状態
   const [data, setData] = useState<T>(fallback)
-  const [isLoading, setIsLoading] = useState(url !== null)
+  const [isLoading, setIsLoading] = useState(url !== null && !skipInitial)
   const [error, setError] = useState<Error | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const initialFetchSkipped = useRef(skipInitial)
 
   // headers と transform を安定化
   const headersRef = useRef(options?.headers)
@@ -74,6 +79,12 @@ export function useFetch<T, R = unknown>(
   }, [url])
 
   useEffect(() => {
+    // skipInitialFetchの場合、初回のみスキップ
+    if (initialFetchSkipped.current) {
+      initialFetchSkipped.current = false
+      return
+    }
+
     fetchData()
 
     return () => {
