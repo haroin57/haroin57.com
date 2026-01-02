@@ -67,7 +67,7 @@ function Products() {
         className="relative z-10 min-h-screen flex flex-col page-fade"
         style={MAIN_TEXT_STYLE}
       >
-        <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-10 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
+        <div className="mx-auto w-full max-w-4xl flex-1 px-4 pt-5 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
           <div className="mx-auto w-full max-w-2xl space-y-6 text-left">
             <header
               className="reveal flex items-center justify-between gap-4"
