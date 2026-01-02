@@ -1858,54 +1858,65 @@ body {
 
 /* モバイル目次リスト */
 .toc-mobile-list {
+  position: relative;
   padding: 0.5rem 0;
 }
 
+/* モバイル用: シンプルな縦線デザイン（ドットの中心を通る） */
 .toc-mobile-dropdown .toc-item {
-  --toc-indent: 2.5rem;
-  --toc-pad-block: 0.6rem;
+  --toc-indent: 2rem;
+  --toc-pad-block: 0.5rem;
+  --dot-size: 8px;
+  --dot-left: 1rem;
 }
 
 .toc-mobile-dropdown .toc-item--level-3 {
-  --toc-indent: 3rem;
+  --toc-indent: 2rem;
 }
 
 .toc-mobile-dropdown .toc-item--level-4 {
-  --toc-indent: 3.5rem;
+  --toc-indent: 2rem;
 }
 
-/* モバイル用タイムライン調整 */
+/* 縦線: ドットの中心を通る（left + dot-size/2 - 0.5px） */
 .toc-mobile-dropdown .toc-list::before {
-  left: 1.25rem;
+  left: calc(var(--dot-left, 1rem) + 3.5px);
+  top: 0.75rem;
+  bottom: 0.75rem;
 }
 
+/* ドット: 全レベル共通サイズ・位置 */
 .toc-mobile-dropdown .toc-item::before {
-  left: 1rem;
+  left: var(--dot-left);
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-width: 1.5px;
 }
 
 .toc-mobile-dropdown .toc-item::after {
-  left: calc(1rem + 3.5px);
+  left: calc(var(--dot-left) + 2.5px);
+  width: 3px;
+  height: 3px;
 }
 
-.toc-mobile-dropdown .toc-item--level-3::before {
-  left: 1rem;
-}
-
-.toc-mobile-dropdown .toc-item--level-3::after {
-  left: calc(1rem + 2.5px);
-}
-
+/* h3/h4 も同じ位置（階層はインデントで表現しない） */
+.toc-mobile-dropdown .toc-item--level-3::before,
 .toc-mobile-dropdown .toc-item--level-4::before {
-  left: 1rem;
+  left: var(--dot-left);
+  width: var(--dot-size);
+  height: var(--dot-size);
 }
 
+.toc-mobile-dropdown .toc-item--level-3::after,
 .toc-mobile-dropdown .toc-item--level-4::after {
-  left: calc(1rem + 2px);
+  left: calc(var(--dot-left) + 2.5px);
+  width: 3px;
+  height: 3px;
 }
 
 .toc-mobile-dropdown .toc-link {
-  font-size: 0.9rem;
-  padding: var(--toc-pad-block) 1rem var(--toc-pad-block) var(--toc-indent);
+  font-size: 0.85rem;
+  padding: var(--toc-pad-block) 0.75rem var(--toc-pad-block) var(--toc-indent);
   margin: calc(-1 * var(--toc-pad-block)) 0 calc(-1 * var(--toc-pad-block)) calc(-1 * var(--toc-indent));
 }
 
