@@ -123,7 +123,7 @@ const AUTH_HTML = `<!DOCTYPE html>
         } else {
           throw new Error(data.error || 'デプロイに失敗しました');
         }
-      } catch (err) {
+      } catch {
         status.className = 'status error';
         status.textContent = err.message;
         btn.disabled = false;
@@ -200,7 +200,7 @@ async function main() {
               process.exit(0)
             }, 1000)
           }
-        } catch (err) {
+        } catch {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ success: false, error: 'Invalid request' }))
         }

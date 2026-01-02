@@ -52,7 +52,8 @@
       "Bash(npx tsc:*)",
       "Bash(del \"c:\\\\Users\\\\harut\\\\haroin57-web\\\\src\\\\pv-worker.ts\")",
       "Bash(tree:*)",
-      "Bash(^d \")"
+      "Bash(^d \")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate HAPPY setup post with detailed process and thoughts\n\n実際の構築プロセスを時系列で詳細に記述し、遭遇した問題と解決方法、\nアーキテクチャ図（Mermaid）、感想を追加\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

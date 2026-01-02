@@ -59,7 +59,7 @@ type HastElement = {
 }
 type MdastNode = { type: string; [key: string]: unknown }
 type MdastRoot = { type: 'root'; children: MdastNode[] }
-type _MdastHeading = { type: 'heading'; depth: number; data?: { id?: unknown } }
+
 type MdastText = { type: 'text'; value: string }
 type MdastParagraph = { type: 'paragraph'; children: MdastNode[]; data?: Record<string, unknown> }
 type MdastList = { type: 'list'; ordered?: boolean; children: MdastNode[]; data?: Record<string, unknown> }
@@ -246,7 +246,7 @@ const rehypeMdnCodeHeaders = () => {
 // 目次自動生成は廃止。マニュアルで目次を記述する方式に変更。
 // 各記事内でMarkdownリストを使って手動で目次を記述してください。
 const injectToc = () => {
-  return (_tree: MdastRoot) => {
+  return () => {
     // 自動生成を無効化 - 何もしない
   }
 }
