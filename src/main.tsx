@@ -1,6 +1,7 @@
 import { BrowserRouter } from 'react-router-dom'
 import { createRoot, hydrateRoot } from 'react-dom/client'
-import AnimatedRoutes, { preloadRoutesForPath } from './components/AnimatedRoutes'
+import AnimatedRoutes from './components/AnimatedRoutes'
+import { preloadRoutesForPath } from './lib/preloadRoutes'
 import GlobalBackground from './components/GlobalBackground'
 import ScrollTopHomeSwitch from './components/ScrollTopHomeSwitch'
 import { AdminAuthProvider } from './contexts/AdminAuthContext'

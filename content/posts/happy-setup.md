@@ -1,6 +1,6 @@
 ---
-title: "HAPPYでClaude Codeをスマホから操作する環境を構築した"
-summary: "Claude CodeのセッションをスマホからリモートでモニタリングするためのHAPPYツール群を自前サーバーで構築した話"
+title: "HAPPYでClaude Codeをスマホから操作する環境をデプロイした"
+summary: "Claude CodeのセッションをスマホからリモートでモニタリングするためのHAPPYツール群を自前サーバーでデプロイした話"
 date: "2026-01-02"
 tags:
   - Claude Code
@@ -11,6 +11,7 @@ tags:
 
 ## 目次
 
+- [目次](#目次)
 - [HAPPYとは](#happyとは)
 - [主な機能](#主な機能)
   - [セッション共有・リモート操作](#セッション共有リモート操作)
@@ -28,6 +29,10 @@ tags:
   - [6. happy-cli側の設定](#6-happy-cli側の設定)
   - [7. 認証フロー](#7-認証フロー)
 - [途中で遭遇した問題たち](#途中で遭遇した問題たち)
+  - [DNSが想定IPに向かない](#dnsが想定ipに向かない)
+  - [Origin Certificate未設定時のTLSエラー](#origin-certificate未設定時のtlsエラー)
+  - [prisma schemaがDocker build contextに含まれていない](#prisma-schemaがdocker-build-contextに含まれていない)
+  - [docker composeをPowerShellで実行して混乱](#docker-composeをpowershellで実行して混乱)
 - [現在の状態](#現在の状態)
 - [想定ユースケース](#想定ユースケース)
 - [感想](#感想)
