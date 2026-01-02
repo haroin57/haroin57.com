@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useMemo } from 'react'
 import PrefetchLink from '../components/PrefetchLink'
 import productsData from '../data/products.json' with { type: 'json' }
 import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../hooks/useAdminAuth'
+import { useFetch } from '../hooks/useFetch'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
@@ -44,29 +45,16 @@ function Products() {
 
   useScrollToTop()
 
-  // 動的に取得したプロダクト一覧
-  const [products, setProducts] = useState<Product[]>(staticProducts)
-  const [isLoading, setIsLoading] = useState(true)
-
   // CMS APIからプロダクト一覧を取得（失敗時は静的データにフォールバック）
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch(`${CMS_ENDPOINT}/products`)
-        if (res.ok) {
-          const data = (await res.json()) as { products: Product[] }
-          if (data.products && data.products.length > 0) {
-            setProducts(data.products)
-          }
-        }
-      } catch {
-        // API失敗時は静的データを使用
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    fetchProducts()
-  }, [])
+  type ProductsResponse = { products: Product[] }
+  const fetchOptions = useMemo(() => ({
+    fallback: staticProducts,
+    transform: (data: ProductsResponse) => data.products?.length > 0 ? data.products : staticProducts,
+  }), [])
+  const { data: products, isLoading } = useFetch<Product[], ProductsResponse>(
+    `${CMS_ENDPOINT}/products`,
+    fetchOptions
+  )
 
   // reveal要素を表示
   useReveal(pageRef, isLoading)

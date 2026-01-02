@@ -1,29 +1,38 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 
 export type FetchState<T> = {
-  data: T | null
+  data: T
   isLoading: boolean
   error: Error | null
   refetch: () => void
 }
 
+export type FetchOptions<T, R = unknown> = {
+  headers?: Record<string, string>
+  fallback?: T
+  transform?: (data: R) => T
+}
+
 /**
- * 汎用データフェッチフック
+ * 汎用データフェッチフック（フォールバック対応）
  * @param url フェッチするURL (nullの場合はフェッチしない)
  * @param options フェッチオプション
  */
-export function useFetch<T>(
+export function useFetch<T, R = unknown>(
   url: string | null,
-  options?: {
-    headers?: Record<string, string>
-    initialData?: T | null
-    transform?: (data: unknown) => T
-  }
+  options?: FetchOptions<T, R>
 ): FetchState<T> {
-  const [data, setData] = useState<T | null>(options?.initialData ?? null)
+  const fallback = options?.fallback as T
+  const [data, setData] = useState<T>(fallback)
   const [isLoading, setIsLoading] = useState(url !== null)
   const [error, setError] = useState<Error | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  // headers と transform を安定化
+  const headersRef = useRef(options?.headers)
+  headersRef.current = options?.headers
+  const transformRef = useRef(options?.transform)
+  transformRef.current = options?.transform
 
   const fetchData = useCallback(async () => {
     if (!url) {
@@ -42,7 +51,7 @@ export function useFetch<T>(
 
     try {
       const res = await fetch(url, {
-        headers: options?.headers,
+        headers: headersRef.current,
         signal: abortControllerRef.current.signal,
       })
 
@@ -50,18 +59,19 @@ export function useFetch<T>(
         throw new Error(`HTTP ${res.status}`)
       }
 
-      const json = await res.json()
-      const transformed = options?.transform ? options.transform(json) : (json as T)
+      const json = (await res.json()) as R
+      const transformed = transformRef.current ? transformRef.current(json) : (json as unknown as T)
       setData(transformed)
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         return // キャンセルされた場合は無視
       }
       setError(err instanceof Error ? err : new Error('Unknown error'))
+      // エラー時はフォールバックを維持
     } finally {
       setIsLoading(false)
     }
-  }, [url, options?.headers, options?.transform])
+  }, [url])
 
   useEffect(() => {
     fetchData()
@@ -81,18 +91,24 @@ export function useFetch<T>(
 }
 
 /**
+ * メモ化されたフェッチオプションを作成
+ */
+export function useFetchOptions<T, R = unknown>(
+  options: FetchOptions<T, R>
+): FetchOptions<T, R> {
+  return useMemo(() => options, [options.fallback, options.headers, options.transform])
+}
+
+/**
  * 認証付きフェッチフック
  */
-export function useAuthFetch<T>(
+export function useAuthFetch<T, R = unknown>(
   url: string | null,
   idToken: string | null,
-  options?: {
-    initialData?: T | null
-    transform?: (data: unknown) => T
-  }
+  options?: FetchOptions<T, R>
 ): FetchState<T> {
   const headers = idToken ? { Authorization: `Bearer ${idToken}` } : undefined
-  return useFetch<T>(url && idToken ? url : null, {
+  return useFetch<T, R>(url && idToken ? url : null, {
     ...options,
     headers,
   })
