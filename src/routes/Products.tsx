@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import productsData from '../data/products.json' with { type: 'json' }
 import PrefetchLink from '../components/PrefetchLink'
+import productsData from '../data/products.json' with { type: 'json' }
 import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../hooks/useAdminAuth'
 import { usePageMeta } from '../hooks/usePageMeta'
@@ -93,12 +92,12 @@ function Products() {
               <div className="flex items-center gap-2">
                 {authLoading ? null : isAdmin ? (
                   <>
-                    <Link
+                    <PrefetchLink
                       to="/admin/products/new"
                       className="px-3 py-1 rounded border border-green-500/50 bg-green-500/10 text-green-400 text-xs sm:text-sm font-semibold transition-colors hover:bg-green-500/20"
                     >
                       新規作成
-                    </Link>
+                    </PrefetchLink>
                     <button
                       type="button"
                       onClick={() => logout()}
@@ -138,12 +137,12 @@ function Products() {
                         {product.language}
                       </div>
                       {isAdmin && (
-                        <Link
+                        <PrefetchLink
                           to={`/admin/products/${product.slug}/edit`}
                           className="px-2 py-0.5 rounded border border-blue-500/50 bg-blue-500/10 text-blue-400 text-xs font-semibold transition-all opacity-0 group-hover:opacity-100 hover:bg-blue-500/20"
                         >
                           編集
-                        </Link>
+                        </PrefetchLink>
                       )}
                     </div>
                     <h2 className="text-base sm:text-xl text-[color:var(--fg-strong,inherit)]">

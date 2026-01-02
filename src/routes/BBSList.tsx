@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../hooks/useAdminAuth'
@@ -304,7 +303,7 @@ function BBSList() {
               <div className="space-y-2">
                 {threads.map((thread, index) => (
                   <div key={thread.id} className="relative group">
-                    <Link
+                    <PrefetchLink
                       to={`/bbs/${thread.id}`}
                       className="block p-3 rounded border border-transparent hover:border-[color:var(--ui-border)] hover:bg-[color:var(--ui-surface-hover)] transition-colors"
                     >
@@ -319,7 +318,7 @@ function BBSList() {
                           <span className="ml-3">最終投稿: {formatDisplayDate(thread.lastPostAt)}</span>
                         )}
                       </div>
-                    </Link>
+                    </PrefetchLink>
                     {isAdmin && (
                       <button
                         type="button"
@@ -338,13 +337,13 @@ function BBSList() {
 
           {/* 戻るリンク */}
             <section className="mt-6 flex justify-start">
-              <Link
+              <PrefetchLink
                 to="/home"
                 className="font-morisawa-dragothic underline-thin hover:text-accent text-base sm:text-lg"
                 style={{ color: 'var(--fg)' }}
               >
                 ← Homeへ
-              </Link>
+              </PrefetchLink>
             </section>
           </article>
           </div>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams} from 'react-router-dom'
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../hooks/useAdminAuth'
@@ -251,12 +251,12 @@ function BBSThread() {
           <div className="reveal space-y-4">
             <p className="text-red-400 py-8 text-center">{error}</p>
             <div className="flex justify-center">
-              <Link
+              <PrefetchLink
                 to="/bbs"
                 className="px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
               >
                 スレッド一覧に戻る
-              </Link>
+              </PrefetchLink>
             </div>
           </div>
         ) : thread ? (
@@ -351,13 +351,13 @@ function BBSThread() {
 
             {/* 戻るリンク */}
             <section className="mt-6 flex justify-start">
-              <Link
+              <PrefetchLink
                 to="/bbs"
                 className="font-morisawa-dragothic underline-thin hover:text-accent text-base sm:text-lg"
                 style={{ color: 'var(--fg)' }}
               >
                 ← スレッド一覧へ
-              </Link>
+              </PrefetchLink>
             </section>
           </article>
         ) : null}

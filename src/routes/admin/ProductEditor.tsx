@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate} from 'react-router-dom'
+import PrefetchLink from '../../components/PrefetchLink'
 import { useAdminAuth } from '../../hooks/useAdminAuth'
 import MarkdownEditor from '../../components/admin/MarkdownEditor'
 import { saveDraft, loadDraft, deleteDraft, formatDraftDate, type ProductDraft } from '../../lib/draftStorage'
@@ -300,9 +301,9 @@ export default function ProductEditor() {
         >
           Googleでログイン
         </button>
-        <Link to="/products" className="text-sm underline opacity-70 hover:opacity-100">
+        <PrefetchLink to="/products" className="text-sm underline opacity-70 hover:opacity-100">
           プロダクト一覧に戻る
-        </Link>
+        </PrefetchLink>
       </div>
     )
   }
@@ -315,9 +316,9 @@ export default function ProductEditor() {
       >
         {/* ヘッダー */}
         <header className="flex items-center gap-4 text-lg sm:text-xl font-semibold">
-          <Link to="/products" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+          <PrefetchLink to="/products" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
             Products
-          </Link>
+          </PrefetchLink>
           <span className="opacity-50">/</span>
           <span>{isNewProduct ? '新規作成' : '編集'}</span>
         </header>
@@ -484,12 +485,12 @@ export default function ProductEditor() {
                 )}
               </div>
               <div className="flex items-center gap-4">
-                <Link
+                <PrefetchLink
                   to="/products"
                   className="px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
                 >
                   キャンセル
-                </Link>
+                </PrefetchLink>
                 <button
                   type="button"
                   onClick={handleSave}

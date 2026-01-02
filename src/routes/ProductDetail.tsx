@@ -1,8 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams} from 'react-router-dom'
+import PrefetchLink from '../components/PrefetchLink'
 import productsData from '../data/products.json' with { type: 'json' }
 import productPostsData from '../data/product-posts.json' with { type: 'json' }
-import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
 import PostContent from '../components/PostContent'
 import TableOfContents from '../components/TableOfContents'
@@ -301,13 +301,13 @@ function ProductDetail() {
                 )}
 
                 <section className="reveal pt-4">
-                  <Link
+                  <PrefetchLink
                     to="/products"
                     className="font-morisawa-dragothic underline-thin hover:text-accent text-base sm:text-lg"
                     style={{ color: 'var(--fg)' }}
                   >
                     ← Products一覧へ
-                  </Link>
+                  </PrefetchLink>
                 </section>
               </article>
             )}

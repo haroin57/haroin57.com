@@ -1,7 +1,7 @@
-import { useLocation, useParams, Link } from 'react-router-dom'
+import { useLocation, useParams} from 'react-router-dom'
+import PrefetchLink from '../components/PrefetchLink'
 import { useEffect, useMemo, useRef, useState, useCallback, startTransition, lazy, Suspense } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
-import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
 import ClientOnly from '../components/ClientOnly'
 import PostContent from '../components/PostContent'
@@ -301,13 +301,13 @@ function PostDetail() {
                 {post.tags && post.tags.length > 0 ? (
                   <div className="flex flex-wrap gap-2 text-[11px] sm:text-sm">
                     {post.tags.map((tag) => (
-                      <Link
+                      <PrefetchLink
                         key={tag}
                         to={`/posts?tag=${encodeURIComponent(tag)}`}
                         className="px-2 py-1 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
                       >
                         {tag}
-                      </Link>
+                      </PrefetchLink>
                     ))}
                   </div>
                 ) : null}
@@ -360,13 +360,13 @@ function PostDetail() {
               </section>
             ) : null}
             <section className="mt-6 flex justify-start">
-              <Link
+              <PrefetchLink
                 to="/posts"
                 className="font-morisawa-dragothic underline-thin hover:text-accent text-base sm:text-lg"
                 style={{ color: 'var(--fg)' }}
               >
                 ← Posts一覧へ
-              </Link>
+              </PrefetchLink>
             </section>
           </>
         )}

@@ -1,7 +1,7 @@
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams} from 'react-router-dom'
+import PrefetchLink from '../components/PrefetchLink'
 import { useEffect, useMemo, useRef, useCallback, startTransition, useState } from 'react'
 import postsData from '../data/posts.json' with { type: 'json' }
-import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
 import { useAdminAuth } from '../hooks/useAdminAuth'
 import { useReveal } from '../hooks/useReveal'
@@ -172,12 +172,12 @@ function Posts() {
               <div className="flex items-center gap-2">
                 {authLoading ? null : isAdmin ? (
                   <>
-                    <Link
+                    <PrefetchLink
                       to="/admin/posts/new"
                       className="px-3 py-1 rounded border border-green-500/50 bg-green-500/10 text-green-400 text-xs sm:text-sm font-semibold transition-colors hover:bg-green-500/20"
                     >
                       新規作成
-                    </Link>
+                    </PrefetchLink>
                     <button
                       type="button"
                       onClick={() => logout()}
@@ -264,12 +264,12 @@ function Posts() {
                           )}
                         </div>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Link
+                          <PrefetchLink
                             to={`/admin/posts/${draft.slug}/edit`}
                             className="px-2 py-1 rounded border border-green-500/50 bg-green-500/10 text-green-400 text-xs font-semibold hover:bg-green-500/20"
                           >
                             編集・投稿
-                          </Link>
+                          </PrefetchLink>
                           <button
                             type="button"
                             onClick={() => handleDeleteDraft(draft)}
@@ -294,12 +294,12 @@ function Posts() {
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs sm:text-sm text-[color:var(--fg,inherit)] opacity-75">{p.createdAt?.split('T')[0]}</p>
                       {isAdmin && p.slug && (
-                        <Link
+                        <PrefetchLink
                           to={`/admin/posts/${p.slug}/edit`}
                           className="px-2 py-0.5 rounded border border-blue-500/50 bg-blue-500/10 text-blue-400 text-xs font-semibold transition-all opacity-0 group-hover:opacity-100 hover:bg-blue-500/20"
                         >
                           編集
-                        </Link>
+                        </PrefetchLink>
                       )}
                     </div>
                     <h2 className="text-base sm:text-xl text-[color:var(--fg-strong,inherit)]">

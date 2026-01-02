@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate} from 'react-router-dom'
+import PrefetchLink from '../../components/PrefetchLink'
 import { useAdminAuth } from '../../hooks/useAdminAuth'
 import MarkdownEditor from '../../components/admin/MarkdownEditor'
 import { saveDraft, loadDraft, deleteDraft, formatDraftDate, type PostDraft } from '../../lib/draftStorage'
@@ -316,9 +317,9 @@ export default function PostEditor() {
         >
           Googleでログイン
         </button>
-        <Link to="/posts" className="text-sm underline opacity-70 hover:opacity-100">
+        <PrefetchLink to="/posts" className="text-sm underline opacity-70 hover:opacity-100">
           記事一覧に戻る
-        </Link>
+        </PrefetchLink>
       </div>
     )
   }
@@ -331,9 +332,9 @@ export default function PostEditor() {
       >
         {/* ヘッダー */}
         <header className="flex items-center gap-4 text-lg sm:text-xl font-semibold">
-          <Link to="/posts" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
+          <PrefetchLink to="/posts" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>
             Posts
-          </Link>
+          </PrefetchLink>
           <span className="opacity-50">/</span>
           <span>{isNewPost ? '新規作成' : '編集'}</span>
           {!isNewPost && (
@@ -478,12 +479,12 @@ export default function PostEditor() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <Link
+                <PrefetchLink
                   to="/posts"
                   className="px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
                 >
                   キャンセル
-                </Link>
+                </PrefetchLink>
                 <button
                   type="button"
                   onClick={() => handleSave(true)}
