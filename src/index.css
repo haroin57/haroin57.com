@@ -1755,3 +1755,180 @@ body {
     display: none;
   }
 }
+
+/* ======================
+   モバイル版目次（Zenn風）
+   ====================== */
+
+/* 固定ヘッダーコンテナ */
+.toc-mobile-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  /* PC版では非表示 */
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .toc-mobile-header {
+    display: block;
+  }
+}
+
+/* ヘッダーバー */
+.toc-mobile-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(23, 23, 23, 0.92);
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--fg);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background-color 200ms ease;
+}
+
+.toc-mobile-bar:hover {
+  background: rgba(30, 30, 30, 0.95);
+}
+
+.toc-mobile-bar:active {
+  background: rgba(40, 40, 40, 0.95);
+}
+
+/* シェブロンアイコン */
+.toc-mobile-chevron {
+  flex-shrink: 0;
+  color: var(--fg);
+  opacity: 0.6;
+  transition: transform 250ms ease, opacity 200ms ease;
+}
+
+.toc-mobile-chevron--open {
+  transform: rotate(180deg);
+  opacity: 0.9;
+}
+
+/* 現在セクション表示 */
+.toc-mobile-current {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg);
+  opacity: 0.85;
+}
+
+/* ドロップダウン */
+.toc-mobile-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 0;
+  overflow: hidden;
+  background: rgba(18, 18, 18, 0.96);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: max-height 300ms ease-out, opacity 200ms ease;
+  opacity: 0;
+}
+
+.toc-mobile-dropdown--open {
+  max-height: 60vh;
+  overflow-y: auto;
+  opacity: 1;
+}
+
+/* モバイル目次リスト */
+.toc-mobile-list {
+  padding: 0.5rem 0;
+}
+
+.toc-mobile-dropdown .toc-item {
+  --toc-indent: 2.5rem;
+  --toc-pad-block: 0.6rem;
+}
+
+.toc-mobile-dropdown .toc-item--level-3 {
+  --toc-indent: 3rem;
+}
+
+.toc-mobile-dropdown .toc-item--level-4 {
+  --toc-indent: 3.5rem;
+}
+
+/* モバイル用タイムライン調整 */
+.toc-mobile-dropdown .toc-list::before {
+  left: 1.25rem;
+}
+
+.toc-mobile-dropdown .toc-item::before {
+  left: 1rem;
+}
+
+.toc-mobile-dropdown .toc-item::after {
+  left: calc(1rem + 3.5px);
+}
+
+.toc-mobile-dropdown .toc-item--level-3::before {
+  left: 1rem;
+}
+
+.toc-mobile-dropdown .toc-item--level-3::after {
+  left: calc(1rem + 2.5px);
+}
+
+.toc-mobile-dropdown .toc-item--level-4::before {
+  left: 1rem;
+}
+
+.toc-mobile-dropdown .toc-item--level-4::after {
+  left: calc(1rem + 2px);
+}
+
+.toc-mobile-dropdown .toc-link {
+  font-size: 0.9rem;
+  padding: var(--toc-pad-block) 1rem var(--toc-pad-block) var(--toc-indent);
+  margin: calc(-1 * var(--toc-pad-block)) 0 calc(-1 * var(--toc-pad-block)) calc(-1 * var(--toc-indent));
+}
+
+.toc-mobile-dropdown .toc-link::after {
+  display: none; /* モバイルでは#マーク非表示 */
+}
+
+/* スクロールバー */
+.toc-mobile-dropdown::-webkit-scrollbar {
+  width: 4px;
+}
+
+.toc-mobile-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.toc-mobile-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.toc-mobile-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* モバイル目次がある場合のページ上部余白 */
+@media (max-width: 900px) {
+  body.has-toc {
+    padding-top: 48px;
+  }
+}
