@@ -36,6 +36,13 @@ export default defineConfig({
           if (id.includes('node_modules/react') || id.includes('node_modules\\react')) {
             return 'react-vendor'
           }
+          // mermaidを完全に分離（動的インポート時のみ読み込み）
+          if (id.includes('node_modules/mermaid') || id.includes('node_modules\\mermaid') ||
+              id.includes('node_modules/cytoscape') || id.includes('node_modules\\cytoscape') ||
+              id.includes('node_modules/dagre') || id.includes('node_modules\\dagre') ||
+              id.includes('node_modules/elkjs') || id.includes('node_modules\\elkjs')) {
+            return 'mermaid'
+          }
           // 重いライブラリを分離
           if (id.includes('node_modules/remark') || id.includes('node_modules\\remark') ||
               id.includes('node_modules/rehype') || id.includes('node_modules\\rehype')) {

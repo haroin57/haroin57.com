@@ -26,10 +26,6 @@ export function useScrollBlur(options: ScrollBlurOptions = {}) {
     const body = document.body
     body.classList.add('post-detail-page')
 
-    const rootStyle = window.getComputedStyle(document.documentElement)
-    const baseWashRaw = rootStyle.getPropertyValue('--bg-wash').trim()
-    const baseWash = Number.isFinite(Number.parseFloat(baseWashRaw)) ? Number.parseFloat(baseWashRaw) : 0
-
     // モバイル/低性能デバイスではblurを無効化または軽量化
     const isMobile = isMobileDevice()
     const isLowPerf = isLowPerformanceDevice()
@@ -39,6 +35,17 @@ export function useScrollBlur(options: ScrollBlurOptions = {}) {
     const effectiveMaxBlur = isLowPerf ? 0 : (isMobile ? maxBlurPx * 0.5 : maxBlurPx)
     // 低性能デバイスではスケールエフェクトも無効化
     const enableScale = !isLowPerf
+
+    // 低性能デバイスでは早期リターン（スクロールイベントリスナーも不要）
+    if (isLowPerf) {
+      return () => {
+        body.classList.remove('post-detail-page')
+      }
+    }
+
+    const rootStyle = window.getComputedStyle(document.documentElement)
+    const baseWashRaw = rootStyle.getPropertyValue('--bg-wash').trim()
+    const baseWash = Number.isFinite(Number.parseFloat(baseWashRaw)) ? Number.parseFloat(baseWashRaw) : 0
 
     let rafId = 0
     let lastT = -1 // 前回のt値を記憶して不要な更新を防ぐ
