@@ -1866,7 +1866,7 @@ body {
 /* モバイル用: シンプルな縦線デザイン（ドットの中心を通る） */
 .toc-mobile-dropdown .toc-item {
   --toc-indent: 2rem;
-  --toc-pad-block: 0.5rem;
+  --toc-pad-block: 0.25rem;
   --dot-size: 8px;
   --dot-left: 1rem;
 }
@@ -1917,7 +1917,7 @@ body {
 
 .toc-mobile-dropdown .toc-link {
   font-size: 0.85rem;
-  min-height: 44px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   padding: var(--toc-pad-block) 0.75rem var(--toc-pad-block) var(--toc-indent);
