@@ -108,12 +108,6 @@ function MobileToc({
   const [isOpen, setIsOpen] = useState(false)
   const [hoveredId, setHoveredId] = useState<string>('')
 
-  // 現在のセクション名を取得
-  const currentSection = useMemo(() => {
-    const current = headings.find((h) => h.id === scrollActiveId)
-    return current?.text || headings[0]?.text || '目次'
-  }, [headings, scrollActiveId])
-
   // メニュー外クリックで閉じる
   useEffect(() => {
     if (!isOpen) return
@@ -146,10 +140,11 @@ function MobileToc({
         aria-expanded={isOpen}
         aria-controls="toc-mobile-dropdown"
       >
+        <span className="toc-mobile-label">目次</span>
         <svg
           className={`toc-mobile-chevron${isOpen ? ' toc-mobile-chevron--open' : ''}`}
-          width="16"
-          height="16"
+          width="14"
+          height="14"
           viewBox="0 0 16 16"
           fill="none"
           aria-hidden="true"
@@ -162,7 +157,6 @@ function MobileToc({
             strokeLinejoin="round"
           />
         </svg>
-        <span className="toc-mobile-current">{currentSection}</span>
       </button>
 
       {/* ドロップダウン目次 */}

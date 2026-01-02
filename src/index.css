@@ -1820,14 +1820,12 @@ body {
   opacity: 0.9;
 }
 
-/* 現在セクション表示 */
-.toc-mobile-current {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* 目次ラベル */
+.toc-mobile-label {
   color: var(--fg);
-  opacity: 0.85;
+  opacity: 0.9;
+  font-weight: 600;
+  letter-spacing: 0.05em;
 }
 
 /* ドロップダウン - 右寄せ */
