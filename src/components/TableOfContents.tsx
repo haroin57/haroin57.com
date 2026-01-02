@@ -108,14 +108,6 @@ function MobileToc({
   const [isOpen, setIsOpen] = useState(false)
   const [hoveredId, setHoveredId] = useState<string>('')
 
-  // bodyにクラスを付与してページ上部の余白を確保
-  useEffect(() => {
-    document.body.classList.add('has-toc')
-    return () => {
-      document.body.classList.remove('has-toc')
-    }
-  }, [])
-
   // 現在のセクション名を取得
   const currentSection = useMemo(() => {
     const current = headings.find((h) => h.id === scrollActiveId)

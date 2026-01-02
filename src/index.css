@@ -1760,12 +1760,12 @@ body {
    モバイル版目次（Zenn風）
    ====================== */
 
-/* 固定ヘッダーコンテナ */
+/* 固定ヘッダーコンテナ - 右上に配置 */
 .toc-mobile-header {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0.75rem;
+  right: 0.75rem;
+  left: auto;
   z-index: 100;
   /* PC版では非表示 */
   display: none;
@@ -1777,28 +1777,30 @@ body {
   }
 }
 
-/* ヘッダーバー */
+/* ヘッダーバー - コンパクトなボタン */
 .toc-mobile-bar {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
+  max-width: 200px;
+  padding: 0.5rem 0.75rem;
   background: rgba(23, 23, 23, 0.92);
-  border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
   color: var(--fg);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transition: background-color 200ms ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .toc-mobile-bar:hover {
   background: rgba(30, 30, 30, 0.95);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .toc-mobile-bar:active {
@@ -1828,25 +1830,28 @@ body {
   opacity: 0.85;
 }
 
-/* ドロップダウン */
+/* ドロップダウン - 右寄せ */
 .toc-mobile-dropdown {
   position: absolute;
-  top: 100%;
-  left: 0;
+  top: calc(100% + 0.5rem);
   right: 0;
+  left: auto;
+  min-width: 220px;
+  max-width: 280px;
   max-height: 0;
   overflow: hidden;
   background: rgba(18, 18, 18, 0.96);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   transition: max-height 300ms ease-out, opacity 200ms ease;
   opacity: 0;
 }
 
 .toc-mobile-dropdown--open {
-  max-height: 60vh;
+  max-height: 50vh;
   overflow-y: auto;
   opacity: 1;
 }
@@ -1926,9 +1931,4 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* モバイル目次がある場合のページ上部余白 */
-@media (max-width: 900px) {
-  body.has-toc {
-    padding-top: 48px;
-  }
-}
+/* 右上配置のため、ページ上部余白は不要 */
