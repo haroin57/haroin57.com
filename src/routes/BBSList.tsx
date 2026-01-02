@@ -7,6 +7,7 @@ import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
 import { BBS_ENDPOINT } from '../lib/endpoints'
 import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
+import { formatDisplayDate } from '../utils/date'
 
 // スレッド型
 type Thread = {
@@ -111,17 +112,6 @@ function BBSList() {
     },
     [title, name, content, isSubmitting]
   )
-
-  // 日時表示フォーマット
-  const formatDisplayDate = (isoDate: string) => {
-    const date = new Date(isoDate)
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-    return `${year}/${month}/${day} ${hours}:${minutes}`
-  }
 
   // 管理者ログイン（Google）
   const handleLogin = useCallback(async () => {

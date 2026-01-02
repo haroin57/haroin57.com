@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useRef, useCallback } from 'react'
 import { useParams} from 'react-router-dom'
 import PrefetchLink from '../components/PrefetchLink'
 import productsData from '../data/products.json' with { type: 'json' }
@@ -11,7 +11,7 @@ import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
 import { useScrollBlur } from '../hooks/useScrollBlur'
 import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
-import { extractCodeText, writeToClipboard } from '../utils/clipboard'
+import { useCodeBlockCopy } from '../hooks/useCodeBlockCopy'
 
 type TechStackItem = {
   category: string
@@ -92,50 +92,8 @@ function ProductDetail() {
   // スクロール時の背景ブラーエフェクト（モバイル最適化済み）
   useScrollBlur()
 
-  // コードブロックのコピーボタン用イベントハンドラ
-  useEffect(() => {
-    const proseRoot = proseRef.current
-    if (!proseRoot) return
-
-    const timeouts = new Map<HTMLButtonElement, number>()
-    const onClick = async (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null
-      const button = target?.closest?.('button.mdn-code-copy') as HTMLButtonElement | null
-      if (!button) return
-
-      const figure = button.closest('figure[data-rehype-pretty-code-figure]') as HTMLElement | null
-      const code = figure?.querySelector('pre > code') as HTMLElement | null
-      if (!code) return
-
-      const codeText = extractCodeText(code).trimEnd()
-      if (!codeText) return
-
-      const ok = await writeToClipboard(codeText)
-      if (!ok) return
-
-      const prev = timeouts.get(button)
-      if (prev) window.clearTimeout(prev)
-      button.classList.add('is-copied')
-      button.textContent = 'Copied'
-
-      const timer = window.setTimeout(() => {
-        button.classList.remove('is-copied')
-        button.textContent = 'Copy'
-        timeouts.delete(button)
-      }, 1200)
-
-      timeouts.set(button, timer)
-    }
-
-    proseRoot.addEventListener('click', onClick)
-    return () => {
-      proseRoot.removeEventListener('click', onClick)
-      for (const timer of timeouts.values()) {
-        window.clearTimeout(timer)
-      }
-      timeouts.clear()
-    }
-  }, [productPost?.html])
+  // コードブロックのコピーボタン機能
+  useCodeBlockCopy(proseRef, productPost?.html)
 
   return (
     <div ref={pageRef} className="relative">
