@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useCallback, startTransition, useState } fr
 import postsData from '../data/posts.json' with { type: 'json' }
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
-import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { useAdminAuth } from '../hooks/useAdminAuth'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
 import { formatDraftDate } from '../lib/draftStorage'
@@ -92,7 +92,7 @@ function Posts() {
 
   // reveal要素を表示
   // posts, drafts, showDraftsが変更されたときにも再実行
-  useReveal(pageRef, [isLoading, posts, drafts, showDrafts])
+  useReveal(pageRef, isLoading)
 
   const allTags = useMemo(() => {
     const set = new Set<string>()

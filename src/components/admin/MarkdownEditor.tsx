@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MDEditor, { commands } from '@uiw/react-md-editor'
-import { useAdminAuth } from '../../contexts/AdminAuthContext'
+import { useAdminAuth } from '../../hooks/useAdminAuth'
 import rehypeKatex from 'rehype-katex'
 import remarkMath from 'remark-math'
 import 'katex/dist/katex.min.css'

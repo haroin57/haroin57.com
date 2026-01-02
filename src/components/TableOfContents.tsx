@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useState, type MouseEvent } from 'react'
+import { useMemo, useCallback, useState, useSyncExternalStore, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 
 export type TocItem = {
@@ -30,8 +30,48 @@ function extractHeadingsFromHtml(html: string): TocItem[] {
   return items
 }
 
+/** スクロール位置をuseSyncExternalStoreで購読 */
+function useScrollActiveId(headings: TocItem[]): string {
+  const subscribe = useCallback((onStoreChange: () => void) => {
+    window.addEventListener('scroll', onStoreChange, { passive: true })
+    return () => window.removeEventListener('scroll', onStoreChange)
+  }, [])
+
+  const getSnapshot = useCallback(() => {
+    if (headings.length === 0) return ''
+
+    const scrollTop = window.scrollY
+    const offset = 100
+
+    if (scrollTop < offset) {
+      return headings[0].id
+    }
+
+    let currentHeading = headings[0].id
+    for (const heading of headings) {
+      const element = document.getElementById(heading.id)
+      if (element) {
+        const rect = element.getBoundingClientRect()
+        const elementTop = rect.top + scrollTop
+        if (elementTop <= scrollTop + offset) {
+          currentHeading = heading.id
+        } else {
+          break
+        }
+      }
+    }
+    return currentHeading
+  }, [headings])
+
+  const getServerSnapshot = useCallback(() => {
+    if (headings.length === 0) return ''
+    return headings[0].id
+  }, [headings])
+
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+}
+
 function TableOfContents({ toc, html }: TableOfContentsProps) {
-  const [scrollActiveId, setScrollActiveId] = useState<string>('')
   const [hoveredId, setHoveredId] = useState<string>('')
 
   // tocが渡された場合はそれを使用、なければhtmlから抽出
@@ -41,66 +81,11 @@ function TableOfContents({ toc, html }: TableOfContentsProps) {
     return []
   }, [toc, html])
 
+  const scrollActiveId = useScrollActiveId(headings)
   const activeId = hoveredId || scrollActiveId
-
-  // スクロール位置に応じてアクティブな見出しを更新
-  useEffect(() => {
-    if (headings.length === 0) return
-
-    // 初期状態で最初の見出しをアクティブにする
-    let initialHashId = ''
-    if (window.location.hash) {
-      try {
-        initialHashId = decodeURIComponent(window.location.hash.slice(1))
-      } catch {
-        initialHashId = window.location.hash.slice(1)
-      }
-    }
-    if (initialHashId && headings.some((h) => h.id === initialHashId)) {
-      setScrollActiveId(initialHashId)
-    } else {
-      setScrollActiveId(headings[0].id)
-    }
-
-    // スクロール位置に基づいて最も近い見出しを検出
-    const handleScroll = () => {
-      const scrollTop = window.scrollY
-      const offset = 100 // ヘッダーの高さを考慮
-
-      // ページ最上部付近の場合は最初の見出しをアクティブに
-      if (scrollTop < offset) {
-        setScrollActiveId(headings[0].id)
-        return
-      }
-
-      // 各見出しの位置を取得し、現在のスクロール位置より上にある最後の見出しを見つける
-      let currentHeading = headings[0].id
-      for (const heading of headings) {
-        const element = document.getElementById(heading.id)
-        if (element) {
-          const rect = element.getBoundingClientRect()
-          const elementTop = rect.top + scrollTop
-          if (elementTop <= scrollTop + offset) {
-            currentHeading = heading.id
-          } else {
-            break
-          }
-        }
-      }
-      setScrollActiveId(currentHeading)
-    }
-
-    // 初期実行
-    handleScroll()
-
-    // スクロールイベントをリッスン
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [headings])
 
   const handleClick = useCallback((event: MouseEvent<HTMLAnchorElement>, id: string) => {
     event.preventDefault()
-    setScrollActiveId(id)
     const element = document.getElementById(id)
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' })

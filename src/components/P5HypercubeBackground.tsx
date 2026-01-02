@@ -1,3 +1,4 @@
+import type P5 from 'p5'
 import { useEffect, useRef } from 'react'
 import { isLowPerformanceDevice, getOptimalRenderScale, getTargetFPS } from '../utils/device'
 
@@ -83,7 +84,7 @@ function P5HypercubeBackground() {
       const { default: P5 } = await import('p5')
       if (!active || !containerRef.current) return
 
-      const sketch = (p: any) => {
+      const sketch = (p: P5) => {
         const prefersReduced =
           typeof window !== 'undefined' &&
           window.matchMedia('(prefers-reduced-motion: reduce)').matches

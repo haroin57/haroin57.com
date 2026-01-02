@@ -56,7 +56,7 @@ export function usePageMeta(meta: PageMeta = {}) {
   useEffect(() => {
     updateMeta(meta, location.pathname)
     // cleanup不要 - 次のページが自分のメタタグを設定する
-  }, [meta.title, meta.description, meta.ogTitle, meta.ogDescription, meta.ogUrl, meta.twitterTitle, meta.twitterDescription, location.pathname])
+  }, [meta, location.pathname])
 }
 
 export default usePageMeta

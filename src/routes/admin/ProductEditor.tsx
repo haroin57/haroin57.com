@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useAdminAuth } from '../../contexts/AdminAuthContext'
+import { useAdminAuth } from '../../hooks/useAdminAuth'
 import MarkdownEditor from '../../components/admin/MarkdownEditor'
 import { saveDraft, loadDraft, deleteDraft, formatDraftDate, type ProductDraft } from '../../lib/draftStorage'
 import { CMS_ENDPOINT } from '../../lib/endpoints'

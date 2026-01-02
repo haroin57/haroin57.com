@@ -1,27 +1,12 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react'
+import { useState, useCallback, useEffect, useRef, type ReactNode } from 'react'
 import type { User, Auth, GoogleAuthProvider } from 'firebase/auth'
 import { initializeFirebase } from '../lib/firebase'
+import { AdminAuthContext, type BeforeLogoutCallback } from './AdminAuthContextDef'
 
 // セッションタイムアウト（1時間）
 const SESSION_TIMEOUT_MS = 60 * 60 * 1000
 
-// ログアウト前に呼び出されるコールバック（下書き保存用）
-type BeforeLogoutCallback = () => void | Promise<void>
-
-type AdminAuthContextType = {
-  isAdmin: boolean
-  user: User | null
-  idToken: string | null
-  isLoading: boolean
-  isRedirecting: boolean
-  sessionExpiresAt: number | null
-  loginWithGoogle: () => Promise<boolean>
-  logout: () => Promise<void>
-  registerBeforeLogout: (callback: BeforeLogoutCallback) => () => void
-}
-
-const AdminAuthContext = createContext<AdminAuthContextType | null>(null)
-
+// 管理者メールアドレスのリスト（環境変数から取得）
 // 管理者メールアドレスのリスト（環境変数から取得）
 const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((e: string) => e.trim().toLowerCase())
 
@@ -210,7 +195,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     return () => {
       if (unsubscribe) unsubscribe()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, []) // 初回マウント時のみ実行
 
   // IDトークンの自動更新（1時間ごと）
@@ -305,10 +290,4 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function useAdminAuth() {
-  const context = useContext(AdminAuthContext)
-  if (!context) {
-    throw new Error('useAdminAuth must be used within AdminAuthProvider')
-  }
-  return context
-}
+// useAdminAuth hook is exported from src/hooks/useAdminAuth.ts

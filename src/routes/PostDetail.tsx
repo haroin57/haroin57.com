@@ -14,7 +14,7 @@ import { CMS_ENDPOINT, GOOD_ENDPOINT } from '../lib/endpoints'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 import { extractCodeText, writeToClipboard } from '../utils/clipboard'
-import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { useAdminAuth } from '../hooks/useAdminAuth'
 
 // 遅延ロード: エディタは管理者のみ使用
 const InlinePostEditor = lazy(() => import('../components/InlinePostEditor'))
@@ -83,7 +83,7 @@ function PostDetail() {
 
   // 即座にreveal要素を表示（遅延なし）
   // postが変更されたときにも再実行
-  useReveal(pageRef, [post])
+  useReveal(pageRef, post?.slug)
 
   // proseRefのコールバック（PostContentから受け取る）
   const handleProseRef = useCallback((el: HTMLDivElement | null) => {

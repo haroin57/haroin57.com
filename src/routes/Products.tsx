@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import productsData from '../data/products.json' with { type: 'json' }
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
-import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { useAdminAuth } from '../hooks/useAdminAuth'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
@@ -70,7 +70,7 @@ function Products() {
   }, [])
 
   // reveal要素を表示
-  useReveal(pageRef, [isLoading])
+  useReveal(pageRef, isLoading)
 
   return (
     <div ref={pageRef} className="relative overflow-hidden">

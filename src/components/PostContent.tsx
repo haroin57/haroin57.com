@@ -30,7 +30,7 @@ function notifyTwitterReady() {
 }
 
 // Twitter埋め込みウィジェットをロード
-function useTwitterEmbeds(containerRef: React.RefObject<HTMLDivElement | null>, deps: unknown[]) {
+function useTwitterEmbeds(containerRef: React.RefObject<HTMLDivElement | null>, html: string) {
   const loadWidgets = useCallback(() => {
     const container = containerRef.current
     if (!container) return
@@ -112,8 +112,8 @@ function useTwitterEmbeds(containerRef: React.RefObject<HTMLDivElement | null>, 
       document.head.appendChild(script)
       onTwitterReady(loadWidgets)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
+    
+  }, [containerRef, html, loadWidgets])
 }
 
 // HTMLコンテンツをメモ化したコンポーネント
@@ -132,8 +132,8 @@ const PostContent = memo(function PostContent({
     onProseRef?.(proseRef.current)
   }, [onProseRef])
 
-  useMermaidBlocks(proseRef, [html])
-  useTwitterEmbeds(proseRef, [html])
+  useMermaidBlocks(proseRef, html)
+  useTwitterEmbeds(proseRef, html)
 
   return (
     <div

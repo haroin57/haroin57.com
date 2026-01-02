@@ -1,6 +1,6 @@
-import { useEffect, type DependencyList, type RefObject } from 'react'
+import { useEffect, type RefObject } from 'react'
 
-export function useReveal<T extends HTMLElement>(ref: RefObject<T | null>, deps: DependencyList = []) {
+export function useReveal<T extends HTMLElement>(ref: RefObject<T | null>, triggerKey?: string | number | boolean | null) {
   useEffect(() => {
     const root = ref.current
     if (!root) return
@@ -11,5 +11,5 @@ export function useReveal<T extends HTMLElement>(ref: RefObject<T | null>, deps:
     queueMicrotask(() => {
       targets.forEach((el) => el.classList.add('is-visible'))
     })
-  }, [ref, ...deps])
+  }, [ref, triggerKey])
 }

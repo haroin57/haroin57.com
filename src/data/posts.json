@@ -1,8 +1,8 @@
 [
   {
     "slug": "happy-setup",
-    "title": "HAPPYでClaude Codeをスマホから操作する環境を構築した",
-    "summary": "Claude CodeのセッションをスマホからリモートでモニタリングするためのHAPPYツール群を自前サーバーで構築した話",
+    "title": "HAPPYでClaude Codeをスマホから操作する環境をデプロイした",
+    "summary": "Claude CodeのセッションをスマホからリモートでモニタリングするためのHAPPYツール群を自前サーバーでデプロイした話",
     "createdAt": "2026-01-02",
     "updatedAt": null,
     "status": "published",
@@ -13,6 +13,11 @@
       "Docker"
     ],
     "toc": [
+      {
+        "id": "目次",
+        "text": "目次",
+        "level": 2
+      },
       {
         "id": "happyとは",
         "text": "HAPPYとは",
@@ -97,6 +102,26 @@
         "id": "途中で遭遇した問題たち",
         "text": "途中で遭遇した問題たち",
         "level": 2
+      },
+      {
+        "id": "dnsが想定ipに向かない",
+        "text": "DNSが想定IPに向かない",
+        "level": 3
+      },
+      {
+        "id": "origin-certificate未設定時のtlsエラー",
+        "text": "Origin Certificate未設定時のTLSエラー",
+        "level": 3
+      },
+      {
+        "id": "prisma-schemaがdocker-build-contextに含まれていない",
+        "text": "prisma schemaがDocker build contextに含まれていない",
+        "level": 3
+      },
+      {
+        "id": "docker-composeをpowershellで実行して混乱",
+        "text": "docker composeをPowerShellで実行して混乱",
+        "level": 3
       },
       {
         "id": "現在の状態",
