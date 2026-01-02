@@ -25,7 +25,7 @@ function PageLayout({ children, showBackButton = true, backTo = '/home' }: PageL
       >
         {showBackButton && <BackButton to={backTo} />}
 
-        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 pt-16 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
+        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 pt-10 pb-10 sm:px-6 sm:pt-20 sm:pb-12">
           <div className="flex flex-1 flex-col py-10">
             <div className="mx-auto w-full max-w-2xl">
               {children}
