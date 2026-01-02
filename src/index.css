@@ -1369,39 +1369,136 @@ body {
   }
 }
 
-/* モバイル全般のタッチ操作最適化 */
+/* ======================
+   モバイル最適化
+   ====================== */
+
 @media (max-width: 640px) {
-  /* テーブルのレスポンシブ */
+  /* ----- フォントサイズ最適化 ----- */
+
+  /* 本文を読みやすいサイズに */
+  .prose {
+    font-size: 1rem; /* 16px */
+    line-height: 1.75;
+  }
+
+  .prose p {
+    margin: 0.875rem 0;
+    line-height: 1.75;
+  }
+
+  /* 見出しサイズ調整 */
+  .prose h1 {
+    font-size: 1.375rem; /* 22px */
+    margin: 1.75rem 0 0.75rem;
+  }
+
+  .prose h2 {
+    font-size: 1.2rem; /* 19.2px */
+    margin: 1.5rem 0 0.625rem;
+  }
+
+  .prose h3 {
+    font-size: 1.1rem; /* 17.6px */
+    margin: 1.25rem 0 0.5rem;
+  }
+
+  .prose h4 {
+    font-size: 1.05rem; /* 16.8px */
+  }
+
+  /* コードのフォントサイズ */
+  .prose code {
+    font-size: 0.9rem; /* 14.4px */
+  }
+
+  .prose :not(pre) > code {
+    font-size: 0.875rem; /* 14px */
+    padding: 0.2rem 0.4rem;
+  }
+
+  /* キャプション */
+  .prose .image-caption {
+    font-size: 0.875rem; /* 14px */
+    padding: 0 0.5rem;
+  }
+
+  /* ----- テーブル最適化 ----- */
   .prose table {
-    min-width: 400px;
+    min-width: 340px;
     font-size: 0.875rem;
   }
 
   .prose table th,
   .prose table td {
-    padding: 0.5rem 0.75rem;
+    padding: 0.625rem 0.75rem;
   }
 
-  /* コードブロックのスクロール */
+  .prose .table-wrapper {
+    margin: 1rem -0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  /* ----- コードブロック最適化 ----- */
   .prose pre {
+    padding: 0.875rem 1rem;
+    font-size: 0.8125rem; /* 13px */
     -webkit-overflow-scrolling: touch;
   }
 
-  /* ボタンのタップターゲットサイズ確保 */
+  .prose figure[data-rehype-pretty-code-figure].mdn-code pre {
+    padding: 1rem;
+  }
+
+  .prose figure[data-rehype-pretty-code-figure].mdn-code .mdn-code-header {
+    padding: 0.6rem 0.875rem;
+  }
+
+  .prose figure[data-rehype-pretty-code-figure].mdn-code .mdn-code-lang {
+    font-size: 0.7rem;
+  }
+
+  /* コピーボタン - タップしやすく */
   .mdn-code-copy {
     min-height: 44px;
     min-width: 44px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
   }
 
-  /* リンクのタップターゲット */
+  /* ----- リンク・タップターゲット最適化 ----- */
   .prose a {
-    padding: 2px 0;
+    padding: 4px 0;
+    text-underline-offset: 4px;
   }
 
-  /* 箇条書きのインデント調整 */
+  /* 箇条書き */
   .prose ul,
   .prose ol {
     padding-left: 1.25rem;
+  }
+
+  .prose li {
+    margin: 0.5rem 0;
+    line-height: 1.7;
+  }
+
+  /* ----- コールアウト・ノートカード ----- */
+  .prose .notecard,
+  .prose .callout {
+    padding: 0.875rem 1rem;
+    margin: 1rem -0.25rem;
+    border-radius: 10px;
+  }
+
+  /* ----- 画像 ----- */
+  .prose .image-figure {
+    margin: 1rem -0.25rem;
+  }
+
+  .prose .image-figure img {
+    max-width: 100%;
+    border-radius: 6px;
   }
 }
 
@@ -1777,167 +1874,165 @@ body {
   }
 }
 
-/* ヘッダーバー - コンパクトなボタン */
+/* ヘッダーバー - タップしやすいサイズ（44px以上） */
 .toc-mobile-bar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  max-width: 200px;
-  padding: 0.5rem 0.75rem;
-  background: rgba(23, 23, 23, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.625rem 1rem;
+  background: rgba(20, 20, 20, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
   color: var(--fg);
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: center;
   cursor: pointer;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
-}
-
-.toc-mobile-bar:hover {
-  background: rgba(30, 30, 30, 0.95);
-  border-color: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  transition: all 180ms ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .toc-mobile-bar:active {
-  background: rgba(40, 40, 40, 0.95);
+  transform: scale(0.96);
+  background: rgba(35, 35, 35, 0.95);
 }
 
 /* シェブロンアイコン */
 .toc-mobile-chevron {
   flex-shrink: 0;
   color: var(--fg);
-  opacity: 0.6;
-  transition: transform 250ms ease, opacity 200ms ease;
+  opacity: 0.7;
+  transition: transform 200ms var(--ease-out-quart), opacity 200ms ease;
 }
 
 .toc-mobile-chevron--open {
   transform: rotate(180deg);
-  opacity: 0.9;
+  opacity: 1;
 }
 
 /* 目次ラベル */
 .toc-mobile-label {
   color: var(--fg);
-  opacity: 0.9;
+  opacity: 0.95;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 
-/* ドロップダウン - 右寄せ */
+/* ドロップダウン */
 .toc-mobile-dropdown {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
   left: auto;
-  min-width: 220px;
-  max-width: 280px;
+  width: max-content;
+  min-width: 200px;
+  max-width: min(300px, calc(100vw - 2rem));
   max-height: 0;
   overflow: hidden;
-  background: rgba(18, 18, 18, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  transition: max-height 300ms ease-out, opacity 200ms ease;
+  background: rgba(15, 15, 15, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  transition: max-height 250ms var(--ease-out-quart), opacity 180ms ease;
   opacity: 0;
 }
 
 .toc-mobile-dropdown--open {
-  max-height: 50vh;
+  max-height: 55vh;
   overflow-y: auto;
   opacity: 1;
 }
 
-/* モバイル目次リスト */
+/* モバイル目次リスト - シンプルなデザイン */
 .toc-mobile-list {
   position: relative;
   padding: 0.5rem 0;
 }
 
-/* モバイル用: シンプルな縦線デザイン（ドットの中心を通る） */
+/* モバイル用: タイムラインなしのシンプルリスト */
 .toc-mobile-dropdown .toc-item {
-  --toc-indent: 2rem;
-  --toc-pad-block: 0.5rem;
-  --dot-size: 8px;
-  --dot-left: 1rem;
+  --toc-pad-block: 0;
+  position: relative;
+  margin: 0;
+  padding: 0;
 }
 
-.toc-mobile-dropdown .toc-item--level-3 {
-  --toc-indent: 2rem;
-}
-
-.toc-mobile-dropdown .toc-item--level-4 {
-  --toc-indent: 2rem;
-}
-
-/* 縦線: ドットの中心を通る（left + dot-size/2 - 0.5px） */
-.toc-mobile-dropdown .toc-list::before {
-  left: calc(var(--dot-left, 1rem) + 3.5px);
-  top: 0.75rem;
-  bottom: 0.75rem;
-}
-
-/* ドット: 全レベル共通サイズ・位置 */
-.toc-mobile-dropdown .toc-item::before {
-  left: var(--dot-left);
-  width: var(--dot-size);
-  height: var(--dot-size);
-  border-width: 1.5px;
-}
-
+/* タイムライン要素を非表示 */
+.toc-mobile-dropdown .toc-list::before,
+.toc-mobile-dropdown .toc-item::before,
 .toc-mobile-dropdown .toc-item::after {
-  left: calc(var(--dot-left) + 2.5px);
-  width: 3px;
-  height: 3px;
+  display: none;
 }
 
-/* h3/h4 も同じ位置（階層はインデントで表現しない） */
-.toc-mobile-dropdown .toc-item--level-3::before,
-.toc-mobile-dropdown .toc-item--level-4::before {
-  left: var(--dot-left);
-  width: var(--dot-size);
-  height: var(--dot-size);
-}
-
-.toc-mobile-dropdown .toc-item--level-3::after,
-.toc-mobile-dropdown .toc-item--level-4::after {
-  left: calc(var(--dot-left) + 2.5px);
-  width: 3px;
-  height: 3px;
-}
-
+/* リンク - タップしやすいサイズ（44px以上の高さ） */
 .toc-mobile-dropdown .toc-link {
-  font-size: 0.85rem;
-  padding: var(--toc-pad-block) 0.75rem var(--toc-pad-block) var(--toc-indent);
-  margin: calc(-1 * var(--toc-pad-block)) 0 calc(-1 * var(--toc-pad-block)) calc(-1 * var(--toc-indent));
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.625rem 1rem;
+  margin: 0;
+  font-size: 0.9375rem; /* 15px */
+  line-height: 1.4;
+  color: var(--fg);
+  opacity: 0.8;
+  text-decoration: none;
+  border-radius: 0;
+  transition: background-color 150ms ease, opacity 150ms ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.toc-mobile-dropdown .toc-link::after {
-  display: none; /* モバイルでは#マーク非表示 */
+.toc-mobile-dropdown .toc-link:active {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-/* スクロールバー */
+/* h3はインデント */
+.toc-mobile-dropdown .toc-item--level-3 .toc-link {
+  padding-left: 1.75rem;
+  font-size: 0.875rem; /* 14px */
+  opacity: 0.7;
+}
+
+/* h4はさらにインデント */
+.toc-mobile-dropdown .toc-item--level-4 .toc-link {
+  padding-left: 2.5rem;
+  font-size: 0.8125rem; /* 13px */
+  opacity: 0.6;
+}
+
+/* アクティブ状態 */
+.toc-mobile-dropdown .toc-item--active .toc-link {
+  opacity: 1;
+  color: var(--fg-strong);
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 600;
+}
+
+/* ホバー状態（タッチデバイスでは無視） */
+@media (hover: hover) {
+  .toc-mobile-dropdown .toc-link:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* 区切り線 */
+.toc-mobile-dropdown .toc-item + .toc-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* スクロールバー非表示 */
+.toc-mobile-dropdown {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .toc-mobile-dropdown::-webkit-scrollbar {
-  width: 4px;
+  display: none;
 }
-
-.toc-mobile-dropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.toc-mobile-dropdown::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 2px;
-}
-
-.toc-mobile-dropdown::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-/* 右上配置のため、ページ上部余白は不要 */
