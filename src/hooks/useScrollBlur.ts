@@ -33,6 +33,9 @@ export function useScrollBlur(options: ScrollBlurOptions = {}) {
     // 低性能デバイスではblurを完全に無効化
     // モバイルでは画面が小さいのでブラーを3倍に強化
     const effectiveMaxBlur = isLowPerf ? 0 : (isMobile ? maxBlurPx * 3 : maxBlurPx)
+    // モバイルではより早くブラーを開始し、短い距離で最大値に達する
+    const effectiveStartPx = isMobile ? 0 : startPx
+    const effectiveRangePx = isMobile ? rangePx * 0.5 : rangePx
     // 低性能デバイスではスケールエフェクトも無効化
     const enableScale = !isLowPerf
 
@@ -52,7 +55,7 @@ export function useScrollBlur(options: ScrollBlurOptions = {}) {
 
     const update = () => {
       const y = window.scrollY || 0
-      const t = Math.max(0, Math.min(1, (y - startPx) / rangePx))
+      const t = Math.max(0, Math.min(1, (y - effectiveStartPx) / effectiveRangePx))
 
       // 更新頻度を下げてメインスレッド負荷を軽減（0.05単位で丸める）
       const roundedT = Math.round(t * 20) / 20
