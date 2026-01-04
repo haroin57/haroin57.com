@@ -31,8 +31,8 @@ export function useScrollBlur(options: ScrollBlurOptions = {}) {
     const isMobile = isMobileDevice()
 
     // 低性能デバイスではblurを完全に無効化
-    // モバイルでは画面が小さいのでブラーを1.5倍に強化
-    const effectiveMaxBlur = isLowPerf ? 0 : (isMobile ? maxBlurPx * 1.5 : maxBlurPx)
+    // モバイルでは画面が小さいのでブラーを3倍に強化
+    const effectiveMaxBlur = isLowPerf ? 0 : (isMobile ? maxBlurPx * 3 : maxBlurPx)
     // 低性能デバイスではスケールエフェクトも無効化
     const enableScale = !isLowPerf
 
