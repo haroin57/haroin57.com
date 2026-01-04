@@ -17,17 +17,15 @@ export const isMobileDevice = (): boolean => {
 
 /**
  * 低性能デバイスかどうかを判定
- * Android、CPU並列度、メモリ量で判定
+ * CPU並列度とメモリ量で判定（モバイルでも最近のデバイスは高性能）
  */
 export const isLowPerformanceDevice = (): boolean => {
   if (typeof window === 'undefined') return false
-  const ua = navigator.userAgent.toLowerCase()
-  const isAndroid = /android/i.test(ua)
-  const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua)
-  const lowConcurrency = (navigator.hardwareConcurrency || 4) <= 4
-  const lowMemory = (navigator as { deviceMemory?: number }).deviceMemory !== undefined && (navigator as { deviceMemory?: number }).deviceMemory! < 4
-  // Androidは特に重いのでより厳しく判定
-  return isAndroid || (isMobile && (lowConcurrency || lowMemory))
+  // CPU 2コア以下は確実に低性能
+  const veryLowConcurrency = (navigator.hardwareConcurrency || 4) <= 2
+  // メモリ2GB未満は確実に低性能（deviceMemoryがない場合は判定しない）
+  const veryLowMemory = (navigator as { deviceMemory?: number }).deviceMemory !== undefined && (navigator as { deviceMemory?: number }).deviceMemory! < 2
+  return veryLowConcurrency || veryLowMemory
 }
 
 /**

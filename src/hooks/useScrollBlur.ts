@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { isMobileDevice, isLowPerformanceDevice } from '../utils/device'
+import { isLowPerformanceDevice } from '../utils/device'
 
 type ScrollBlurOptions = {
   startPx?: number
@@ -26,13 +26,12 @@ export function useScrollBlur(options: ScrollBlurOptions = {}) {
     const body = document.body
     body.classList.add('post-detail-page')
 
-    // モバイル/低性能デバイスではblurを無効化または軽量化
-    const isMobile = isMobileDevice()
+    // 低性能デバイスではblurを無効化、それ以外はフルで適用
     const isLowPerf = isLowPerformanceDevice()
 
     // 低性能デバイスではblurを完全に無効化
-    // モバイルではblur量を半減
-    const effectiveMaxBlur = isLowPerf ? 0 : (isMobile ? maxBlurPx * 0.5 : maxBlurPx)
+    // モバイルでも最近のデバイスは十分高性能なのでフル適用
+    const effectiveMaxBlur = isLowPerf ? 0 : maxBlurPx
     // 低性能デバイスではスケールエフェクトも無効化
     const enableScale = !isLowPerf
 
