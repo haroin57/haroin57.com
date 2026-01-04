@@ -12,21 +12,36 @@ type TwitterWindow = Window & {
 }
 
 // グローバルでスクリプトのロード状態を管理
-let twitterScriptStatus: 'idle' | 'loading' | 'ready' | 'error' = 'idle'
-const twitterReadyCallbacks: Array<() => void> = []
+// HMR時にリセットされないようwindowオブジェクトに格納
+type TwitterState = {
+  status: 'idle' | 'loading' | 'ready' | 'error'
+  callbacks: Array<() => void>
+}
+const TWITTER_STATE_KEY = '__twitterWidgetState' as const
+type WindowWithTwitterState = Window & { [TWITTER_STATE_KEY]?: TwitterState }
+
+function getTwitterState(): TwitterState {
+  const win = window as WindowWithTwitterState
+  if (!win[TWITTER_STATE_KEY]) {
+    win[TWITTER_STATE_KEY] = { status: 'idle', callbacks: [] }
+  }
+  return win[TWITTER_STATE_KEY]
+}
 
 function onTwitterReady(callback: () => void) {
-  if (twitterScriptStatus === 'ready') {
+  const state = getTwitterState()
+  if (state.status === 'ready') {
     callback()
   } else {
-    twitterReadyCallbacks.push(callback)
+    state.callbacks.push(callback)
   }
 }
 
 function notifyTwitterReady() {
-  twitterScriptStatus = 'ready'
-  twitterReadyCallbacks.forEach(cb => cb())
-  twitterReadyCallbacks.length = 0
+  const state = getTwitterState()
+  state.status = 'ready'
+  state.callbacks.forEach(cb => cb())
+  state.callbacks.length = 0
 }
 
 // Twitter埋め込みウィジェットをロード
@@ -62,27 +77,28 @@ function useTwitterEmbeds(containerRef: React.RefObject<HTMLDivElement | null>, 
     if (twitterEmbeds.length === 0) return
 
     const win = window as TwitterWindow
+    const state = getTwitterState()
 
     // 既にtwttrが準備できている場合
-    if (twitterScriptStatus === 'ready' && win.twttr?.widgets?.load) {
+    if (state.status === 'ready' && win.twttr?.widgets?.load) {
       loadWidgets()
       return
     }
 
     // スクリプトがエラーの場合は再試行
-    if (twitterScriptStatus === 'error') {
-      twitterScriptStatus = 'idle'
+    if (state.status === 'error') {
+      state.status = 'idle'
     }
 
     // スクリプトをロード中または準備完了待ち
-    if (twitterScriptStatus === 'loading') {
+    if (state.status === 'loading') {
       onTwitterReady(loadWidgets)
       return
     }
 
     // スクリプトがまだロードされていない場合
-    if (twitterScriptStatus === 'idle') {
-      twitterScriptStatus = 'loading'
+    if (state.status === 'idle') {
+      state.status = 'loading'
 
       const script = document.createElement('script')
       script.src = 'https://platform.twitter.com/widgets.js'
@@ -104,14 +120,14 @@ function useTwitterEmbeds(containerRef: React.RefObject<HTMLDivElement | null>, 
             // 最大5秒待機
             setTimeout(() => waitForReady(retries + 1), 100)
           } else {
-            twitterScriptStatus = 'error'
+            state.status = 'error'
           }
         }
         waitForReady()
       }
 
       script.onerror = () => {
-        twitterScriptStatus = 'error'
+        state.status = 'error'
         console.warn('Twitter widget script failed to load')
       }
 

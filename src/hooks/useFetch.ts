@@ -31,6 +31,8 @@ export function useFetch<T, R = unknown>(
   const [isLoading, setIsLoading] = useState(url !== null && !skipInitial)
   const [error, setError] = useState<Error | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+  // SSRハイドレーション時の初回フェッチをスキップするためのフラグ
+  // 一度スキップしたら以降はフェッチを許可する（refなので再レンダリングでリセットされない）
   const initialFetchSkipped = useRef(skipInitial)
 
   // headers と transform を安定化
@@ -80,6 +82,8 @@ export function useFetch<T, R = unknown>(
 
   useEffect(() => {
     // skipInitialFetchの場合、初回のみスキップ
+    // Note: initialFetchSkipped.currentは一度falseになったら変わらないので
+    // fetchDataが依存配列に入っていれば以降のURL変更時に正しくフェッチされる
     if (initialFetchSkipped.current) {
       initialFetchSkipped.current = false
       return

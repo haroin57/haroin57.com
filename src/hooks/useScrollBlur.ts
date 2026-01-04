@@ -64,9 +64,9 @@ export function useScrollBlur(options: ScrollBlurOptions = {}) {
       const scale = enableScale ? 1 + blur / 140 : 1
       const opacity = 1 - t * (1 - minOpacity)
 
-      // CSSカスタムプロパティを更新
+      // CSSカスタムプロパティを更新（すべて小数点以下2桁で統一）
       if (effectiveMaxBlur > 0 && blur >= 0.05) {
-        const blurValue = `${blur.toFixed(1)}px`
+        const blurValue = `${blur.toFixed(2)}px`
         body.style.setProperty('--bg-filter', `blur(${blurValue})`)
         body.style.setProperty('--bg-blur', blurValue)
       } else {
@@ -74,8 +74,8 @@ export function useScrollBlur(options: ScrollBlurOptions = {}) {
         body.style.removeProperty('--bg-blur')
       }
 
-      if (enableScale && Math.abs(scale - 1) >= 0.001) {
-        body.style.setProperty('--bg-scale', scale.toFixed(3))
+      if (enableScale && Math.abs(scale - 1) >= 0.01) {
+        body.style.setProperty('--bg-scale', scale.toFixed(2))
       } else {
         body.style.removeProperty('--bg-scale')
       }
