@@ -12,13 +12,14 @@
 4. [コンポーネント](#コンポーネント)
 5. [ルート（ページ）](#ルートページ)
 6. [管理者機能](#管理者機能)
-7. [ライブラリ・ユーティリティ](#ライブラリユーティリティ)
-8. [データファイル](#データファイル)
-9. [依存関係一覧](#依存関係一覧)
-10. [セキュリティ実装](#セキュリティ実装)
-11. [pv-worker.ts 詳細解説](#pv-workerts-詳細解説)
-12. [ローカル記事のデプロイ](#ローカル記事のデプロイ)
-13. [初学者向けガイド](#初学者向けガイド)
+7. [カスタムフック](#カスタムフック)
+8. [ユーティリティ](#ユーティリティ)
+9. [データファイル](#データファイル)
+10. [依存関係一覧](#依存関係一覧)
+11. [セキュリティ実装](#セキュリティ実装)
+12. [pv-worker.ts 詳細解説](#pv-workerts-詳細解説)
+13. [ローカル記事のデプロイ](#ローカル記事のデプロイ)
+14. [初学者向けガイド](#初学者向けガイド)
 
 ---
 
@@ -49,10 +50,19 @@ src/
 │       └── MarkdownEditor.tsx  # Markdownエディタ（画像アップロード対応）
 ├── hooks/
 │   ├── useMermaidBlocks.ts     # Mermaidダイアグラムレンダリングフック
-│   └── ...                     # その他フック
+│   ├── useCodeBlockCopy.ts     # コードブロックコピー機能フック
+│   ├── useFetch.ts             # 汎用データフェッチフック
+│   ├── useScrollBlur.ts        # スクロール連動背景ブラーフック
+│   ├── useScrollToTop.ts       # ページトップスクロールフック
+│   ├── usePageMeta.ts          # ページメタタグ管理フック
+│   ├── useReveal.ts            # アニメーション表示フック
+│   └── useAdminAuth.ts         # 認証コンテキスト取得フック
 ├── utils/
 │   ├── mermaid.ts              # Mermaidライブラリロード・レンダリング
-│   └── ...                     # その他ユーティリティ
+│   ├── clipboard.ts            # クリップボード操作ユーティリティ
+│   ├── date.ts                 # 日付フォーマットユーティリティ
+│   ├── device.ts               # デバイス判定ユーティリティ
+│   └── title.ts                # タイトル生成ユーティリティ
 ├── routes/
 │   ├── Home.tsx                # ホームページ（コンテンツ一覧）
 │   ├── Posts.tsx               # 記事一覧ページ
@@ -523,6 +533,276 @@ Mermaidライブラリのロードとレンダリングを行うユーティリ�
 
 **依存関係:**
 - `mermaid`（動的import）
+
+---
+
+### `src/hooks/useCodeBlockCopy.ts`
+
+コードブロックのコピーボタン機能を提供するフック。
+
+**シグネチャ:**
+
+```typescript
+function useCodeBlockCopy(
+  ref: RefObject<HTMLElement | null>,
+  dependency?: unknown
+): void
+```
+
+**機能:**
+- イベント委譲によるコピーボタンクリック検出
+- `figure[data-rehype-pretty-code-figure]`内のコードを抽出
+- クリップボードへのコピー（フォールバック対応）
+- コピー成功時のビジュアルフィードバック（1.2秒後にリセット）
+- 複数のタイマーを適切に管理・クリーンアップ
+
+**依存関係:**
+- `react`: `useEffect`, `RefObject`
+- `../utils/clipboard`: `extractCodeText`, `writeToClipboard`
+
+---
+
+### `src/hooks/useFetch.ts`
+
+汎用データフェッチフック（フォールバック対応）。
+
+**型定義:**
+
+```typescript
+type FetchState<T> = {
+  data: T
+  isLoading: boolean
+  error: Error | null
+  refetch: () => void
+}
+
+type FetchOptions<T, R = unknown> = {
+  headers?: Record<string, string>
+  fallback?: T
+  transform?: (data: R) => T
+  skipInitialFetch?: boolean  // SSRハイドレーション時に初回フェッチをスキップ
+}
+```
+
+**エクスポートされる関数:**
+
+| 関数名 | 説明 |
+|--------|------|
+| `useFetch<T, R>(url, options?)` | 汎用データフェッチフック |
+| `useFetchOptions<T, R>(options)` | メモ化されたフェッチオプションを作成 |
+| `useAuthFetch<T, R>(url, idToken, options?)` | 認証付きフェッチフック |
+
+**機能:**
+- AbortControllerによるリクエストキャンセル
+- エラー時のフォールバックデータ維持
+- レスポンスのトランスフォーム機能
+- SSRハイドレーション対応（`skipInitialFetch`オプション）
+- 認証ヘッダーの自動付与（`useAuthFetch`）
+
+**依存関係:**
+- `react`: `useEffect`, `useState`, `useRef`, `useCallback`, `useMemo`
+
+---
+
+### `src/hooks/useScrollBlur.ts`
+
+スクロールに応じた背景ブラーエフェクトを適用するフック。
+
+**型定義:**
+
+```typescript
+type ScrollBlurOptions = {
+  startPx?: number      // ブラー開始位置（デフォルト: 48）
+  rangePx?: number      // ブラー変化範囲（デフォルト: 420）
+  maxBlurPx?: number    // 最大ブラー量（デフォルト: 12）
+  maxExtraWash?: number // 最大追加wash（デフォルト: 0.2）
+  minOpacity?: number   // 最小透明度（デフォルト: 0.65）
+}
+```
+
+**機能:**
+- スクロール位置に応じたCSS変数の動的更新（`--bg-blur`, `--bg-scale`, `--bg-wash`, `--bg-opacity`）
+- `requestAnimationFrame`によるスムーズなアニメーション
+- モバイル/低性能デバイスでの自動軽量化（ブラー半減または無効化）
+- 更新頻度の最適化（0.05単位で丸めて不要な更新を防止）
+- スクロール進行時のアニメーション停止制御
+- クリーンアップ時のCSS変数リセット
+
+**依存関係:**
+- `react`: `useEffect`
+- `../utils/device`: `isMobileDevice`, `isLowPerformanceDevice`
+
+---
+
+### `src/hooks/useScrollToTop.ts`
+
+ページトップへのスクロールを行うシンプルなフック。
+
+**シグネチャ:**
+
+```typescript
+function useScrollToTop(): void
+```
+
+**機能:**
+- マウント時に`window.scrollTo({ top: 0, behavior: 'auto' })`を実行
+- ページ遷移時のスクロール位置リセット用
+
+**依存関係:**
+- `react`: `useEffect`
+
+---
+
+### `src/hooks/usePageMeta.ts`
+
+ページのメタタグを動的に管理するフック。
+
+**型定義:**
+
+```typescript
+type PageMeta = {
+  title?: string
+  description?: string
+  ogTitle?: string
+  ogDescription?: string
+  ogUrl?: string
+  twitterTitle?: string
+  twitterDescription?: string
+}
+```
+
+**機能:**
+- `document.title`の更新
+- OGP（Open Graph Protocol）メタタグの更新
+- Twitterカードメタタグの更新
+- 存在しないメタタグの自動作成
+- デフォルト値へのフォールバック
+
+**依存関係:**
+- `react`: `useEffect`
+- `react-router-dom`: `useLocation`
+
+---
+
+### `src/hooks/useReveal.ts`
+
+`.reveal`クラスを持つ要素にアニメーション表示クラスを付与するフック。
+
+**シグネチャ:**
+
+```typescript
+function useReveal<T extends HTMLElement>(
+  ref: RefObject<T | null>,
+  triggerKey?: string | number | boolean | null
+): void
+```
+
+**機能:**
+- 指定したコンテナ内の`.reveal`要素を検出
+- `queueMicrotask`で即座に`.is-visible`クラスを追加
+- `triggerKey`の変更で再トリガー可能
+
+**依存関係:**
+- `react`: `useEffect`, `RefObject`
+
+---
+
+### `src/hooks/useAdminAuth.ts`
+
+管理者認証コンテキストを取得するフック。
+
+**シグネチャ:**
+
+```typescript
+function useAdminAuth(): AdminAuthContextType
+```
+
+**機能:**
+- `AdminAuthContext`からコンテキスト値を取得
+- プロバイダー外での使用時にエラーをスロー
+
+**依存関係:**
+- `react`: `useContext`
+- `../contexts/AdminAuthContextDef`: `AdminAuthContext`
+
+---
+
+### `src/utils/clipboard.ts`
+
+クリップボード操作ユーティリティ。
+
+**関数:**
+
+| 関数名 | 説明 |
+|--------|------|
+| `extractCodeText(codeElement)` | コード要素からテキストを抽出（行番号対応） |
+| `writeToClipboard(text)` | クリップボードへ書き込み（フォールバック対応） |
+
+**機能:**
+- `[data-line]`属性を持つ行要素からの改行区切りテキスト抽出
+- `navigator.clipboard.writeText` API使用
+- フォールバック: テキストエリア経由の`execCommand('copy')`
+
+---
+
+### `src/utils/date.ts`
+
+日付フォーマットユーティリティ。
+
+**関数:**
+
+| 関数名 | 戻り値例 | 説明 |
+|--------|---------|------|
+| `formatRelativeDate(dateStr)` | "3 days ago" | 相対日時表記に変換 |
+| `formatDisplayDate(isoDate)` | "2025/01/02 12:30" | 表示用フォーマットに変換 |
+| `formatDateOnly(isoDate)` | "2025-01-02" | 日付のみに変換 |
+
+**`formatRelativeDate`の出力パターン:**
+- `Today`: 今日
+- `Yesterday`: 昨日
+- `X days ago`: 2〜6日前
+- `X week(s) ago`: 1〜4週間前
+- `X month(s) ago`: 1〜11ヶ月前
+- `X year(s) ago`: 1年以上前
+
+---
+
+### `src/utils/device.ts`
+
+デバイス判定ユーティリティ。
+
+**関数:**
+
+| 関数名 | 戻り値 | 説明 |
+|--------|--------|------|
+| `isMobileDevice()` | `boolean` | モバイルデバイスかどうか |
+| `isLowPerformanceDevice()` | `boolean` | 低性能デバイスかどうか |
+| `getOptimalRenderScale()` | `number` | 最適なレンダースケール（0.5〜1.0） |
+| `getTargetFPS()` | `number` | 目標FPS（30または60） |
+
+**判定基準:**
+- モバイル: User-Agent + 画面幅768px未満
+- 低性能: Android、CPU並列度4以下、メモリ4GB未満
+- Androidデバイスは特に厳しく判定
+
+---
+
+### `src/utils/title.ts`
+
+ページタイトル生成ユーティリティ。
+
+**定数:**
+
+| 定数名 | 値 | 説明 |
+|--------|-----|------|
+| `SITE_TITLE` | `'haroin57 web'` | サイトタイトル |
+
+**関数:**
+
+| 関数名 | 説明 |
+|--------|------|
+| `stripLeadingSlugOrUrl(value)` | 先頭のスラッグやURLプレフィックスを除去 |
+| `buildDocumentTitle(parts)` | パーツを` \| `で結合してタイトルを生成（最大4パーツ） |
 
 ---
 

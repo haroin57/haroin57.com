@@ -1,6 +1,5 @@
 /* Google Fonts は index.html で非ブロッキング読み込み */
-
-@import 'katex/dist/katex.min.css';
+/* KaTeX CSS は PostContent で遅延ロード */
 
 @tailwind base;
 @tailwind components;

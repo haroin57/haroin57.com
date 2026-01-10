@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@uiw/react-md-editor": "^4.0.11",
-    "better-sqlite3": "^12.4.6",
     "claude": "^0.1.1",
     "fast-glob": "^3.3.3",
     "firebase": "^12.7.0",
@@ -40,8 +39,7 @@
     "remark-math": "^6.0.0",
     "remark-rehype": "^11.1.2",
     "remark-slug": "^7.0.1",
-    "remark-toc": "^9.0.0",
-    "sqlite3": "^5.1.7"
+    "remark-toc": "^9.0.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251229.0",

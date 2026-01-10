@@ -1,6 +1,18 @@
 import { useEffect, useRef, memo, useCallback } from 'react'
 import { useMermaidBlocks } from '../hooks/useMermaidBlocks'
 
+// KaTeX CSSを遅延ロード（数式を含むページでのみ読み込み）
+let katexCssLoaded = false
+function loadKatexCss() {
+  if (katexCssLoaded || typeof document === 'undefined') return
+  katexCssLoaded = true
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css'
+  link.crossOrigin = 'anonymous'
+  document.head.appendChild(link)
+}
+
 // Twitter埋め込みウィジェットの型定義
 type TwitterWindow = Window & {
   twttr?: {
@@ -148,6 +160,14 @@ const PostContent = memo(function PostContent({
   onProseRef?: (el: HTMLDivElement | null) => void
 }) {
   const proseRef = useRef<HTMLDivElement | null>(null)
+
+  // KaTeX数式が含まれている場合のみCSSをロード
+  const hasKatex = html.includes('katex') || html.includes('math-display')
+  useEffect(() => {
+    if (hasKatex) {
+      loadKatexCss()
+    }
+  }, [hasKatex])
 
   // refを親に伝える
   useEffect(() => {

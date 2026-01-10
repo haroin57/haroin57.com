@@ -1,15 +1,17 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { Suspense } from 'react'
+import { Suspense, lazy } from 'react'
 import App from '../App'
-import Home from '../routes/Home'
-import Posts from '../routes/Posts'
-import PostDetail from '../routes/PostDetail'
-import Products from '../routes/Products'
-import ProductDetail from '../routes/ProductDetail'
-import Photos from '../routes/Photos'
-import About from '../routes/About'
-import BBSList from '../routes/BBSList'
-import BBSThread from '../routes/BBSThread'
+
+// SSR用も遅延ロードに統一（クライアントと同じチャンク分割を実現）
+const Home = lazy(() => import('../routes/Home'))
+const Posts = lazy(() => import('../routes/Posts'))
+const PostDetail = lazy(() => import('../routes/PostDetail'))
+const Products = lazy(() => import('../routes/Products'))
+const ProductDetail = lazy(() => import('../routes/ProductDetail'))
+const Photos = lazy(() => import('../routes/Photos'))
+const About = lazy(() => import('../routes/About'))
+const BBSList = lazy(() => import('../routes/BBSList'))
+const BBSThread = lazy(() => import('../routes/BBSThread'))
 
 function ServerRoutes() {
   const location = useLocation()

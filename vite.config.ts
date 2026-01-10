@@ -32,22 +32,41 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id: string) => {
-          // React関連を別チャンクに (Windows/Unix両対応)
-          if (id.includes('node_modules/react') || id.includes('node_modules\\react')) {
+          // パスの正規化（Windows/Unix両対応）
+          const normalizedId = id.replace(/\\/g, '/')
+
+          // React関連を別チャンクに
+          if (normalizedId.includes('node_modules/react')) {
             return 'react-vendor'
           }
-          // mermaidを完全に分離（動的インポート時のみ読み込み）
-          if (id.includes('node_modules/mermaid') || id.includes('node_modules\\mermaid') ||
-              id.includes('node_modules/cytoscape') || id.includes('node_modules\\cytoscape') ||
-              id.includes('node_modules/dagre') || id.includes('node_modules\\dagre') ||
-              id.includes('node_modules/elkjs') || id.includes('node_modules\\elkjs')) {
-            return 'mermaid'
+
+          // Firebase（認証機能）を別チャンクに - 管理画面でのみ使用
+          if (normalizedId.includes('node_modules/firebase') ||
+              normalizedId.includes('node_modules/@firebase')) {
+            return 'firebase'
           }
-          // 重いライブラリを分離
-          if (id.includes('node_modules/remark') || id.includes('node_modules\\remark') ||
-              id.includes('node_modules/rehype') || id.includes('node_modules\\rehype')) {
-            return 'markdown'
+
+          // p5.js（背景アニメーション）を別チャンクに
+          if (normalizedId.includes('node_modules/p5')) {
+            return 'p5'
           }
+
+          // Markdown Editor（管理画面）を別チャンクに
+          if (normalizedId.includes('node_modules/@uiw/react-md-editor') ||
+              normalizedId.includes('node_modules/@uiw/react-markdown-preview')) {
+            return 'md-editor'
+          }
+
+          // コードハイライト関連を別チャンクに
+          if (normalizedId.includes('node_modules/refractor') ||
+              normalizedId.includes('node_modules/react-refractor') ||
+              normalizedId.includes('node_modules/prismjs')) {
+            return 'syntax-highlight'
+          }
+
+          // 注意: mermaid, remark, rehype は動的インポートされているため
+          // manualChunksで指定しない（自動的に別チャンクになる）
+
           return undefined
         },
       },
