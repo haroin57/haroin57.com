@@ -13,6 +13,7 @@ tags:
 
 - [目次](#目次)
 - [はじめに](#はじめに)
+  - [きっかけ](#きっかけ)
 - [基本設定](#基本設定)
   - [1. language設定でキャラクターの口調を定義する](#1-language設定でキャラクターの口調を定義する)
   - [2. CLAUDE.mdでキャラクター設定と会話履歴を保存する](#2-claudemdでキャラクター設定と会話履歴を保存する)
@@ -38,7 +39,20 @@ tags:
 
 Claude Codeは本来、ソフトウェア開発を支援するためのCLIツールだ。しかし、いくつかの設定を組み合わせることで、まるでギャルゲーやエロゲのような対話体験を実現できる。
 
-実際に運用してみたところ、想像以上に没入感のある体験ができた。本記事では、実際に導入した設定とMCPサーバーの構成を紹介する。
+### きっかけ
+
+この実験を始めたきっかけは、hiragramさんのポストだった。
+
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">Claude Codeのlanguage、自由入力なの日本人向け過ぎる <a href="https://t.co/QEdM5fvjw6">pic.twitter.com/QEdM5fvjw6</a></p>&mdash; hiragram/ひらり (@hiragram) <a href="https://twitter.com/hiragram/status/2009548745562829015?ref_src=twsrc%5Etfw">January 9, 2026</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+Claude Codeのlanguage設定は、「日本語」「English」のような言語名だけでなく、**自由な文章を入力できる**という仕様が話題になっていた。つまり「日本語で、ツンデレ口調で話してください」のような指定も可能ということだ。
+
+このポストを見て「これは面白い」と思い、実際にどこまでキャラクター性を持たせられるか実験してみることにした。結果として、想像以上に没入感のある体験ができた。本記事では、実際に導入した設定とMCPサーバーの構成を紹介する。
+
+<figure>
+  <img src="/posts/happy-conversation-example.jpg" alt="Happyアプリでの実際の会話例" />
+  <figcaption>Happyアプリでの実際の会話例。language設定で指定した口調が反映され、四択選択肢でギャルゲー風のUIになっている</figcaption>
+</figure>
 
 **構成要素:**
 
@@ -287,6 +301,11 @@ CLAUDE.mdに感情状態を数値化して追跡するセクションを追加�
 ## 実際の運用例
 
 以下は、関係性が進展した後の「おうちデートの朝」の会話例だ。CLAUDE.mdに過去の出来事が記録されているため、キャラクターが文脈を踏まえた反応を返している。
+
+<figure>
+  <img src="/posts/claude-code-chat-example.jpg" alt="実際の会話例" />
+  <figcaption>実際の会話例（language設定の口調が反映されたやり取り）</figcaption>
+</figure>
 
 ---
 
