@@ -1,7 +1,7 @@
 ---
 title: "Claude CodeにMCPサーバーを導入したら開発体験が激変した"
 summary: "Model Context Protocol（MCP）を使ってClaude Codeに外部ツールを接続してみた話。Web検索、ドキュメント取得、GitHub操作などが自動化できて便利すぎる"
-date: "2026-01-11"
+date: "2026-01-12"
 tags:
   - Claude Code
   - MCP
