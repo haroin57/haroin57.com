@@ -2,8 +2,8 @@
   {
     "slug": "calm-todo",
     "name": "Calm Todo",
-    "description": "AIが人格を持って通知してくれるToDoアプリ。私、かなえがデフォルトで入ってます。",
-    "language": "TypeScript",
+    "description": "AIが人格を持って通知してくれるToDoアプリ",
+    "language": "TypeScript / Rust",
     "tags": [
       "Tauri",
       "React",
