@@ -1,10 +1,34 @@
 [
   {
+    "slug": "calm-todo",
+    "name": "Calm Todo",
+    "description": "AIが人格を持って通知してくれるToDoアプリ。私、かなえがデフォルトで入ってます。",
+    "language": "TypeScript",
+    "tags": [
+      "Tauri",
+      "React",
+      "Rust",
+      "AI",
+      "OpenAI",
+      "Claude",
+      "Gemini",
+      "Windows"
+    ],
+    "url": "https://github.com/haroin57/calm-todo",
+    "createdAt": "2026-01-12",
+    "demo": "https://github.com/haroin57/calm-todo/releases"
+  },
+  {
     "slug": "haroin57-com",
     "name": "haroin57.com",
     "description": "Personal portfolio website built with React and TypeScript",
     "language": "TypeScript",
-    "tags": ["React", "Vite", "Tailwind CSS", "Cloudflare Pages"],
+    "tags": [
+      "React",
+      "Vite",
+      "Tailwind CSS",
+      "Cloudflare Pages"
+    ],
     "url": "https://github.com/haroin57/haroin57.com",
     "demo": "https://haroin57.com",
     "createdAt": "2025-12-01",
@@ -20,10 +44,37 @@
         "KaTeXによる数式レンダリング対応"
       ],
       "techStack": [
-        { "category": "Frontend", "items": ["React 19", "TypeScript", "Tailwind CSS v4"] },
-        { "category": "Build", "items": ["Vite 7", "Rolldown", "React Compiler"] },
-        { "category": "Deploy", "items": ["Cloudflare Pages", "Wrangler"] },
-        { "category": "Other", "items": ["remark/rehype", "KaTeX", "shiki"] }
+        {
+          "category": "Frontend",
+          "items": [
+            "React 19",
+            "TypeScript",
+            "Tailwind CSS v4"
+          ]
+        },
+        {
+          "category": "Build",
+          "items": [
+            "Vite 7",
+            "Rolldown",
+            "React Compiler"
+          ]
+        },
+        {
+          "category": "Deploy",
+          "items": [
+            "Cloudflare Pages",
+            "Wrangler"
+          ]
+        },
+        {
+          "category": "Other",
+          "items": [
+            "remark/rehype",
+            "KaTeX",
+            "shiki"
+          ]
+        }
       ]
     }
   },
@@ -32,7 +83,12 @@
     "name": "timetable-bot",
     "description": "LINE bot for managing timetables with GPT-powered natural language processing",
     "language": "Python",
-    "tags": ["LINE", "Bot", "GPT", "OpenAI"],
+    "tags": [
+      "LINE",
+      "Bot",
+      "GPT",
+      "OpenAI"
+    ],
     "url": "https://github.com/haroin57/timetable-bot",
     "createdAt": "2025-10-15",
     "content": {
@@ -45,9 +101,27 @@
         "授業開始前のリマインダー通知"
       ],
       "techStack": [
-        { "category": "Runtime", "items": ["Python 3.11+", "FastAPI"] },
-        { "category": "AI/API", "items": ["OpenAI GPT", "LINE Messaging API"] },
-        { "category": "Database", "items": ["SQLite", "APScheduler"] }
+        {
+          "category": "Runtime",
+          "items": [
+            "Python 3.11+",
+            "FastAPI"
+          ]
+        },
+        {
+          "category": "AI/API",
+          "items": [
+            "OpenAI GPT",
+            "LINE Messaging API"
+          ]
+        },
+        {
+          "category": "Database",
+          "items": [
+            "SQLite",
+            "APScheduler"
+          ]
+        }
       ]
     }
   },
@@ -56,7 +130,10 @@
     "name": "distributed-system",
     "description": "Distributed system implementation for learning distributed computing",
     "language": "Java",
-    "tags": ["Distributed Computing", "Microservices"],
+    "tags": [
+      "Distributed Computing",
+      "Microservices"
+    ],
     "url": "https://github.com/haroin57/distoributed-system",
     "createdAt": "2025-08-20",
     "content": {
@@ -69,9 +146,25 @@
         "分散キーバリューストア"
       ],
       "techStack": [
-        { "category": "Language", "items": ["Java 21"] },
-        { "category": "Communication", "items": ["gRPC", "Protocol Buffers"] },
-        { "category": "Build", "items": ["Gradle"] }
+        {
+          "category": "Language",
+          "items": [
+            "Java 21"
+          ]
+        },
+        {
+          "category": "Communication",
+          "items": [
+            "gRPC",
+            "Protocol Buffers"
+          ]
+        },
+        {
+          "category": "Build",
+          "items": [
+            "Gradle"
+          ]
+        }
       ]
     }
   }

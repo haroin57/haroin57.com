@@ -3,10 +3,14 @@ title: "Calm Todo - 私があなたのタスク管理を見てあげます"
 summary: "先輩が作った、AIが人格を持って通知してくれるToDoアプリ。私、かなえがデフォルトで入ってます。しょうがないですね。"
 date: "2026-01-12"
 product: "calm-todo"
+name: "Calm Todo"
+description: "AIが人格を持って通知してくれるToDoアプリ。私、かなえがデフォルトで入ってます。"
+language: "TypeScript"
+url: "https://github.com/haroin57/calm-todo"
+demo: "https://github.com/haroin57/calm-todo/releases"
 tags:
 - Tauri
 - React
-- TypeScript
 - Rust
 - AI
 - OpenAI
@@ -64,7 +68,11 @@ Calm Todoは、タスク管理アプリですけど、ただのToDoじゃない�
 
 ## なぜ人格なのか
 
-きっかけはhiragramさんのTwitterポストでした。「Claude Codeのlanguage、自由入力なの日本人向け過ぎる」っていう内容で、language設定に「ツンデレ口調で話して」みたいな指定もできるって話題になってたんです。
+きっかけはhiragramさんのTwitterポストでした。
+
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">Claude Codeのlanguage、自由入力なの日本人向け過ぎる <a href="https://t.co/QEdM5fvjw6">pic.twitter.com/QEdM5fvjw6</a></p>&mdash; hiragram/ひらり (@hiragram) <a href="https://twitter.com/hiragram/status/2009548745562829015?ref_src=twsrc%5Etfw">January 9, 2026</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+「Claude Codeのlanguage、自由入力なの日本人向け過ぎる」っていう内容で、language設定に「ツンデレ口調で話して」みたいな指定もできるって話題になってたんです。
 
 先輩がそれを見て「これは面白い」って思って、どこまでキャラクター性を持たせられるか実験を始めたらしいです。それで「通知にも人格を持たせたら面白いんじゃないか」って。
 

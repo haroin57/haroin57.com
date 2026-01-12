@@ -17,6 +17,7 @@ import { toString } from 'mdast-util-to-string'
 
 const PRODUCTS_DIR = path.join(process.cwd(), 'content/products')
 const OUT_PATH = path.join(process.cwd(), 'src/data/product-posts.json')
+const PRODUCTS_JSON_PATH = path.join(process.cwd(), 'src/data/products.json')
 
 type HastNode = { type: string; [key: string]: unknown }
 type HastRoot = { type: 'root'; children: HastNode[] }
@@ -42,6 +43,17 @@ type TocItem = {
   id: string
   text: string
   level: number
+}
+
+type Product = {
+  slug: string
+  name: string
+  description: string
+  language: string
+  tags: string[]
+  url: string
+  demo?: string
+  createdAt: string | null
 }
 
 /** HTMLから見出しを抽出（tocがない場合のフォールバック用） */
@@ -97,6 +109,16 @@ function extractTocFromMarkdown(markdown: string): TocItem[] {
 async function main() {
   const files = await fg('**/*.md', { cwd: PRODUCTS_DIR })
   const productPosts = []
+  const products: Product[] = []
+
+  // 既存のproducts.jsonを読み込む（Markdown化されていないプロダクトを保持するため）
+  let existingProducts: Product[] = []
+  try {
+    const existingData = await fs.readFile(PRODUCTS_JSON_PATH, 'utf8')
+    existingProducts = JSON.parse(existingData)
+  } catch {
+    // ファイルが存在しない場合は空配列
+  }
 
 
   const CODE_LANGUAGE_LABELS: Record<string, string> = {
@@ -728,12 +750,43 @@ async function main() {
       toc,
       html,
     })
+
+    // products.json用のエントリを作成（frontmatterにname, description, language, urlがある場合のみ）
+    if (data.name && data.url) {
+      const product: Product = {
+        slug: data.product || slug,
+        name: data.name,
+        description: data.description || data.summary || '',
+        language: data.language || 'TypeScript',
+        tags,
+        url: data.url,
+        createdAt: data.date || null,
+      }
+      if (data.demo) {
+        product.demo = data.demo
+      }
+      products.push(product)
+    }
   }
 
   productPosts.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+
+  // Markdownから生成したproductsのslugリスト
+  const generatedSlugs = new Set(products.map((p) => p.slug))
+
+  // 既存のproducts.jsonから、Markdownファイルがないプロダクトを保持
+  const legacyProducts = existingProducts.filter((p) => !generatedSlugs.has(p.slug))
+
+  // マージして日付でソート（Markdown生成分を優先）
+  const allProducts = [...products, ...legacyProducts]
+  allProducts.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+
   await fs.mkdir(path.dirname(OUT_PATH), { recursive: true })
   await fs.writeFile(OUT_PATH, JSON.stringify(productPosts, null, 2), 'utf8')
   console.log(`Generated ${productPosts.length} product posts -> ${OUT_PATH}`)
+
+  await fs.writeFile(PRODUCTS_JSON_PATH, JSON.stringify(allProducts, null, 2), 'utf8')
+  console.log(`Generated ${allProducts.length} products -> ${PRODUCTS_JSON_PATH}`)
 }
 
 main().catch((err) => {
