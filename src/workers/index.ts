@@ -7,6 +7,7 @@ import { buildCorsHeaders, checkOrigin } from './utils'
 import { handlePv, handleGood } from './pv'
 import { handleBbs } from './bbs'
 import { handleCms } from './cms'
+import { handleCyaniteWebhook } from './cyanite'
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
@@ -17,8 +18,9 @@ export default {
     const isGood = url.pathname.startsWith('/api/good')
     const isBbs = url.pathname.startsWith('/api/bbs')
     const isCms = url.pathname.startsWith('/api/cms')
+    const isCyaniteWebhook = url.pathname.startsWith('/api/cyanite/webhook')
 
-    if (!isPv && !isGood && !isBbs && !isCms) {
+    if (!isPv && !isGood && !isBbs && !isCms && !isCyaniteWebhook) {
       return new Response('not found', { status: 404 })
     }
 
@@ -55,6 +57,13 @@ export default {
         return new Response('Method not allowed', { status: 405, headers: corsHeaders })
       }
       return handleCms(req, env, corsHeaders, url.pathname)
+    }
+
+    if (isCyaniteWebhook) {
+      if (req.method !== 'POST') {
+        return new Response('Method not allowed', { status: 405, headers: corsHeaders })
+      }
+      return handleCyaniteWebhook(req, env, corsHeaders)
     }
 
     // PV, Good は POST のみ

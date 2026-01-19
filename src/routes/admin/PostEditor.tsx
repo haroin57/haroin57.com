@@ -327,7 +327,7 @@ export default function PostEditor() {
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
-        className="relative z-10 mx-auto min-h-screen max-w-5xl px-4 py-10 space-y-6 page-fade sm:px-6 sm:py-12"
+        className="relative z-10 mx-auto min-h-screen max-w-none px-4 py-10 space-y-6 page-fade sm:px-6 sm:py-12"
         style={MAIN_TEXT_STYLE}
       >
         {/* ヘッダー */}

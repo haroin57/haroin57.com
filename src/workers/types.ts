@@ -17,6 +17,7 @@ export type Env = {
   FIREBASE_PROJECT_ID?: string
   ADMIN_EMAILS?: string
   R2_PUBLIC_URL?: string
+  CYANITE_WEBHOOK_SECRET?: string
 }
 
 // Firebase IDトークンのヘッダー型

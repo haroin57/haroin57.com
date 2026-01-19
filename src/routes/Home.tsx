@@ -221,16 +221,17 @@ function Home() {
         className="relative z-10 min-h-screen flex flex-col page-fade"
         style={MAIN_TEXT_STYLE}
       >
-        <div className="mx-auto w-full max-w-4xl flex-1 px-4 pb-10 sm:px-6 sm:pb-12">
-          <div className="mx-auto w-full max-w-2xl space-y-8">
+        <div className="mx-auto w-full flex-1 px-4 pb-10 sm:px-6 sm:pb-12">
+          <div className="mx-auto w-full max-w-5xl space-y-8">
             {/* Contents見出し + ナビゲーション - 画面中央に配置 */}
             <div className="flex flex-col items-center justify-center min-h-[40vh] sm:min-h-[55vh]">
-              <h1 className="reveal text-2xl sm:text-3xl md:text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)] mb-8 sm:mb-12 self-start">
-                Contents
-              </h1>
+              <div className="flex flex-col items-start">
+                <h1 className="reveal text-2xl sm:text-3xl md:text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)] mb-8 sm:mb-12 -ml-[50px] sm:-ml-[80px]">
+                  Contents
+                </h1>
 
-              {/* ナビゲーションボタン - 中央配置 */}
-              <nav className="reveal flex flex-wrap items-start justify-center gap-4 sm:gap-8">
+                {/* ナビゲーションボタン - 中央配置 */}
+                <nav className="reveal flex flex-wrap items-start justify-start gap-4 sm:gap-8">
                 {navItems.map((item) => (
                   <PrefetchLink
                     key={item.to}
@@ -254,6 +255,7 @@ function Home() {
                   </PrefetchLink>
                 ))}
               </nav>
+              </div>
             </div>
 
             {/* タイムライン */}

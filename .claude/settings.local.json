@@ -53,7 +53,18 @@
       "Bash(del \"c:\\\\Users\\\\harut\\\\haroin57-web\\\\src\\\\pv-worker.ts\")",
       "Bash(tree:*)",
       "Bash(^d \")",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate HAPPY setup post with detailed process and thoughts\n\n実際の構築プロセスを時系列で詳細に記述し、遭遇した問題と解決方法、\nアーキテクチャ図（Mermaid）、感想を追加\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate HAPPY setup post with detailed process and thoughts\n\n実際の構築プロセスを時系列で詳細に記述し、遭遇した問題と解決方法、\nアーキテクチャ図（Mermaid）、感想を追加\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(copy \"C:\\\\Users\\\\harut\\\\OneDrive\\\\Downloads\\\\実際の会話例.jpg\" \"c:\\\\Users\\\\harut\\\\haroin57-web\\\\public\\\\posts\\\\happy-conversation-example.jpg\")",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(taskkill:*)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(npm run dev:*)",
+      "mcp__github__get_file_contents",
+      "mcp__github__get_release_by_tag",
+      "Bash(npm run gen:products:*)",
+      "Bash(npm run:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

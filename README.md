@@ -84,6 +84,9 @@ CF_API_TOKEN=your-api-token
 # 管理者設定
 ADMIN_SECRET=your-admin-secret
 ADMIN_EMAILS=admin1@example.com,admin2@example.com
+
+# Cyanite Webhook
+CYANITE_WEBHOOK_SECRET=your-webhook-secret
 ```
 
 ## 開発
@@ -186,6 +189,7 @@ src/
 - `GET /api/bbs/thread/:threadId` - スレッド詳細
 - `POST /api/bbs/thread` - スレッド作成
 - `POST /api/bbs/post` - 投稿作成
+- `POST /api/cyanite/webhook` - Cyanite Webhook受信
 
 ### 管理者API (要認証)
 - `GET /api/cms/posts` - 記事一覧

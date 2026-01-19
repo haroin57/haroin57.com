@@ -33,7 +33,7 @@ function App() {
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
-        className="relative z-10 mx-auto h-[100svh] max-w-4xl px-4 sm:px-6 page-fade"
+        className="relative z-10 mx-auto h-[100svh] max-w-none px-4 sm:px-6 page-fade"
         style={MAIN_TEXT_STYLE}
       >
         <section className="home-hero relative flex min-h-[100svh] flex-col items-center justify-center text-center">
@@ -41,7 +41,7 @@ function App() {
             <h1 className="reveal text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong)] sm:text-5xl md:text-6xl">
               haroin57 web
             </h1>
-            <p className="reveal mx-auto max-w-2xl text-base leading-relaxed opacity-90 sm:text-lg md:text-xl">
+            <p className="reveal mx-auto max-w-none text-base leading-relaxed opacity-90 sm:text-lg md:text-xl">
               I&apos;m haroin, an engineering student belonging to Shinshu University, interested in distributed systems, web
               development, and desktop music.
             </p>

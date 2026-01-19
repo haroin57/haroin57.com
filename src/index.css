@@ -505,6 +505,14 @@ img {
   color: var(--fg-strong);
 }
 
+/* 画像の高さ制限（グローバル） */
+.prose img {
+  max-height: 70vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
 /* 画像とキャプション */
 .prose .image-figure {
   margin: 1.25rem 0;
@@ -1642,9 +1650,16 @@ body {
 /* ======================
    PC版サイドバー目次
    ====================== */
+@media (min-width: 901px) {
+  .post-detail-layout {
+    padding-right: 14rem;
+  }
+}
+
 .toc-sidebar {
   position: fixed;
-  left: calc(50% + 380px);
+  right: 2rem;
+  left: auto;
   top: 100px;
   z-index: 40;
   width: 160px;

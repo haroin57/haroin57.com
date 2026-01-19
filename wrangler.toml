@@ -4,6 +4,9 @@
 name = "haroin-api"
 main = "src/workers/index.ts"
 compatibility_date = "2025-12-02"
+routes = [
+  { pattern = "haroin57.com/api/*", zone_name = "haroin57.com" }
+]
 
 # ============================================
 # KV Namespace (レート制限、PV、Good用)
@@ -47,3 +50,4 @@ ALLOWED_ORIGIN = "https://haroin57.com"
 # - ADMIN_SECRET: 管理者用シークレットキー
 # - FIREBASE_PROJECT_ID: Firebase プロジェクトID
 # - ADMIN_EMAILS: 管理者メールアドレス（カンマ区切り）
+# - CYANITE_WEBHOOK_SECRET: Cyanite Webhook 署名検証用シークレット
