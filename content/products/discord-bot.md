@@ -576,48 +576,57 @@ flowchart TB
 1つのDiscordメッセージがClaude APIに到達するまでの処理を詳細に示します。
 
 ```mermaid
-flowchart TB
+flowchart LR
     MSG["`**Discord** on_message`"]:::input
 
     subgraph Parallel["並列プリプロセス 9タスク"]
-        direction LR
-        subgraph Row1[" "]
-            direction LR
+        direction TB
+        subgraph Col1[" "]
+            direction TB
             T1["`reply_ctx`"]
             T2["`channel_history`"]
             T3["`**mem0_search**`"]
         end
-        subgraph Row2[" "]
-            direction LR
+        subgraph Col2[" "]
+            direction TB
             T4["`**emotion_load**`"]
             T5["`image_download`"]
             T6["`session_load`"]
         end
-        subgraph Row3[" "]
-            direction LR
+        subgraph Col3[" "]
+            direction TB
             T7["`daily_context`"]
             T8["`kanae_self_memory`"]
             T9["`entity_context`"]
         end
+        Col1 ~~~ Col2 ~~~ Col3
     end
 
     PB["`**prompt_builder**`"]:::build
-    SYS["`**system 4ブロック**`"]:::build
-    USER["`**user content**`"]:::build
+
+    subgraph Build["プロンプト組立"]
+        direction TB
+        SYS["`**system 4ブロック**`"]:::build
+        USER["`**user content**`"]:::build
+    end
+
     MCPS["`**mcp_selector**`"]:::select
 
     MSG --> Parallel
     Parallel --> PB
-    PB --> SYS & USER
-    SYS & USER --> MCPS
+    PB --> SYS
+    PB --> USER
+    SYS --> MCPS
+    USER --> MCPS
 
     classDef input fill:#1e3a5f,stroke:#60a5fa,stroke-width:2px,color:#e2e8f0
     classDef build fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#e2e8f0
     classDef select fill:#701a75,stroke:#e879f9,stroke-width:2px,color:#e2e8f0
     style Parallel fill:#134e4a,stroke:#5eead4,stroke-width:2px,color:#e2e8f0
-    style Row1 fill:none,stroke:none
-    style Row2 fill:none,stroke:none
-    style Row3 fill:none,stroke:none
+    style Build fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#e2e8f0
+    style Col1 fill:none,stroke:none
+    style Col2 fill:none,stroke:none
+    style Col3 fill:none,stroke:none
 ```
 
 9つのプリプロセスタスクが `asyncio.gather` で並列実行されます。Mem0検索・感情読込・セッション履歴ロードなどI/O待ちが多い処理を並列化することで、レイテンシを最小化しています。
@@ -686,7 +695,7 @@ Claude APIの応答を受け取り、ツール呼び出しを処理するルー�
 config:
   theme: dark
   themeVariables:
-    fontSize: 18px
+    fontSize: 24px
 ---
 flowchart TB
     subgraph Loop["run_agent_loop (tool_loop.py)"]
