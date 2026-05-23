@@ -496,27 +496,39 @@ Discord上に画像を添付すると、base64変換してClaude APIのマルチ
 ```mermaid
 flowchart TB
     subgraph Input["入力ソース"]
-        Discord["Discord DM/Channel"]
-        WebAPI["Web API (Socket.IO)"]
-        VSCode["Claude Code (MCP)"]
+        Discord["`**Discord**
+        DM / Channel`"]
+        WebAPI["`**Web API**
+        Socket.IO`"]
+        VSCode["`**Claude Code**
+        MCP`"]
     end
 
-    subgraph Core["コア処理 (bot.py)"]
-        Preprocess["並列プリプロセス\n(9タスク)"]
-        PromptBuilder["プロンプト組立\n(prompt_builder)"]
-        MCPSelector["MCP Server選択\n(mcp_selector)"]
+    subgraph Core["コア処理 bot.py"]
+        Preprocess["`**並列プリプロセス**
+        9タスク`"]
+        PromptBuilder["`**プロンプト組立**
+        prompt_builder`"]
+        MCPSelector["`**MCP Server選択**
+        mcp_selector`"]
     end
 
     subgraph API["Claude API Layer"]
-        Entry["entry.py\n(リトライ/セッション)"]
-        ToolLoop["tool_loop.py\n(エージェントループ)"]
-        Anthropic["Anthropic Messages API\n(Subscriber tier)"]
+        Entry["`**entry.py**
+        リトライ / セッション`"]
+        ToolLoop["`**tool_loop.py**
+        エージェントループ`"]
+        Anthropic["`**Anthropic Messages API**
+        Subscriber tier`"]
     end
 
     subgraph Memory["記憶・状態"]
-        Mem0["Mem0\n(ChromaDB + SQLite)"]
-        Emotion["感情エンジン\n(Haiku daemon)"]
-        Session["セッション\n(JSONL transcript)"]
+        Mem0["`**Mem0**
+        ChromaDB + SQLite`"]
+        Emotion["`**感情エンジン**
+        Haiku daemon`"]
+        Session["`**セッション**
+        JSONL transcript`"]
     end
 
     subgraph MCP["MCP Servers"]
@@ -562,30 +574,47 @@ flowchart TB
 ```mermaid
 flowchart LR
     subgraph Receive["受信"]
-        MSG["Discord\non_message"]
+        MSG["`**Discord**
+        on_message`"]
     end
 
-    subgraph Parallel["並列プリプロセス (asyncio.gather)"]
+    subgraph Parallel["並列プリプロセス asyncio.gather"]
         direction TB
-        T1["reply_ctx\n返信先の取得"]
-        T2["channel_history\n直近の会話履歴"]
-        T3["mem0_search\nSmart Search"]
-        T4["emotion_load\n感情状態読込"]
-        T5["image_download\n添付画像DL"]
-        T6["session_load\nJSONL履歴"]
-        T7["daily_context\nリングバッファ"]
-        T8["kanae_self_memory\n自己記憶"]
-        T9["entity_context\nEntity Graph"]
+        T1["`reply_ctx
+        *返信先の取得*`"]
+        T2["`channel_history
+        *直近の会話履歴*`"]
+        T3["`**mem0_search**
+        *Smart Search*`"]
+        T4["`**emotion_load**
+        *感情状態読込*`"]
+        T5["`image_download
+        *添付画像DL*`"]
+        T6["`session_load
+        *JSONL履歴*`"]
+        T7["`daily_context
+        *リングバッファ*`"]
+        T8["`kanae_self_memory
+        *自己記憶*`"]
+        T9["`entity_context
+        *Entity Graph*`"]
     end
 
     subgraph Build["プロンプト組立"]
-        PB["prompt_builder.build()"]
-        SYS["system[0-3]\nbilling + identity\n+ CLI prompt\n+ persona"]
-        USER["user content\n&lt;kanae_state&gt;\n&lt;kanae_daily&gt;\n&lt;retrieved_memories&gt;\n&lt;untrusted_user_input&gt;"]
+        PB["`**prompt_builder**`"]
+        SYS["`**system 4ブロック**
+        billing / identity
+        CLI prompt / persona`"]
+        USER["`**user content**
+        kanae_state
+        kanae_daily
+        retrieved_memories
+        untrusted_user_input`"]
     end
 
     subgraph Select["MCP選択"]
-        MCPS["mcp_selector\nキーワードスキャン"]
+        MCPS["`**mcp_selector**
+        キーワードスキャン`"]
     end
 
     MSG --> Parallel
@@ -614,9 +643,9 @@ mitmproxyで解析したCLIの認証プロトコルを、Pythonで再現する�
 sequenceDiagram
     participant Bot as kanae-bot
     participant OAuth as oauth_manager
-    participant Creds as ~/.claude/.credentials.json
-    participant Platform as platform.claude.com
-    participant API as api.anthropic.com
+    participant Creds as credentials.json
+    participant Platform as platform claude
+    participant API as Anthropic API
 
     Note over Bot: プロセス起動時
     Bot->>Creds: トークン読込
@@ -628,28 +657,24 @@ sequenceDiagram
     Note over OAuth: Subscriber session primed
 
     Note over Bot: APIリクエスト時
-    Bot->>OAuth: ensure_valid_token()
-    alt トークン期限切れ (5分前)
-        OAuth->>Platform: POST /v1/oauth/token<br/>grant_type=refresh_token
+    Bot->>OAuth: ensure_valid_token
+    alt トークン期限切れ
+        OAuth->>Platform: POST /v1/oauth/token refresh
         Platform-->>OAuth: 新 access_token
-        OAuth->>Creds: atomic write (安全な書き戻し)
+        OAuth->>Creds: atomic write
     end
 
-    Bot->>Bot: build_cli_headers()<br/>User-Agent, X-Stainless-*
-    Bot->>Bot: get_attribution_header_value()<br/>billing header (SHA256 suffix)
-    Bot->>Bot: get_metadata()<br/>device_id + account_uuid + session_id
-    Bot->>Bot: _build_cached_system()<br/>system[0-3] 4ブロック構築
+    Bot->>Bot: build_cli_headers
+    Bot->>Bot: get_attribution_header_value
+    Bot->>Bot: get_metadata
+    Bot->>Bot: _build_cached_system
 
-    Bot->>API: POST /v1/messages<br/>Authorization: Bearer {token}<br/>+ CLI偽装ヘッダー群
+    Bot->>API: POST /v1/messages + CLI偽装ヘッダー
 
-    Note over API: httpx event hook
-    Bot->>Bot: cch_request_hook()<br/>xxHash64(body, seed) → cch=XXXXX<br/>プレースホルダー置換
+    Note over Bot: httpx event hook
+    Bot->>Bot: cch_request_hook xxHash64
 
-    API-->>Bot: Streaming response<br/>(Subscriber tier ratelimit)
-
-    style Bot fill:#134e4a,stroke:#5eead4
-    style API fill:#78350f,stroke:#fbbf24
-    style Platform fill:#4c1d95,stroke:#a78bfa
+    API-->>Bot: Streaming response
 ```
 
 認証は3段階です:
@@ -669,36 +694,47 @@ Claude APIの応答を受け取り、ツール呼び出しを処理するルー�
 flowchart TB
     subgraph Loop["run_agent_loop (tool_loop.py)"]
         direction TB
-        SEND["Messages API へ送信\n(streaming)"]
-        RECV["レスポンス受信\ntext / tool_use / end_turn"]
+        SEND["`**Messages API へ送信**
+        streaming`"]
+        RECV["`**レスポンス受信**
+        text / tool_use / end_turn`"]
 
         SEND --> RECV
 
-        RECV -->|end_turn / stop| DONE["ループ終了\nAgentLoopResult"]
-        RECV -->|tool_use| GATE["can_use_tool\n(権限チェック)"]
+        RECV -->|end_turn / stop| DONE["`**ループ終了**
+        AgentLoopResult`"]
+        RECV -->|tool_use| GATE["`**can_use_tool**
+        *権限チェック*`"]
         
-        GATE -->|許可| EXEC["ツール実行"]
-        GATE -->|拒否| SKIP["tool_result:\nPermission denied"]
+        GATE -->|許可| EXEC["`**ツール実行**`"]
+        GATE -->|拒否| SKIP["`tool_result
+        *Permission denied*`"]
 
-        EXEC -->|builtin| BUILTIN["execute_builtin_tool\n(Read/Write/Bash/Grep等)"]
-        EXEC -->|mcp__*| MCPTOOL["McpPool.call_tool\n(lazy spawn対応)"]
+        EXEC -->|builtin| BUILTIN["`**execute_builtin_tool**
+        Read / Write / Bash / Grep`"]
+        EXEC -->|mcp__*| MCPTOOL["`**McpPool.call_tool**
+        *lazy spawn対応*`"]
 
-        BUILTIN --> RESULT["tool_result\nをメッセージに追加"]
+        BUILTIN --> RESULT["`**tool_result**
+        メッセージに追加`"]
         MCPTOOL --> RESULT
         SKIP --> RESULT
         RESULT --> SEND
     end
 
     subgraph Watch["監視"]
-        STALL["StallWatchdog\n(タイムアウト検出)"]
-        RL["ratelimit observer\n(ヘッダー監視)"]
+        STALL["`StallWatchdog
+        *タイムアウト検出*`"]
+        RL["`ratelimit observer
+        *ヘッダー監視*`"]
     end
 
     SEND -.-> STALL
     RECV -.-> RL
 
     subgraph Limits["制限"]
-        MAX["max_turns チェック\n(admin=128, restricted=8)"]
+        MAX["`max_turns チェック
+        *admin=128 / restricted=8*`"]
     end
 
     RESULT --> MAX
@@ -723,32 +759,51 @@ CLIと同じエージェントループをPythonで再実装しています。�
 
 ```mermaid
 flowchart TB
-    subgraph Ingest["Ingest パイプライン (会話後・背景タスク)"]
+    subgraph Ingest["Ingest 会話後の背景タスク"]
         direction LR
-        INPUT["user_text +\nassistant_text"]
-        EXTRACT["extract.py\nHaiku 4.5\nfact + entity 抽出"]
-        FILTER["フィルタ\nspeaker==self\nimportance≥MIN"]
-        DEDUP["dedup.py\n2段階\ncosine→LLM"]
+        INPUT["`user_text +
+        assistant_text`"]
+        EXTRACT["`**extract.py**
+        *Haiku 4.5*
+        fact + entity 抽出`"]
+        FILTER["`**フィルタ**
+        speaker==self
+        importance≥MIN`"]
+        DEDUP["`**dedup.py**
+        *2段階*
+        cosine → LLM`"]
         
         INPUT --> EXTRACT --> FILTER --> DEDUP
         
-        DEDUP -->|新規| STORE["ChromaDB\n+ BM25 index"]
-        DEDUP -->|重複| REINFORCE["reinforce.py\nmention_count++"]
-        EXTRACT -->|entities| GRAPH["graph.py\nSQLite KG\nupsert"]
+        DEDUP -->|新規| STORE["`**ChromaDB**
+        + BM25 index`"]
+        DEDUP -->|重複| REINFORCE["`**reinforce.py**
+        mention_count++`"]
+        EXTRACT -->|entities| GRAPH["`**graph.py**
+        SQLite KG upsert`"]
     end
 
-    subgraph Search["Search パイプライン (プリプロセス時)"]
+    subgraph Search["Search プリプロセス時"]
         direction LR
         QUERY["raw_query"]
-        REWRITE["Haiku\nquery rewrite\n正準キーワード変換"]
+        REWRITE["`**Haiku query rewrite**
+        *正準キーワード変換*`"]
         
-        VECTOR["Vector search\nChromaDB\ntext-embedding-3-small"]
-        BM25["BM25 search\nSQLite FTS5\n形態素解析"]
+        VECTOR["`**Vector search**
+        ChromaDB
+        text-embedding-3-small`"]
+        BM25["`**BM25 search**
+        SQLite FTS5
+        *形態素解析*`"]
         
-        RRF["RRF\nReciprocal Rank\nFusion (k=60)"]
-        EXPAND["Entity 1-hop\nexpansion"]
-        RERANK["LLM rerank\n+ reinforcement\nboost"]
-        RESULT["top-k\nmemories"]
+        RRF["`**RRF**
+        Reciprocal Rank Fusion
+        *k=60*`"]
+        EXPAND["`**Entity 1-hop**
+        expansion`"]
+        RERANK["`**LLM rerank**
+        + reinforcement boost`"]
+        RESULT["`**top-k memories**`"]
         
         QUERY --> REWRITE
         REWRITE --> VECTOR
@@ -759,9 +814,12 @@ flowchart TB
     end
 
     subgraph Storage["永続化層"]
-        CHROMA[("ChromaDB\n1,126 facts\n24MB")]
-        SQLITE_BM25[("SQLite FTS5\n1.8MB")]
-        SQLITE_GRAPH[("SQLite Graph\n844 entities\n1,322 edges\n1.9MB")]
+        CHROMA[("**ChromaDB**
+        1,126 facts / 24MB")]
+        SQLITE_BM25[("**SQLite FTS5**
+        1.8MB")]
+        SQLITE_GRAPH[("**SQLite Graph**
+        844 entities / 1,322 edges")]
     end
 
     STORE --> CHROMA
@@ -792,7 +850,7 @@ flowchart TB
 stateDiagram-v2
     state "会話中" as conv {
         [*] --> 発話解析
-        発話解析 --> 感情更新: Haiku daemon\nquery(6軸context)
+        発話解析 --> 感情更新: Haiku daemon query
         感情更新 --> derived_labels: validator
         derived_labels --> kanae_emotion.json: RMW lock
     }
@@ -806,7 +864,7 @@ stateDiagram-v2
 
     state "プロンプト注入" as inject {
         kanae_emotion.json --> kanae_state_block
-        kanae_state_block --> system_prompt: "&lt;kanae_state&gt;\nvalence=0.7\narousal=0.4\n..."
+        kanae_state_block --> system_prompt: kanae_state注入
     }
 
     conv --> silent: 30分無言
