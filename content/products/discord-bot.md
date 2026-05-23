@@ -576,58 +576,48 @@ flowchart TB
 1つのDiscordメッセージがClaude APIに到達するまでの処理を詳細に示します。
 
 ```mermaid
-flowchart LR
-    subgraph Receive["受信"]
-        MSG["`**Discord**
-        on_message`"]
+flowchart TB
+    MSG["`**Discord** on_message`"]:::input
+
+    subgraph Parallel["並列プリプロセス 9タスク"]
+        direction LR
+        subgraph Row1[" "]
+            direction LR
+            T1["`reply_ctx`"]
+            T2["`channel_history`"]
+            T3["`**mem0_search**`"]
+        end
+        subgraph Row2[" "]
+            direction LR
+            T4["`**emotion_load**`"]
+            T5["`image_download`"]
+            T6["`session_load`"]
+        end
+        subgraph Row3[" "]
+            direction LR
+            T7["`daily_context`"]
+            T8["`kanae_self_memory`"]
+            T9["`entity_context`"]
+        end
     end
 
-    subgraph Parallel["並列プリプロセス"]
-        direction TB
-        SPACER[" "]:::hidden
-        T1["`reply_ctx
-        *返信先の取得*`"]
-        T2["`channel_history
-        *直近の会話履歴*`"]
-        T3["`**mem0_search**
-        *Smart Search*`"]
-        T4["`**emotion_load**
-        *感情状態読込*`"]
-        T5["`image_download
-        *添付画像DL*`"]
-        T6["`session_load
-        *JSONL履歴*`"]
-        T7["`daily_context
-        *リングバッファ*`"]
-        T8["`kanae_self_memory
-        *自己記憶*`"]
-        T9["`entity_context
-        *Entity Graph*`"]
-    end
+    PB["`**prompt_builder**`"]:::build
+    SYS["`**system 4ブロック**`"]:::build
+    USER["`**user content**`"]:::build
+    MCPS["`**mcp_selector**`"]:::select
 
-    subgraph Build["プロンプト組立"]
-        PB["`**prompt_builder**`"]
-        SYS["`**system 4ブロック**`"]
-        USER["`**user content**`"]
-    end
-
-    subgraph Select["MCP選択"]
-        MCPS["`**mcp_selector**
-        キーワードスキャン`"]
-    end
-
-    classDef hidden fill:none,stroke:none,color:transparent
     MSG --> Parallel
-    SPACER ~~~ T1
-    T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 --> PB
-    PB --> SYS
-    PB --> USER
+    Parallel --> PB
+    PB --> SYS & USER
     SYS & USER --> MCPS
 
-    style Receive fill:#1e3a5f,stroke:#60a5fa,stroke-width:2px
-    style Parallel fill:#134e4a,stroke:#5eead4,stroke-width:2px
-    style Build fill:#78350f,stroke:#fbbf24,stroke-width:2px
-    style Select fill:#701a75,stroke:#e879f9,stroke-width:2px
+    classDef input fill:#1e3a5f,stroke:#60a5fa,stroke-width:2px,color:#e2e8f0
+    classDef build fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#e2e8f0
+    classDef select fill:#701a75,stroke:#e879f9,stroke-width:2px,color:#e2e8f0
+    style Parallel fill:#134e4a,stroke:#5eead4,stroke-width:2px,color:#e2e8f0
+    style Row1 fill:none,stroke:none
+    style Row2 fill:none,stroke:none
+    style Row3 fill:none,stroke:none
 ```
 
 9つのプリプロセスタスクが `asyncio.gather` で並列実行されます。Mem0検索・感情読込・セッション履歴ロードなどI/O待ちが多い処理を並列化することで、レイテンシを最小化しています。
