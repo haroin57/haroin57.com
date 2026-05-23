@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import PrefetchLink from '../components/PrefetchLink'
 import SiteFooter from '../components/SiteFooter'
-import { useAdminAuth } from '../hooks/useAdminAuth'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
@@ -28,11 +27,7 @@ function BBSList() {
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [loginError, setLoginError] = useState<string | null>(null)
-  const [isLoggingIn, setIsLoggingIn] = useState(false)
-  const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null)
   const pageRef = useRef<HTMLDivElement | null>(null)
-  const { isAdmin, idToken, loginWithGoogle, logout } = useAdminAuth()
 
   // BBSページのメタタグ
   usePageMeta({
@@ -113,54 +108,6 @@ function BBSList() {
     [title, name, content, isSubmitting]
   )
 
-  // 管理者ログイン（Google）
-  const handleLogin = useCallback(async () => {
-    if (isLoggingIn) return
-
-    setIsLoggingIn(true)
-    setLoginError(null)
-
-    const success = await loginWithGoogle()
-    if (!success) {
-      setLoginError('管理者アカウントではありません')
-    }
-    setIsLoggingIn(false)
-  }, [isLoggingIn, loginWithGoogle])
-
-  // スレッド削除
-  const handleDeleteThread = useCallback(
-    async (threadId: string, e: React.MouseEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-
-      if (!idToken || deletingThreadId) return
-      if (!window.confirm('このスレッドを削除しますか？この操作は取り消せません。')) return
-
-      setDeletingThreadId(threadId)
-      try {
-        const res = await fetch(`${BBS_ENDPOINT}/threads/${threadId}`, {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        })
-
-        if (!res.ok) {
-          const data = await res.json() as { error?: string }
-          throw new Error(data.error || 'Failed to delete thread')
-        }
-
-        setThreads((prev) => prev.filter((t) => t.id !== threadId))
-      } catch (err) {
-        console.error('Failed to delete thread:', err)
-        alert(err instanceof Error ? err.message : 'スレッドの削除に失敗しました')
-      } finally {
-        setDeletingThreadId(null)
-      }
-    },
-    [idToken, deletingThreadId]
-  )
-
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       <main
@@ -184,24 +131,6 @@ function BBSList() {
               haroin57 BBSスレッド
             </h1>
             <div className="flex items-center gap-2">
-              {isAdmin ? (
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="px-3 py-2 rounded border border-red-500/50 bg-red-500/10 text-red-400 font-semibold text-xs transition-colors hover:bg-red-500/20"
-                >
-                  管理者ログアウト
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleLogin}
-                  disabled={isLoggingIn}
-                  className="px-3 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] opacity-60 font-semibold text-xs transition-colors hover:opacity-100 disabled:opacity-50"
-                >
-                  {isLoggingIn ? 'ログイン中...' : '管理者'}
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => setShowCreateForm((v) => !v)}
@@ -211,13 +140,6 @@ function BBSList() {
               </button>
             </div>
           </div>
-
-          {/* ログインエラー表示 */}
-          {loginError && (
-            <div className="glass-panel p-3 border border-red-500/50 bg-red-500/10">
-              <p className="text-red-400 text-sm">{loginError}</p>
-            </div>
-          )}
 
           {/* スレッド作成フォーム */}
           {showCreateForm && (
@@ -309,16 +231,6 @@ function BBSList() {
                         )}
                       </div>
                     </PrefetchLink>
-                    {isAdmin && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteThread(thread.id, e)}
-                        disabled={deletingThreadId === thread.id}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded border border-red-500/50 bg-red-500/10 text-red-400 text-xs font-semibold transition-all opacity-0 group-hover:opacity-100 hover:bg-red-500/20 disabled:opacity-50"
-                      >
-                        {deletingThreadId === thread.id ? '削除中...' : '削除'}
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>
