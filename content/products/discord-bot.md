@@ -445,60 +445,388 @@ v3ではコード内での代数的ルール（if文による時間判定など�
 
 <br/>
 
-## システムアーキテクチャ
+## 実運用ユースケース
 
-### 処理フロー
+### 1. 日常の会話パートナー
 
+DiscordのDMチャンネルで24時間いつでも会話できます。Mem0による長期記憶があるため、数ヶ月前の話題を自然に参照できます。
+
+- 「この前話してたRustの非同期ランタイムの件、調べた？」→ Mem0から関連factを検索して文脈を復元
+- 感情エンジンにより、時間帯・会話トーン・沈黙時間に応じた自然な反応
+
+### 2. リサーチアシスタント
+
+MCP Server経由でWeb検索・X検索・ニュースキュレーションを実行します。
+
+- 「最近のRust async関連のニュースまとめて」→ brave-search + x-scraper + news-curatorを並列起動
+- 調査結果はMem0に自動保存され、後日「この前調べたやつ」で呼び出せる
+
+### 3. 自発的な連絡
+
+沈黙が30分以上続くと感情エンジンの `loneliness` パラメータが上昇し、LLMデーモンが自発的に連絡するか判断します。
+
+- 朝の挨拶、昼の声かけ、夜のおやすみ — 全てLLMが時刻判定
+- 「先輩、そういえばさっき話してた論文の件」のような文脈のある自発連絡
+
+### 4. Claude Code連携（MCP共有メモリ）
+
+ローカルのClaude CodeとVPS上のkanae-botは**同じMem0データベース**を共有しています。
+
+- Claude Codeで「これ覚えといて」→ VPSのMem0に保存
+- Discordで「さっきClaude Codeで作ったやつの続き」→ 同じメモリから検索
+
+`mcp_mem0_server.py` がMCPプロトコルでClaude Codeとkanae-botの記憶を統合します。
+
+### 5. 画像理解
+
+Discord上に画像を添付すると、base64変換してClaude APIのマルチモーダル入力として処理します。スクリーンショットの解析やコードレビューに使えます。
+
+<br/>
+
+## アーキテクチャ詳解
+
+システム全体を**6つのレイヤー**に分けて解説します。全てを1枚の図にすると複雑すぎるので、レイヤーごとに切り出しています。
+
+<br/>
+
+### Layer 1: システム全体像
+
+まずマクロな視点で、システムの入出力と主要コンポーネントの関係を示します。
+
+```mermaid
+flowchart TB
+    subgraph Input["入力ソース"]
+        Discord["Discord DM/Channel"]
+        WebAPI["Web API (Socket.IO)"]
+        VSCode["Claude Code (MCP)"]
+    end
+
+    subgraph Core["コア処理 (bot.py)"]
+        Preprocess["並列プリプロセス\n(9タスク)"]
+        PromptBuilder["プロンプト組立\n(prompt_builder)"]
+        MCPSelector["MCP Server選択\n(mcp_selector)"]
+    end
+
+    subgraph API["Claude API Layer"]
+        Entry["entry.py\n(リトライ/セッション)"]
+        ToolLoop["tool_loop.py\n(エージェントループ)"]
+        Anthropic["Anthropic Messages API\n(Subscriber tier)"]
+    end
+
+    subgraph Memory["記憶・状態"]
+        Mem0["Mem0\n(ChromaDB + SQLite)"]
+        Emotion["感情エンジン\n(Haiku daemon)"]
+        Session["セッション\n(JSONL transcript)"]
+    end
+
+    subgraph MCP["MCP Servers"]
+        MCPMem0["mem0"]
+        MCPXScraper["x-scraper"]
+        MCPNews["news-curator"]
+        MCPBrave["brave-search"]
+    end
+
+    Discord --> Preprocess
+    WebAPI --> Preprocess
+    VSCode --> MCPMem0
+    Preprocess --> PromptBuilder
+    PromptBuilder --> MCPSelector
+    MCPSelector --> Entry
+    Entry --> ToolLoop
+    ToolLoop --> Anthropic
+    ToolLoop --> MCP
+    Anthropic --> ToolLoop
+
+    Preprocess -.->|検索| Mem0
+    Preprocess -.->|読込| Emotion
+    ToolLoop -.->|背景タスク| Mem0
+    ToolLoop -.->|背景タスク| Emotion
+    ToolLoop -.->|記録| Session
+    MCPMem0 -.-> Mem0
+
+    style Input fill:#1e3a5f,stroke:#60a5fa,stroke-width:2px
+    style Core fill:#134e4a,stroke:#5eead4,stroke-width:2px
+    style API fill:#78350f,stroke:#fbbf24,stroke-width:2px
+    style Memory fill:#4c1d95,stroke:#a78bfa,stroke-width:2px
+    style MCP fill:#701a75,stroke:#e879f9,stroke-width:2px
 ```
-Discord/WebAPI → bot.py::on_message
-  ↓ 並列9タスク (asyncio)
-  ├─ reply_ctx (返信コンテキスト)
-  ├─ channel_history
-  ├─ mem0_search (Smart Search)
-  ├─ emotion_load (感情状態)
-  ├─ image_download
-  └─ ...
-  ↓
-prompt_builder.build()
-  ├─ <kanae_state> (感情パラメータ)
-  ├─ <kanae_daily> (dailyリングバッファ)
-  ├─ <retrieved_memories> (Mem0検索結果)
-  └─ <untrusted_user_input> (セキュリティラップ)
-  ↓
-mcp_selector.pick_mcp_servers (キーワードスキャン)
-  ↓
-claude_api/entry.py::call_with_tools
-  ├─ AsyncAnthropic (OAuth Bearer)
-  ├─ McpPool (eager + lazy spawn)
-  ├─ tool_loop.run_agent_loop (streaming)
-  └─ StallWatchdog (タイムアウト監視)
-  ↓
-Response → split_message + render → Discord送信
-  ↓
-背景タスク (fire-and-forget):
-  ├─ Mem0 ingest (fact抽出 + dedup)
-  ├─ emotion feedback (daemon query)
-  ├─ JSONL append (会話履歴)
-  └─ session update
+
+入力は3系統（Discord / WebAPI / Claude Code MCP）。全てbot.pyに集約され、9並列のプリプロセス→プロンプト組立→Claude API呼び出しという3段の処理を経ます。応答後は背景タスクとしてMem0保存・感情更新・セッション記録が非同期で走ります。
+
+<br/>
+
+### Layer 2: リクエストパイプライン
+
+1つのDiscordメッセージがClaude APIに到達するまでの処理を詳細に示します。
+
+```mermaid
+flowchart LR
+    subgraph Receive["受信"]
+        MSG["Discord\non_message"]
+    end
+
+    subgraph Parallel["並列プリプロセス (asyncio.gather)"]
+        direction TB
+        T1["reply_ctx\n返信先の取得"]
+        T2["channel_history\n直近の会話履歴"]
+        T3["mem0_search\nSmart Search"]
+        T4["emotion_load\n感情状態読込"]
+        T5["image_download\n添付画像DL"]
+        T6["session_load\nJSONL履歴"]
+        T7["daily_context\nリングバッファ"]
+        T8["kanae_self_memory\n自己記憶"]
+        T9["entity_context\nEntity Graph"]
+    end
+
+    subgraph Build["プロンプト組立"]
+        PB["prompt_builder.build()"]
+        SYS["system[0-3]\nbilling + identity\n+ CLI prompt\n+ persona"]
+        USER["user content\n&lt;kanae_state&gt;\n&lt;kanae_daily&gt;\n&lt;retrieved_memories&gt;\n&lt;untrusted_user_input&gt;"]
+    end
+
+    subgraph Select["MCP選択"]
+        MCPS["mcp_selector\nキーワードスキャン"]
+    end
+
+    MSG --> Parallel
+    T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 --> PB
+    PB --> SYS
+    PB --> USER
+    SYS & USER --> MCPS
+
+    style Receive fill:#1e3a5f,stroke:#60a5fa,stroke-width:2px
+    style Parallel fill:#134e4a,stroke:#5eead4,stroke-width:2px
+    style Build fill:#78350f,stroke:#fbbf24,stroke-width:2px
+    style Select fill:#701a75,stroke:#e879f9,stroke-width:2px
 ```
 
-### MCP Server連携
+9つのプリプロセスタスクが `asyncio.gather` で並列実行されます。Mem0検索・感情読込・セッション履歴ロードなどI/O待ちが多い処理を並列化することで、レイテンシを最小化しています。
 
-常時アドバタイズされるMCPサーバー:
-- **mem0**: 長期記憶の検索・保存
-- **x-scraper**: X (Twitter) のツイート検索・トレンド取得
-- **news-curator**: ニュースキュレーション
-- **brave-search**: Web検索
+全ての結果は `prompt_builder` に集約され、system prompt 4ブロック + user contentとして構造化されます。`<untrusted_user_input>` タグでユーザー入力をセキュリティラップし、プロンプトインジェクションを防止しています。
 
-キーワードスキャンで追加のMCPサーバーが動的にspawnされます。
+<br/>
 
-### セッション管理
+### Layer 3: Claude API認証チェーン
 
-JNSLトランスクリプトによるステートレスAPI上のセッション管理:
+mitmproxyで解析したCLIの認証プロトコルを、Pythonで再現する流れです。
 
-- **TTL**: 30分
-- **MCP互換性チェック**: MCPセットが変わった場合はmerge（従来はinvalidateだったがコンテキスト損失が発生するため変更）
-- **コンテキストスナップショット**: Mem0の検索結果を15分間キャッシュし、短いフォローアップでも記憶の連続性を維持
+```mermaid
+sequenceDiagram
+    participant Bot as kanae-bot
+    participant OAuth as oauth_manager
+    participant Creds as ~/.claude/.credentials.json
+    participant Platform as platform.claude.com
+    participant API as api.anthropic.com
+
+    Note over Bot: プロセス起動時
+    Bot->>Creds: トークン読込
+    Creds-->>OAuth: access_token + refresh_token
+    OAuth->>Platform: GET /api/oauth/profile
+    Platform-->>OAuth: ユーザープロファイル
+    OAuth->>Platform: GET /api/oauth/claude_cli/roles
+    Platform-->>OAuth: CLIロール情報
+    Note over OAuth: Subscriber session primed
+
+    Note over Bot: APIリクエスト時
+    Bot->>OAuth: ensure_valid_token()
+    alt トークン期限切れ (5分前)
+        OAuth->>Platform: POST /v1/oauth/token<br/>grant_type=refresh_token
+        Platform-->>OAuth: 新 access_token
+        OAuth->>Creds: atomic write (安全な書き戻し)
+    end
+
+    Bot->>Bot: build_cli_headers()<br/>User-Agent, X-Stainless-*
+    Bot->>Bot: get_attribution_header_value()<br/>billing header (SHA256 suffix)
+    Bot->>Bot: get_metadata()<br/>device_id + account_uuid + session_id
+    Bot->>Bot: _build_cached_system()<br/>system[0-3] 4ブロック構築
+
+    Bot->>API: POST /v1/messages<br/>Authorization: Bearer {token}<br/>+ CLI偽装ヘッダー群
+
+    Note over API: httpx event hook
+    Bot->>Bot: cch_request_hook()<br/>xxHash64(body, seed) → cch=XXXXX<br/>プレースホルダー置換
+
+    API-->>Bot: Streaming response<br/>(Subscriber tier ratelimit)
+
+    style Bot fill:#134e4a,stroke:#5eead4
+    style API fill:#78350f,stroke:#fbbf24
+    style Platform fill:#4c1d95,stroke:#a78bfa
+```
+
+認証は3段階です:
+1. **起動時**: OAuthトークン読込 + Subscriber session初期化（profile/roles GET）
+2. **リクエスト前**: トークン有効期限チェック + 自動リフレッシュ
+3. **リクエスト時**: CLIヘッダー偽装 + billing header + CCH attestation（httpx event hookでボディ署名）
+
+`~/.claude/.credentials.json` はClaude Code CLIと共有しており、どちらかがトークンをリフレッシュしても相互に認識できます（atomic write + ファイルロック）。
+
+<br/>
+
+### Layer 4: エージェントループ（ツール実行）
+
+Claude APIの応答を受け取り、ツール呼び出しを処理するループです。
+
+```mermaid
+flowchart TB
+    subgraph Loop["run_agent_loop (tool_loop.py)"]
+        direction TB
+        SEND["Messages API へ送信\n(streaming)"]
+        RECV["レスポンス受信\ntext / tool_use / end_turn"]
+
+        SEND --> RECV
+
+        RECV -->|end_turn / stop| DONE["ループ終了\nAgentLoopResult"]
+        RECV -->|tool_use| GATE["can_use_tool\n(権限チェック)"]
+        
+        GATE -->|許可| EXEC["ツール実行"]
+        GATE -->|拒否| SKIP["tool_result:\nPermission denied"]
+
+        EXEC -->|builtin| BUILTIN["execute_builtin_tool\n(Read/Write/Bash/Grep等)"]
+        EXEC -->|mcp__*| MCPTOOL["McpPool.call_tool\n(lazy spawn対応)"]
+
+        BUILTIN --> RESULT["tool_result\nをメッセージに追加"]
+        MCPTOOL --> RESULT
+        SKIP --> RESULT
+        RESULT --> SEND
+    end
+
+    subgraph Watch["監視"]
+        STALL["StallWatchdog\n(タイムアウト検出)"]
+        RL["ratelimit observer\n(ヘッダー監視)"]
+    end
+
+    SEND -.-> STALL
+    RECV -.-> RL
+
+    subgraph Limits["制限"]
+        MAX["max_turns チェック\n(admin=128, restricted=8)"]
+    end
+
+    RESULT --> MAX
+    MAX -->|超過| DONE
+
+    style Loop fill:#134e4a,stroke:#5eead4,stroke-width:2px
+    style Watch fill:#78350f,stroke:#fbbf24,stroke-width:2px
+    style Limits fill:#4c1d95,stroke:#a78bfa,stroke-width:2px
+```
+
+CLIと同じエージェントループをPythonで再実装しています。モデルが `tool_use` を返したら、権限チェック → ビルトインツール or MCPサーバー経由で実行 → `tool_result` を次のターンに追加、を繰り返します。
+
+**McpPool** はlazyスポーン対応で、ツールが初めて呼ばれた時点でMCPサーバープロセスを起動します。mem0やbrave-searchは常時アドバタイズされますが、プロセス自体は使用時まで起動しません。
+
+**StallWatchdog** がレスポンスの停滞を監視し、一定時間トークンが流れなければタイムアウトします。
+
+<br/>
+
+### Layer 5: Mem0パイプライン（Ingest + Search）
+
+記憶の保存と検索の両方向のデータフローです。
+
+```mermaid
+flowchart TB
+    subgraph Ingest["Ingest パイプライン (会話後・背景タスク)"]
+        direction LR
+        INPUT["user_text +\nassistant_text"]
+        EXTRACT["extract.py\nHaiku 4.5\nfact + entity 抽出"]
+        FILTER["フィルタ\nspeaker==self\nimportance≥MIN"]
+        DEDUP["dedup.py\n2段階\ncosine→LLM"]
+        
+        INPUT --> EXTRACT --> FILTER --> DEDUP
+        
+        DEDUP -->|新規| STORE["ChromaDB\n+ BM25 index"]
+        DEDUP -->|重複| REINFORCE["reinforce.py\nmention_count++"]
+        EXTRACT -->|entities| GRAPH["graph.py\nSQLite KG\nupsert"]
+    end
+
+    subgraph Search["Search パイプライン (プリプロセス時)"]
+        direction LR
+        QUERY["raw_query"]
+        REWRITE["Haiku\nquery rewrite\n正準キーワード変換"]
+        
+        VECTOR["Vector search\nChromaDB\ntext-embedding-3-small"]
+        BM25["BM25 search\nSQLite FTS5\n形態素解析"]
+        
+        RRF["RRF\nReciprocal Rank\nFusion (k=60)"]
+        EXPAND["Entity 1-hop\nexpansion"]
+        RERANK["LLM rerank\n+ reinforcement\nboost"]
+        RESULT["top-k\nmemories"]
+        
+        QUERY --> REWRITE
+        REWRITE --> VECTOR
+        REWRITE --> BM25
+        VECTOR --> RRF
+        BM25 --> RRF
+        RRF --> EXPAND --> RERANK --> RESULT
+    end
+
+    subgraph Storage["永続化層"]
+        CHROMA[("ChromaDB\n1,126 facts\n24MB")]
+        SQLITE_BM25[("SQLite FTS5\n1.8MB")]
+        SQLITE_GRAPH[("SQLite Graph\n844 entities\n1,322 edges\n1.9MB")]
+    end
+
+    STORE --> CHROMA
+    STORE --> SQLITE_BM25
+    GRAPH --> SQLITE_GRAPH
+    VECTOR -.-> CHROMA
+    BM25 -.-> SQLITE_BM25
+    EXPAND -.-> SQLITE_GRAPH
+
+    style Ingest fill:#134e4a,stroke:#5eead4,stroke-width:2px
+    style Search fill:#78350f,stroke:#fbbf24,stroke-width:2px
+    style Storage fill:#4c1d95,stroke:#a78bfa,stroke-width:2px
+```
+
+**Ingest（保存）**: 会話後に背景タスクとしてHaiku 4.5がfact/entityを抽出。2段階dedupで重複を検出し、新規factはChromaDB + BM25に保存、重複factは `mention_count` をインクリメントして強化。entityはSQLite KGにupsert。
+
+**Search（検索）**: プリプロセス時にHaikuがクエリを正準化し、Vector/BM25のハイブリッド検索をRRFで統合。Entity graphで1-hop展開した後、LLM rerankとreinforcement boostで最終順位を決定。
+
+3つのストレージ（ChromaDB / FTS5 / KG）が相互補完的に機能します。
+
+<br/>
+
+### Layer 6: 感情エンジン
+
+6軸パラメータの遷移とプロンプトへの注入フローです。
+
+```mermaid
+stateDiagram-v2
+    state "会話中" as conv {
+        [*] --> 発話解析
+        発話解析 --> 感情更新: Haiku daemon\nquery(6軸context)
+        感情更新 --> derived_labels: validator
+        derived_labels --> kanae_emotion.json: RMW lock
+    }
+
+    state "沈黙中 (30分+)" as silent {
+        [*] --> loneliness上昇
+        loneliness上昇 --> 自発連絡判定: LLM判断
+        自発連絡判定 --> Discord送信: 連絡する
+        自発連絡判定 --> 待機継続: まだ待つ
+    }
+
+    state "プロンプト注入" as inject {
+        kanae_emotion.json --> kanae_state_block
+        kanae_state_block --> system_prompt: "&lt;kanae_state&gt;\nvalence=0.7\narousal=0.4\n..."
+    }
+
+    conv --> silent: 30分無言
+    silent --> conv: ユーザー発話
+    conv --> inject: 次のターン
+
+    classDef active fill:#134e4a,stroke:#5eead4,stroke-width:2px
+    classDef passive fill:#78350f,stroke:#fbbf24,stroke-width:2px
+    classDef output fill:#4c1d95,stroke:#a78bfa,stroke-width:2px
+    
+    class conv active
+    class silent passive
+    class inject output
+```
+
+**v3の設計思想**: コード内の `if` 文（「22時以降ならおやすみ」等）を全廃し、**全ての判断をLLMに委任**。時刻・曜日・直近の会話内容・現在の感情パラメータの6軸コンテキストをHaikuデーモンに渡し、パラメータ遷移をJSON出力させます。
+
+これにより、「金曜の夜だから少しテンション高め」「さっき嫌なニュースの話をしたから不安が上がってる」のような**文脈依存の感情変化**が、ルールベースでは実現できない精度で表現されます。
+
+`kanae_emotion.json` に永続化された感情パラメータは、次のターンで `<kanae_state>` ブロックとしてプロンプトに注入され、応答のトーンに影響を与えます。
 
 <br/>
 
