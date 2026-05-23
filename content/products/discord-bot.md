@@ -649,41 +649,66 @@ flowchart LR
 mitmproxyで解析したCLIの認証プロトコルを、Pythonで再現する流れです。
 
 ```mermaid
+---
+config:
+  theme: dark
+  themeVariables:
+    fontSize: 16px
+    actorBkg: '#1e3a5f'
+    actorBorder: '#60a5fa'
+    actorTextColor: '#e2e8f0'
+    actorLineColor: '#475569'
+    signalColor: '#e2e8f0'
+    signalTextColor: '#e2e8f0'
+    labelBoxBkgColor: '#78350f'
+    labelBoxBorderColor: '#fbbf24'
+    labelTextColor: '#fef3c7'
+    noteBkgColor: '#4c1d95'
+    noteTextColor: '#e9d5ff'
+    noteBorderColor: '#a78bfa'
+    activationBkgColor: '#5eead4'
+---
 sequenceDiagram
     participant Bot as kanae-bot
     participant OAuth as oauth_manager
     participant Creds as credentials.json
-    participant Platform as platform claude
+    participant Platform as platform.claude.com
     participant API as Anthropic API
 
-    Note over Bot: プロセス起動時
-    Bot->>Creds: トークン読込
-    Creds-->>OAuth: access_token + refresh_token
-    OAuth->>Platform: GET /api/oauth/profile
-    Platform-->>OAuth: ユーザープロファイル
-    OAuth->>Platform: GET /api/oauth/claude_cli/roles
-    Platform-->>OAuth: CLIロール情報
-    Note over OAuth: Subscriber session primed
-
-    Note over Bot: APIリクエスト時
-    Bot->>OAuth: ensure_valid_token
-    alt トークン期限切れ
-        OAuth->>Platform: POST /v1/oauth/token refresh
-        Platform-->>OAuth: 新 access_token
-        OAuth->>Creds: atomic write
+    rect rgba(30, 58, 95, 0.4)
+        Note over Bot,API: フェーズ1 起動時 Subscriber session 初期化
+        Bot->>Creds: トークン読込
+        Creds-->>OAuth: access_token + refresh_token
+        OAuth->>Platform: GET /api/oauth/profile
+        Platform-->>OAuth: ユーザープロファイル
+        OAuth->>Platform: GET /api/oauth/claude_cli/roles
+        Platform-->>OAuth: CLIロール情報
+        Note over OAuth: Subscriber session primed
     end
 
-    Bot->>Bot: build_cli_headers
-    Bot->>Bot: get_attribution_header_value
-    Bot->>Bot: get_metadata
-    Bot->>Bot: _build_cached_system
+    rect rgba(120, 53, 15, 0.4)
+        Note over Bot,API: フェーズ2 リクエスト前 トークン検証・自動リフレッシュ
+        Bot->>OAuth: ensure_valid_token
+        alt トークン期限切れ 5分前
+            OAuth->>Platform: POST /v1/oauth/token refresh
+            Platform-->>OAuth: 新 access_token
+            OAuth->>Creds: atomic write
+        end
+    end
 
-    Bot->>API: POST /v1/messages + CLI偽装ヘッダー
+    rect rgba(76, 29, 149, 0.4)
+        Note over Bot,API: フェーズ3 リクエスト時 CLIヘッダー偽装・CCH署名
+        Bot->>Bot: build_cli_headers
+        Bot->>Bot: get_attribution_header_value
+        Bot->>Bot: get_metadata
+        Bot->>Bot: _build_cached_system
 
-    Note over Bot: httpx event hook
-    Bot->>Bot: cch_request_hook xxHash64
+        Bot->>API: POST /v1/messages + CLI偽装ヘッダー
+        Note over Bot,API: httpx event hookでボディ署名
+        Bot->>Bot: cch_request_hook xxHash64
 
-    API-->>Bot: Streaming response
+        API-->>Bot: Streaming response Subscriber tier
+    end
 ```
 
 認証は3段階です:
