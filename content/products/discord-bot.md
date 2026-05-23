@@ -849,22 +849,55 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    A1["`**発話解析**`"] --> A2["`**感情更新** *Haiku*`"]
-    A2 --> A3["`derived_labels`"]
-    A3 --> A4["`**kanae_emotion.json**`"]
+    subgraph Conv["会話フロー"]
+        A1["`**発話解析**
+        ユーザーの発話を解析`"]:::input
+        A2["`**感情更新**
+        Haiku daemon query`"]:::haiku
+        A3["`**derived_labels**
+        validator検証`"]:::process
+        A4["`**kanae_emotion.json**
+        6軸パラメータ永続化`"]:::storage
+        A1 --> A2 --> A3 --> A4
+    end
+
+    subgraph Silent["沈黙フロー 30分+"]
+        B1["`**loneliness上昇**
+        沈黙時間に比例`"]:::emotion
+        B2["`**自発連絡判定**
+        LLMが文脈判断`"]:::haiku
+        B3["`**Discord送信**
+        自発メッセージ`"]:::output
+        B4["`**待機継続**`"]:::wait
+        B1 --> B2
+        B2 -->|連絡する| B3
+        B2 -->|まだ待つ| B4
+    end
+
+    subgraph Inject["プロンプト注入"]
+        C1["`**emotion読込**`"]:::storage
+        C2["`**kanae_state_block**
+        6軸をXML化`"]:::process
+        C3["`**system_prompt注入**
+        次のターンに反映`"]:::output
+        C1 --> C2 --> C3
+    end
 
     A4 -->|30分無言| B1
-
-    B1["`**loneliness上昇**`"] --> B2["`**自発連絡判定** *LLM*`"]
-    B2 -->|連絡する| B3["`**Discord送信**`"]
-    B2 -->|まだ待つ| B4["`待機継続`"]
-
     B4 -->|ユーザー発話| A1
-
     A4 -->|次のターン| C1
-    C1["`**kanae_emotion.json**`"] --> C2["`**kanae_state_block**`"]
-    C2 --> C3["`**system_prompt注入**`"]
 
+    classDef input fill:#1e3a5f,stroke:#60a5fa,stroke-width:2px,color:#e2e8f0
+    classDef haiku fill:#701a75,stroke:#e879f9,stroke-width:2px,color:#e2e8f0
+    classDef process fill:#134e4a,stroke:#5eead4,stroke-width:2px,color:#e2e8f0
+    classDef storage fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#e2e8f0
+    classDef emotion fill:#7f1d1d,stroke:#f87171,stroke-width:2px,color:#e2e8f0
+    classDef output fill:#14532d,stroke:#4ade80,stroke-width:2px,color:#e2e8f0
+    classDef wait fill:#374151,stroke:#9ca3af,stroke-width:1px,color:#9ca3af
+
+    style Conv fill:#0f172a,stroke:#60a5fa,stroke-width:2px,color:#e2e8f0
+    style Silent fill:#1c1917,stroke:#f87171,stroke-width:2px,color:#e2e8f0
+    style Inject fill:#0c0a09,stroke:#a78bfa,stroke-width:2px,color:#e2e8f0
 ```
 
 **v3の設計思想**: コード内の `if` 文（「22時以降ならおやすみ」等）を全廃し、**全ての判断をLLMに委任**。時刻・曜日・直近の会話内容・現在の感情パラメータの6軸コンテキストをHaikuデーモンに渡し、パラメータ遷移をJSON出力させます。
