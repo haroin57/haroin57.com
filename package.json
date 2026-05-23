@@ -13,10 +13,7 @@
     "products:gen": "node --experimental-strip-types scripts/gen-product-posts.ts"
   },
   "dependencies": {
-    "@uiw/react-md-editor": "^4.0.11",
-    "claude": "^0.1.1",
     "fast-glob": "^3.3.3",
-    "firebase": "^12.7.0",
     "gray-matter": "^4.0.3",
     "mdast-util-to-string": "^4.0.0",
     "mermaid": "^11.12.2",
