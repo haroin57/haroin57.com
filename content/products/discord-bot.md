@@ -847,37 +847,38 @@ flowchart TB
 6軸パラメータの遷移とプロンプトへの注入フローです。
 
 ```mermaid
-stateDiagram-v2
-    state "会話中" as conv {
-        [*] --> 発話解析
-        発話解析 --> 感情更新: Haiku daemon query
-        感情更新 --> derived_labels: validator
-        derived_labels --> kanae_emotion.json: RMW lock
-    }
+flowchart TB
+    subgraph Conv["会話中"]
+        direction LR
+        A1["`**発話解析**`"] --> A2["`**感情更新**
+        *Haiku daemon*`"]
+        A2 --> A3["`derived_labels
+        *validator*`"]
+        A3 --> A4["`**kanae_emotion.json**
+        *RMW lock*`"]
+    end
 
-    state "沈黙中 (30分+)" as silent {
-        [*] --> loneliness上昇
-        loneliness上昇 --> 自発連絡判定: LLM判断
-        自発連絡判定 --> Discord送信: 連絡する
-        自発連絡判定 --> 待機継続: まだ待つ
-    }
+    subgraph Silent["沈黙中 30分以上"]
+        direction LR
+        B1["`**loneliness上昇**`"] --> B2["`**自発連絡判定**
+        *LLM判断*`"]
+        B2 -->|連絡する| B3["`**Discord送信**`"]
+        B2 -->|まだ待つ| B4["`待機継続`"]
+    end
 
-    state "プロンプト注入" as inject {
-        kanae_emotion.json --> kanae_state_block
-        kanae_state_block --> system_prompt: kanae_state注入
-    }
+    subgraph Inject["プロンプト注入"]
+        direction LR
+        C1["`**kanae_emotion.json**`"] --> C2["`**kanae_state_block**`"] --> C3["`**system_prompt**
+        *次のターンに注入*`"]
+    end
 
-    conv --> silent: 30分無言
-    silent --> conv: ユーザー発話
-    conv --> inject: 次のターン
+    Conv -->|30分無言| Silent
+    Silent -->|ユーザー発話| Conv
+    Conv -->|次のターン| Inject
 
-    classDef active fill:#134e4a,stroke:#5eead4,stroke-width:2px
-    classDef passive fill:#78350f,stroke:#fbbf24,stroke-width:2px
-    classDef output fill:#4c1d95,stroke:#a78bfa,stroke-width:2px
-    
-    class conv active
-    class silent passive
-    class inject output
+    style Conv fill:#134e4a,stroke:#5eead4,stroke-width:2px
+    style Silent fill:#78350f,stroke:#fbbf24,stroke-width:2px
+    style Inject fill:#4c1d95,stroke:#a78bfa,stroke-width:2px
 ```
 
 **v3の設計思想**: コード内の `if` 文（「22時以降ならおやすみ」等）を全廃し、**全ての判断をLLMに委任**。時刻・曜日・直近の会話内容・現在の感情パラメータの6軸コンテキストをHaikuデーモンに渡し、パラメータ遷移をJSON出力させます。
