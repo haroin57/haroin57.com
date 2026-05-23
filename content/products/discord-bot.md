@@ -582,8 +582,9 @@ flowchart LR
         on_message`"]
     end
 
-    subgraph Parallel["並列プリプロセス asyncio.gather"]
+    subgraph Parallel["並列プリプロセス"]
         direction TB
+        SPACER[" "]:::hidden
         T1["`reply_ctx
         *返信先の取得*`"]
         T2["`channel_history
@@ -615,7 +616,9 @@ flowchart LR
         キーワードスキャン`"]
     end
 
+    classDef hidden fill:none,stroke:none,color:transparent
     MSG --> Parallel
+    SPACER ~~~ T1
     T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 --> PB
     PB --> SYS
     PB --> USER
