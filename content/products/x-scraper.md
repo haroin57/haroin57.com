@@ -118,12 +118,22 @@ X.comはGraphQLクエリにビルドハッシュ（query ID）を要求します
 x-scraperは**X.comのJSバンドルを正規表現で解析**し、現在有効なqueryIdを自動抽出します。
 
 ```mermaid
+---
+config:
+  theme: dark
+  themeVariables:
+    fontSize: 16px
+  flowchart:
+    htmlLabels: true
+    nodeSpacing: 60
+    rankSpacing: 60
+---
 flowchart TB
     START(["`**ハッシュ要求**`"]):::start
 
     subgraph MemCache["メモリキャッシュ"]
-        MEM["`**_resolved_search_hash**
-        プロセス内変数`"]:::cache
+        MEM["`**メモリ変数**
+        プロセス内保持`"]:::cache
     end
 
     subgraph DiskCache["ディスクキャッシュ"]
@@ -132,17 +142,17 @@ flowchart TB
     end
 
     subgraph FetchLogic["JSバンドル解析"]
-        GET_HOME["`**GET https://x.com**
+        GET_HOME["`**GET x.com**
         メインページ取得`"]:::fetch
-        EXTRACT_JS["`**正規表現で抽出**
-        responsive-web/client-web/*.js`"]:::process
-        GET_JS["`**JS bundle 順次GET**`"]:::fetch
+        EXTRACT_JS["`**JS URL抽出**
+        client-web/*.js`"]:::process
+        GET_JS["`**JS順次GET**`"]:::fetch
         PARSE["`**queryId抽出**
-        operationName SearchTimeline`"]:::process
+        正規表現マッチ`"]:::process
     end
 
     FALLBACK["`**フォールバック値**
-    GcXk9vN_d1jUfHNqLacXQA`"]:::fallback
+    ハードコード`"]:::fallback
 
     OUTPUT(["`**ハッシュ確定**`"]):::output
 
