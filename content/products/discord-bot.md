@@ -692,6 +692,12 @@ sequenceDiagram
 Claude APIの応答を受け取り、ツール呼び出しを処理するループです。
 
 ```mermaid
+---
+config:
+  theme: dark
+  themeVariables:
+    fontSize: 18px
+---
 flowchart TB
     subgraph Loop["run_agent_loop (tool_loop.py)"]
         direction TB
