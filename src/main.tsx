@@ -4,7 +4,6 @@ import AnimatedRoutes from './components/AnimatedRoutes'
 import { preloadRoutesForPath } from './lib/preloadRoutes'
 import GlobalBackground from './components/GlobalBackground'
 import ScrollTopHomeSwitch from './components/ScrollTopHomeSwitch'
-import { AdminAuthProvider } from './contexts/AdminAuthContext'
 import './index.css'
 
 const rootElement = document.getElementById('root')
@@ -19,11 +18,9 @@ const normalizePath = (path: string) => {
 
 const app = (
   <BrowserRouter>
-    <AdminAuthProvider>
-      <GlobalBackground />
-      <ScrollTopHomeSwitch />
-      <AnimatedRoutes />
-    </AdminAuthProvider>
+    <GlobalBackground />
+    <ScrollTopHomeSwitch />
+    <AnimatedRoutes />
   </BrowserRouter>
 )
 

@@ -1,10 +1,13 @@
-import { useContext } from 'react'
-import { AdminAuthContext } from '../contexts/AdminAuthContextDef'
-
 export function useAdminAuth() {
-  const context = useContext(AdminAuthContext)
-  if (!context) {
-    throw new Error('useAdminAuth must be used within AdminAuthProvider')
+  return {
+    isAdmin: false,
+    user: null,
+    idToken: null,
+    isLoading: false,
+    isRedirecting: false,
+    sessionExpiresAt: null,
+    loginWithGoogle: async () => false,
+    logout: async () => {},
+    registerBeforeLogout: () => () => {},
   }
-  return context
 }

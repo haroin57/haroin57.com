@@ -11,8 +11,6 @@ import {
   About,
   BBSList,
   BBSThread,
-  PostEditor,
-  ProductEditor,
 } from '../lib/preloadRoutes'
 
 function AnimatedRoutes() {
@@ -32,10 +30,6 @@ function AnimatedRoutes() {
           <Route path="/about" element={<About />} />
           <Route path="/bbs" element={<BBSList />} />
           <Route path="/bbs/:threadId" element={<BBSThread />} />
-          <Route path="/admin/posts/new" element={<PostEditor />} />
-          <Route path="/admin/posts/:slug/edit" element={<PostEditor />} />
-          <Route path="/admin/products/new" element={<ProductEditor />} />
-          <Route path="/admin/products/:slug/edit" element={<ProductEditor />} />
         </Routes>
       </Suspense>
     </div>

@@ -9,8 +9,6 @@ const Photos = lazyWithPreload(() => import('../routes/Photos'))
 const About = lazyWithPreload(() => import('../routes/About'))
 const BBSList = lazyWithPreload(() => import('../routes/BBSList'))
 const BBSThread = lazyWithPreload(() => import('../routes/BBSThread'))
-const PostEditor = lazyWithPreload(() => import('../routes/admin/PostEditor'))
-const ProductEditor = lazyWithPreload(() => import('../routes/admin/ProductEditor'))
 
 export async function preloadRoutesForPath(pathname: string): Promise<void> {
   const segments = pathname.split('/').filter(Boolean)
@@ -29,18 +27,6 @@ export async function preloadRoutesForPath(pathname: string): Promise<void> {
 
   if (first === 'bbs' && second) {
     await BBSThread.preload()
-    return
-  }
-
-  if (first === 'admin') {
-    if (second === 'posts') {
-      await PostEditor.preload()
-      return
-    }
-    if (second === 'products') {
-      await ProductEditor.preload()
-      return
-    }
     return
   }
 
@@ -79,6 +65,4 @@ export {
   About,
   BBSList,
   BBSThread,
-  PostEditor,
-  ProductEditor,
 }
