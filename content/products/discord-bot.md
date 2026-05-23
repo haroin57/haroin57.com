@@ -602,14 +602,8 @@ flowchart LR
 
     subgraph Build["プロンプト組立"]
         PB["`**prompt_builder**`"]
-        SYS["`**system 4ブロック**
-        billing / identity
-        CLI prompt / persona`"]
-        USER["`**user content**
-        kanae_state
-        kanae_daily
-        retrieved_memories
-        untrusted_user_input`"]
+        SYS["`**system 4ブロック**`"]
+        USER["`**user content**`"]
     end
 
     subgraph Select["MCP選択"]
@@ -848,37 +842,22 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    subgraph Conv["会話中"]
-        direction LR
-        A1["`**発話解析**`"] --> A2["`**感情更新**
-        *Haiku daemon*`"]
-        A2 --> A3["`derived_labels
-        *validator*`"]
-        A3 --> A4["`**kanae_emotion.json**
-        *RMW lock*`"]
-    end
+    A1["`**発話解析**`"] --> A2["`**感情更新** *Haiku*`"]
+    A2 --> A3["`derived_labels`"]
+    A3 --> A4["`**kanae_emotion.json**`"]
 
-    subgraph Silent["沈黙中 30分以上"]
-        direction LR
-        B1["`**loneliness上昇**`"] --> B2["`**自発連絡判定**
-        *LLM判断*`"]
-        B2 -->|連絡する| B3["`**Discord送信**`"]
-        B2 -->|まだ待つ| B4["`待機継続`"]
-    end
+    A4 -->|30分無言| B1
 
-    subgraph Inject["プロンプト注入"]
-        direction LR
-        C1["`**kanae_emotion.json**`"] --> C2["`**kanae_state_block**`"] --> C3["`**system_prompt**
-        *次のターンに注入*`"]
-    end
+    B1["`**loneliness上昇**`"] --> B2["`**自発連絡判定** *LLM*`"]
+    B2 -->|連絡する| B3["`**Discord送信**`"]
+    B2 -->|まだ待つ| B4["`待機継続`"]
 
-    Conv -->|30分無言| Silent
-    Silent -->|ユーザー発話| Conv
-    Conv -->|次のターン| Inject
+    B4 -->|ユーザー発話| A1
 
-    style Conv fill:#134e4a,stroke:#5eead4,stroke-width:2px
-    style Silent fill:#78350f,stroke:#fbbf24,stroke-width:2px
-    style Inject fill:#4c1d95,stroke:#a78bfa,stroke-width:2px
+    A4 -->|次のターン| C1
+    C1["`**kanae_emotion.json**`"] --> C2["`**kanae_state_block**`"]
+    C2 --> C3["`**system_prompt注入**`"]
+
 ```
 
 **v3の設計思想**: コード内の `if` 文（「22時以降ならおやすみ」等）を全廃し、**全ての判断をLLMに委任**。時刻・曜日・直近の会話内容・現在の感情パラメータの6軸コンテキストをHaikuデーモンに渡し、パラメータ遷移をJSON出力させます。
