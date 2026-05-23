@@ -583,21 +583,30 @@ flowchart LR
         direction TB
         subgraph Col1[" "]
             direction TB
-            T1["`reply_ctx`"]
-            T2["`channel_history`"]
-            T3["`**mem0_search**`"]
+            T1["`**reply_ctx**
+            返信先メッセージ取得`"]
+            T2["`**channel_history**
+            直近20件の会話履歴`"]
+            T3["`**mem0_search**
+            長期記憶のSmart Search`"]
         end
         subgraph Col2[" "]
             direction TB
-            T4["`**emotion_load**`"]
-            T5["`image_download`"]
-            T6["`session_load`"]
+            T4["`**emotion_load**
+            感情パラメータ読込`"]
+            T5["`**image_download**
+            添付画像のbase64変換`"]
+            T6["`**session_load**
+            JSONLトランスクリプト読込`"]
         end
         subgraph Col3[" "]
             direction TB
-            T7["`daily_context`"]
-            T8["`kanae_self_memory`"]
-            T9["`entity_context`"]
+            T7["`**daily_context**
+            日次リングバッファ読込`"]
+            T8["`**kanae_self_memory**
+            かなえの自己記憶取得`"]
+            T9["`**entity_context**
+            関連エンティティ展開`"]
         end
         Col1 ~~~ Col2 ~~~ Col3
     end
