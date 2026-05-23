@@ -279,7 +279,13 @@ Bearer Tokenは公開情報（Web版X.comのJSバンドルに埋め込まれて�
 `search_x` ツールが実行されてから結果が返るまでのデータフローです。
 
 ```mermaid
-flowchart LR
+---
+config:
+  theme: dark
+  themeVariables:
+    fontSize: 16px
+---
+flowchart TB
     subgraph Input["入力"]
         Q["`**keywords**
         例: AI, Claude
@@ -287,12 +293,14 @@ flowchart LR
     end
 
     subgraph Prepare["準備"]
+        direction TB
         LOAD["`**_load_cookies**
         x_cookies.json 読込`"]:::prep
         HASH["`**_fetch_search_hash**
         GraphQLハッシュ取得`"]:::prep
         BUILD_URL["`**URL構築**
         SearchTimeline/{hash}`"]:::prep
+        LOAD --> HASH --> BUILD_URL
     end
 
     subgraph Search["検索ループ"]
@@ -304,9 +312,13 @@ flowchart LR
         最新ツイート`"]:::query
         TOP["`**Top検索**
         人気ツイート`"]:::query
+        FOR --> QUERY
+        QUERY --> LATEST
+        QUERY --> TOP
     end
 
     subgraph Parse["パース"]
+        direction TB
         GQL["`**GraphQL POST**
         variables + features 20種`"]:::api
         EXTRACT["`**_extract_graphql_tweets**
@@ -315,9 +327,11 @@ flowchart LR
         text >= 10文字`"]:::process
         MEDIA["`**メディア抽出**
         photo/video/gif URL`"]:::process
+        GQL --> EXTRACT --> FILTER --> MEDIA
     end
 
     subgraph Output["出力"]
+        direction TB
         ITEM["`**NewsItem化**
         title, url, engagement
         media_urls`"]:::result
@@ -325,24 +339,14 @@ flowchart LR
         seen set`"]:::result
         SORT["`**engagement順ソート**`"]:::result
         JSON["`**JSON返却**`"]:::result
+        ITEM --> DEDUP --> SORT --> JSON
     end
 
     Q --> LOAD
-    LOAD --> HASH
-    HASH --> BUILD_URL
     BUILD_URL --> FOR
-    FOR --> QUERY
-    QUERY --> LATEST
-    QUERY --> TOP
     LATEST --> GQL
     TOP --> GQL
-    GQL --> EXTRACT
-    EXTRACT --> FILTER
-    FILTER --> MEDIA
     MEDIA --> ITEM
-    ITEM --> DEDUP
-    DEDUP --> SORT
-    SORT --> JSON
 
     classDef input fill:#1e3a5f,stroke:#60a5fa,stroke-width:2px,color:#e2e8f0
     classDef prep fill:#134e4a,stroke:#5eead4,stroke-width:2px,color:#e2e8f0
