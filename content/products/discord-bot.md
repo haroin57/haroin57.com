@@ -732,7 +732,7 @@ config:
     fontSize: 24px
 ---
 flowchart TB
-    subgraph Loop["run_agent_loop (tool_loop.py)"]
+    subgraph Loop["run_agent_loop"]
         direction TB
         SEND["`**Messages API へ送信**
         streaming`"]
