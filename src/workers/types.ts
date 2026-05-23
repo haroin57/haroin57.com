@@ -14,36 +14,8 @@ export type Env = {
   // 環境変数
   ALLOWED_ORIGIN?: string
   ADMIN_SECRET?: string
-  FIREBASE_PROJECT_ID?: string
-  ADMIN_EMAILS?: string
   R2_PUBLIC_URL?: string
   CYANITE_WEBHOOK_SECRET?: string
-}
-
-// Firebase IDトークンのヘッダー型
-export type FirebaseTokenHeader = {
-  alg: string
-  kid: string
-  typ: string
-}
-
-// Firebase IDトークンのペイロード型
-export type FirebaseTokenPayload = {
-  iss: string
-  aud: string
-  auth_time: number
-  user_id: string
-  sub: string
-  iat: number
-  exp: number
-  email?: string
-  email_verified?: boolean
-}
-
-// Google公開鍵のキャッシュ
-export type PublicKeyCache = {
-  keys: Record<string, CryptoKey>
-  expiresAt: number
 }
 
 // BBS型定義
@@ -84,67 +56,6 @@ export type ThreadRow = {
   created_by: string
   post_count: number
   last_post_at: string
-}
-
-// CMS型定義
-export type CMSPostMeta = {
-  slug: string
-  title: string
-  summary: string
-  createdAt: string
-  updatedAt: string
-  tags: string[]
-  status: 'draft' | 'published'
-}
-
-export type CMSPost = CMSPostMeta & {
-  markdown: string
-  html: string
-}
-
-// D1用のPost型
-export type CMSPostRow = {
-  slug: string
-  title: string
-  summary: string
-  markdown: string
-  html: string
-  tags: string // JSON string
-  status: 'draft' | 'published'
-  created_at: string
-  updated_at: string
-}
-
-export type CMSProductMeta = {
-  slug: string
-  name: string
-  description: string
-  language: string
-  tags: string[]
-  url: string
-  demo?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export type CMSProduct = CMSProductMeta & {
-  markdown?: string
-  html?: string
-}
-
-// D1用のProduct型
-export type CMSProductRow = {
-  slug: string
-  name: string
-  description: string
-  language: string
-  tags: string // JSON string
-  url: string
-  demo: string | null
-  markdown: string | null
-  html: string | null
-  created_at: string
-  updated_at: string
 }
 
 // 定数

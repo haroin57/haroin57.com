@@ -6,7 +6,6 @@ import { DEFAULT_ORIGIN } from './types'
 import { buildCorsHeaders, checkOrigin } from './utils'
 import { handlePv, handleGood } from './pv'
 import { handleBbs } from './bbs'
-import { handleCms } from './cms'
 import { handleCyaniteWebhook } from './cyanite'
 
 export default {
@@ -17,10 +16,9 @@ export default {
     const isPv = url.pathname.startsWith('/api/pv')
     const isGood = url.pathname.startsWith('/api/good')
     const isBbs = url.pathname.startsWith('/api/bbs')
-    const isCms = url.pathname.startsWith('/api/cms')
     const isCyaniteWebhook = url.pathname.startsWith('/api/cyanite/webhook')
 
-    if (!isPv && !isGood && !isBbs && !isCms && !isCyaniteWebhook) {
+    if (!isPv && !isGood && !isBbs && !isCyaniteWebhook) {
       return new Response('not found', { status: 404 })
     }
 
@@ -43,20 +41,6 @@ export default {
         return new Response('Method not allowed', { status: 405, headers: corsHeaders })
       }
       return handleBbs(req, env, corsHeaders, url.pathname)
-    }
-
-    // CMS は GET, POST, PUT, PATCH, DELETE を許可
-    if (isCms) {
-      if (
-        req.method !== 'GET' &&
-        req.method !== 'POST' &&
-        req.method !== 'PUT' &&
-        req.method !== 'PATCH' &&
-        req.method !== 'DELETE'
-      ) {
-        return new Response('Method not allowed', { status: 405, headers: corsHeaders })
-      }
-      return handleCms(req, env, corsHeaders, url.pathname)
     }
 
     if (isCyaniteWebhook) {
