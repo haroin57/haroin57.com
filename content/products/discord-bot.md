@@ -352,6 +352,10 @@ entity_relations (時系列状態変化)
 
 検索時にtop-3候補からentityを抽出し、1-hop expansion で関連factを引き込みます。
 
+**実際のナレッジグラフ（mention_count ≥ 20のエンティティ、33ノード / 73エッジ）:**
+
+![kanae-bot Knowledge Graph](/knowledge_graph.webp)
+
 <br/>
 
 ### Phase 5: Hebbian Reinforcement
