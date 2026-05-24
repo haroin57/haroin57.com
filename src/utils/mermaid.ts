@@ -143,10 +143,206 @@ function attachZoomToggle(block: HTMLElement): void {
   btn.className = 'mermaid-zoom-toggle'
   btn.textContent = '拡大'
   btn.setAttribute('aria-label', '拡大表示')
-  btn.addEventListener('click', () => {
-    const isZoomed = block.classList.toggle('zoomed')
-    btn.textContent = isZoomed ? '縮小' : '拡大'
-    btn.setAttribute('aria-label', isZoomed ? '元のサイズに戻す' : '拡大表示')
-  })
+  btn.addEventListener('click', () => openMermaidModal(block))
   block.appendChild(btn)
+}
+
+let modalEl: HTMLDivElement | null = null
+
+function openMermaidModal(block: HTMLElement): void {
+  const svg = block.querySelector('svg')
+  if (!svg) return
+
+  closeMermaidModal()
+
+  const overlay = document.createElement('div')
+  overlay.className = 'mermaid-modal-overlay'
+  overlay.setAttribute('role', 'dialog')
+  overlay.setAttribute('aria-modal', 'true')
+
+  const inner = document.createElement('div')
+  inner.className = 'mermaid-modal-inner'
+
+  // Clone SVG so original stays untouched
+  const svgClone = svg.cloneNode(true) as SVGElement
+  svgClone.removeAttribute('style')
+  // Use viewBox-based scaling and remove explicit width/height
+  svgClone.removeAttribute('width')
+  svgClone.removeAttribute('height')
+  inner.appendChild(svgClone)
+
+  const closeBtn = document.createElement('button')
+  closeBtn.type = 'button'
+  closeBtn.className = 'mermaid-modal-close'
+  closeBtn.textContent = '✕'
+  closeBtn.setAttribute('aria-label', '閉じる')
+  closeBtn.addEventListener('click', closeMermaidModal)
+
+  const hint = document.createElement('div')
+  hint.className = 'mermaid-modal-hint'
+  hint.textContent = 'ピンチでズーム、ドラッグで移動'
+
+  overlay.appendChild(inner)
+  overlay.appendChild(closeBtn)
+  overlay.appendChild(hint)
+
+  // Click on overlay (not inner) closes
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeMermaidModal()
+  })
+
+  // ESC key closes
+  const escHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') closeMermaidModal()
+  }
+  document.addEventListener('keydown', escHandler)
+  overlay.dataset.escHandler = '1'
+  ;(overlay as any).__escHandler = escHandler
+
+  document.body.appendChild(overlay)
+  document.body.style.overflow = 'hidden'
+  modalEl = overlay
+
+  attachPanZoom(inner, svgClone)
+}
+
+function closeMermaidModal(): void {
+  if (!modalEl) return
+  const handler = (modalEl as any).__escHandler
+  if (handler) document.removeEventListener('keydown', handler)
+  modalEl.remove()
+  modalEl = null
+  document.body.style.overflow = ''
+}
+
+function attachPanZoom(container: HTMLElement, svg: SVGElement): void {
+  let scale = 1
+  let tx = 0
+  let ty = 0
+
+  // Pointer tracking
+  const pointers = new Map<number, { x: number; y: number }>()
+  let lastDist: number | null = null
+  let panLastX = 0
+  let panLastY = 0
+  let panning = false
+
+  const applyTransform = () => {
+    svg.style.transformOrigin = '0 0'
+    svg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`
+  }
+  applyTransform()
+
+  container.style.touchAction = 'none'
+  container.style.userSelect = 'none'
+
+  container.addEventListener('pointerdown', (e) => {
+    container.setPointerCapture(e.pointerId)
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pointers.size === 1) {
+      panning = true
+      panLastX = e.clientX
+      panLastY = e.clientY
+    } else if (pointers.size === 2) {
+      lastDist = pinchDistance()
+      panning = false
+    }
+  })
+
+  container.addEventListener('pointermove', (e) => {
+    if (!pointers.has(e.pointerId)) return
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pointers.size === 2) {
+      const newDist = pinchDistance()
+      if (lastDist) {
+        const factor = newDist / lastDist
+        // Zoom around pinch midpoint
+        const mid = pinchMidpoint()
+        const rect = container.getBoundingClientRect()
+        const cx = mid.x - rect.left
+        const cy = mid.y - rect.top
+        const newScale = Math.max(0.5, Math.min(8, scale * factor))
+        const actualFactor = newScale / scale
+        tx = cx - (cx - tx) * actualFactor
+        ty = cy - (cy - ty) * actualFactor
+        scale = newScale
+        applyTransform()
+      }
+      lastDist = newDist
+    } else if (pointers.size === 1 && panning) {
+      tx += e.clientX - panLastX
+      ty += e.clientY - panLastY
+      panLastX = e.clientX
+      panLastY = e.clientY
+      applyTransform()
+    }
+  })
+
+  const endPointer = (e: PointerEvent) => {
+    pointers.delete(e.pointerId)
+    if (pointers.size < 2) lastDist = null
+    if (pointers.size === 0) panning = false
+    if (pointers.size === 1) {
+      // Continue panning with remaining pointer
+      const remaining = pointers.values().next().value
+      if (remaining) {
+        panLastX = remaining.x
+        panLastY = remaining.y
+        panning = true
+      }
+    }
+  }
+
+  container.addEventListener('pointerup', endPointer)
+  container.addEventListener('pointercancel', endPointer)
+
+  // Wheel zoom for desktop
+  container.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault()
+      const rect = container.getBoundingClientRect()
+      const cx = e.clientX - rect.left
+      const cy = e.clientY - rect.top
+      const delta = -e.deltaY * 0.002
+      const factor = Math.exp(delta)
+      const newScale = Math.max(0.5, Math.min(8, scale * factor))
+      const actualFactor = newScale / scale
+      tx = cx - (cx - tx) * actualFactor
+      ty = cy - (cy - ty) * actualFactor
+      scale = newScale
+      applyTransform()
+    },
+    { passive: false }
+  )
+
+  // Double-tap to reset
+  let lastTap = 0
+  container.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return
+    const now = Date.now()
+    if (now - lastTap < 300) {
+      scale = 1
+      tx = 0
+      ty = 0
+      applyTransform()
+    }
+    lastTap = now
+  })
+
+  function pinchDistance(): number {
+    const p = Array.from(pointers.values())
+    if (p.length < 2) return 0
+    const dx = p[0].x - p[1].x
+    const dy = p[0].y - p[1].y
+    return Math.hypot(dx, dy)
+  }
+
+  function pinchMidpoint(): { x: number; y: number } {
+    const p = Array.from(pointers.values())
+    return {
+      x: (p[0].x + p[1].x) / 2,
+      y: (p[0].y + p[1].y) / 2,
+    }
+  }
 }
