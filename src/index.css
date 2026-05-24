@@ -1415,9 +1415,65 @@ body {
     padding: 0.5rem 0.75rem;
   }
 
+  .prose .table-wrapper {
+    margin: 1rem -1rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    position: relative;
+  }
+
+  /* テーブル右端のスクロール指示シャドウ */
+  .prose .table-wrapper::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 8px;
+    width: 24px;
+    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.6));
+    pointer-events: none;
+  }
+
   /* ----- コードブロック ----- */
   .prose pre {
     -webkit-overflow-scrolling: touch;
+    font-size: 0.78rem;
+    padding: 0.65rem 0.75rem;
+    margin: 0.75rem -1rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    /* スクロールバーを視覚的に常時表示 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+
+  .prose pre::-webkit-scrollbar {
+    height: 6px;
+    -webkit-appearance: none;
+  }
+
+  .prose pre::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+
+  .prose pre::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .prose figure[data-rehype-pretty-code-figure].mdn-code {
+    margin: 0.75rem -1rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  /* インラインcode の改行制御（長い識別子の溢れ防止） */
+  .prose :not(pre) > code {
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   /* コピーボタン - タップしやすく（44px以上） */
@@ -1435,6 +1491,72 @@ body {
   .prose ul,
   .prose ol {
     padding-left: 1.25rem;
+  }
+
+  /* ----- Mermaid モバイル最適化 ----- */
+  .mermaid-block {
+    margin: 1rem -1rem;
+    padding: 0.85rem 0.5rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+
+  .mermaid-block::-webkit-scrollbar {
+    height: 6px;
+    -webkit-appearance: none;
+  }
+
+  .mermaid-block::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+
+  .mermaid-block::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .mermaid-block svg {
+    /* モバイルでもナチュラルな最小幅を保持しスクロール可能に */
+    min-width: 0;
+    max-width: none;
+    width: auto;
+    height: auto;
+  }
+
+  /* スクロール可能な右端ヒント */
+  .mermaid-block::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 8px;
+    width: 24px;
+    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.65));
+    pointer-events: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  /* ----- 段落・本文の文字サイズ調整 ----- */
+  .prose p {
+    line-height: 1.75;
+  }
+
+  .prose h1 {
+    font-size: 1.35rem;
+  }
+
+  .prose h2 {
+    font-size: 1.15rem;
+  }
+
+  .prose h3 {
+    font-size: 1.05rem;
   }
 }
 
