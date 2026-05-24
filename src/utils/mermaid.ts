@@ -129,8 +129,24 @@ export async function renderMermaidBlocks(root: ParentNode): Promise<void> {
       block.innerHTML = svg
       block.classList.add('mermaid-rendered')
       bindFunctions?.(block)
+      attachZoomToggle(block)
     } catch {
       setMermaidError(block)
     }
   }
+}
+
+function attachZoomToggle(block: HTMLElement): void {
+  if (block.querySelector('.mermaid-zoom-toggle')) return
+  const btn = document.createElement('button')
+  btn.type = 'button'
+  btn.className = 'mermaid-zoom-toggle'
+  btn.textContent = '拡大'
+  btn.setAttribute('aria-label', '拡大表示')
+  btn.addEventListener('click', () => {
+    const isZoomed = block.classList.toggle('zoomed')
+    btn.textContent = isZoomed ? '縮小' : '拡大'
+    btn.setAttribute('aria-label', isZoomed ? '元のサイズに戻す' : '拡大表示')
+  })
+  block.appendChild(btn)
 }

@@ -1521,11 +1521,54 @@ body {
   }
 
   .mermaid-block svg {
-    /* モバイルでテキスト可読性確保のため最小幅を強制 → 横スクロール */
-    min-width: 720px;
-    max-width: none;
+    /* デフォルトはfit-width。.zoomedクラスで拡大表示 */
+    min-width: 0;
+    max-width: 100%;
     width: auto;
     height: auto;
+    touch-action: pinch-zoom;
+  }
+
+  .mermaid-block.zoomed svg {
+    min-width: 720px;
+    max-width: none;
+  }
+
+  .mermaid-block.zoomed::after {
+    /* 拡大時にスクロールシャドウ表示 */
+    opacity: 1;
+  }
+}
+
+/* ----- Mermaid拡大ボタン (全幅対応) ----- */
+.mermaid-zoom-toggle {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 10;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.mermaid-zoom-toggle:hover,
+.mermaid-zoom-toggle:active {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+@media (min-width: 641px) {
+  /* PCでは拡大ボタン非表示 (元から大きく表示されるため) */
+  .mermaid-zoom-toggle {
+    display: none;
   }
 
   /* スクロール可能な右端ヒント */

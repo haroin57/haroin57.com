@@ -10,6 +10,7 @@ export function MermaidRenderer({ chart, className = '' }: MermaidRendererProps)
   const containerRef = useRef<HTMLDivElement>(null)
   const [svg, setSvg] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
+  const [zoomed, setZoomed] = useState(false)
 
   useEffect(() => {
     let isActive = true
@@ -52,11 +53,21 @@ export function MermaidRenderer({ chart, className = '' }: MermaidRendererProps)
   }
 
   return (
-    <div
-      ref={containerRef}
-      className={`mermaid-container ${className}`}
-      dangerouslySetInnerHTML={{ __html: svg }}
-    />
+    <div className={`mermaid-renderer-wrap ${zoomed ? 'zoomed' : ''}`}>
+      <button
+        type="button"
+        className="mermaid-zoom-toggle"
+        onClick={() => setZoomed((z) => !z)}
+        aria-label={zoomed ? '元のサイズに戻す' : '拡大表示'}
+      >
+        {zoomed ? '縮小' : '拡大'}
+      </button>
+      <div
+        ref={containerRef}
+        className={`mermaid-container ${className}`}
+        dangerouslySetInnerHTML={{ __html: svg }}
+      />
+    </div>
   )
 }
 
