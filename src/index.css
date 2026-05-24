@@ -1472,10 +1472,21 @@ body {
   }
 
   .prose pre code,
-  .prose pre code .line {
+  .prose pre code .line,
+  .prose pre code [data-line] {
     white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap: anywhere;
+  }
+
+  /* rehype-pretty-code が code に inline display:grid を入れるため、
+     grid items が overflow しないよう min-width 0 を強制 */
+  .prose pre code[style*="grid"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .prose pre code > * {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .prose figure[data-rehype-pretty-code-figure].mdn-code {
