@@ -197,6 +197,16 @@ body {
   @apply bg-ink text-slate-100 font-sans antialiased;
   background-color: #222222;
   min-height: 100vh;
+  /* iOS Safari の pre/code auto-inflate を無効化 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* pre/code は明示的に inflate 無効化 */
+pre,
+code {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* ページコンテンツのフェードイン */
