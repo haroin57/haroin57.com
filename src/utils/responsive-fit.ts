@@ -82,9 +82,39 @@ export function watchResponsiveFit(root: ParentNode): () => void {
   // Initial run
   scheduleFit(root)
 
+  // Optional debug overlay
+  if (typeof window !== 'undefined' && window.location.search.includes('debug=1')) {
+    setTimeout(() => mountDebugOverlay(root), 1000)
+  }
+
   return () => {
     window.removeEventListener('resize', onResize)
     window.removeEventListener('orientationchange', onResize)
     observer.disconnect()
   }
+}
+
+function mountDebugOverlay(root: ParentNode): void {
+  let overlay = document.getElementById('__resp_debug')
+  if (!overlay) {
+    overlay = document.createElement('div')
+    overlay.id = '__resp_debug'
+    overlay.style.cssText =
+      'position:fixed;top:0;left:0;right:0;z-index:99999;background:rgba(220,38,38,0.95);color:white;font-family:monospace;font-size:11px;padding:6px;line-height:1.3;max-height:50vh;overflow:auto;border-bottom:2px solid yellow;'
+    document.body.appendChild(overlay)
+  }
+  const elements = Array.from(root.querySelectorAll<HTMLElement>(FIT_SELECTOR))
+  const ua = navigator.userAgent
+  const lines: string[] = []
+  lines.push(`[DEBUG] vw=${window.innerWidth} doc=${document.documentElement.scrollWidth} body=${document.body.scrollWidth}`)
+  lines.push(`[DEBUG] UA: ${ua.slice(0, 60)}`)
+  elements.slice(0, 8).forEach((el, i) => {
+    const r = el.getBoundingClientRect()
+    const cs = window.getComputedStyle(el)
+    const overflow = el.scrollWidth > el.offsetWidth + 1 ? ' OVERFLOW' : ''
+    lines.push(
+      `[${i}] ${el.tagName} w=${Math.round(r.width)} sw=${el.scrollWidth} ow=${el.offsetWidth} fs=${cs.fontSize} ws=${cs.whiteSpace} d=${cs.display}${overflow}`
+    )
+  })
+  overlay.innerHTML = lines.map((l) => `<div>${l}</div>`).join('')
 }

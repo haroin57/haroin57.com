@@ -182,8 +182,9 @@ const PostContent = memo(function PostContent({
   useEffect(() => {
     const el = proseRef.current
     if (!el) return
-    // Only enable on narrow viewports (mobile)
-    if (window.innerWidth > 640) return
+    const isDebug = window.location.search.includes('debug=1')
+    // Only enable on narrow viewports (mobile) or debug
+    if (window.innerWidth > 640 && !isDebug) return
     const cleanup = watchResponsiveFit(el)
     return cleanup
   }, [html])
