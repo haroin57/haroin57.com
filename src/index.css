@@ -1521,8 +1521,8 @@ body {
   }
 
   .mermaid-block svg {
-    /* モバイルでもナチュラルな最小幅を保持しスクロール可能に */
-    min-width: 0;
+    /* モバイルでテキスト可読性確保のため最小幅を強制 → 横スクロール */
+    min-width: 720px;
     max-width: none;
     width: auto;
     height: auto;
