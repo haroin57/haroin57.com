@@ -404,6 +404,29 @@ img {
   transform: skewX(-8deg);
 }
 
+/* Mermaid内のem/strongはforeignObject内でレイアウトが崩れるため上書き */
+.mermaid-block em,
+.mermaid-block foreignObject em,
+.mermaid-container em,
+.mermaid-container foreignObject em {
+  display: inline !important;
+  transform: none !important;
+  font-style: italic;
+}
+
+.mermaid-block foreignObject,
+.mermaid-container foreignObject {
+  overflow: visible;
+}
+
+.mermaid-block foreignObject > div,
+.mermaid-container foreignObject > div {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
 /* テーブルのスタイル */
 .prose .table-wrapper {
   overflow-x: auto;
