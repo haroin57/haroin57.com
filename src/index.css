@@ -1452,55 +1452,38 @@ body {
     overflow-x: auto;
   }
 
-  /* ----- コードブロック ----- */
+  /* ----- コードブロック (横スクロール方式) ----- */
   .prose pre {
     -webkit-overflow-scrolling: touch;
-    font-size: 0.72rem;
-    padding: 0.65rem 0.75rem;
+    font-size: 0.78rem;
+    padding: 0.7rem 0.8rem;
     margin: 0.75rem 0;
     border-radius: 10px;
-    /* モバイルでは折り返しを有効化して全コードを表示 */
-    white-space: pre-wrap;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    overflow-x: hidden;
+    /* 折り返しせず横スクロール */
+    white-space: pre;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* スクロールバー表示 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
   }
 
-  .prose pre,
-  .prose pre code,
-  .prose pre code .line,
-  .prose pre code [data-line],
-  .prose pre code [data-line] span {
-    white-space: pre-wrap !important;
-    word-break: break-word !important;
-    overflow-wrap: anywhere !important;
-    font-size: 0.7rem !important;
+  .prose pre::-webkit-scrollbar {
+    height: 6px;
+    -webkit-appearance: none;
   }
-
-  /* rehype-pretty-code の inline display:grid を block に強制上書き */
-  .prose pre code,
-  .prose pre code[style] {
-    display: block !important;
-    grid-template-columns: none !important;
+  .prose pre::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 3px;
   }
-
-  .prose pre code > * {
-    display: block !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    width: auto !important;
-  }
-
-  /* pre 自体も overflow 強制無効化 */
-  .prose pre {
-    overflow-x: hidden !important;
-    overflow-y: visible !important;
-    max-width: 100% !important;
+  .prose pre::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
   }
 
   .prose figure[data-rehype-pretty-code-figure].mdn-code {
     margin: 0.75rem 0;
     border-radius: 10px;
+    overflow: hidden;
   }
 
   .prose figure[data-rehype-pretty-code-figure].mdn-code pre {
