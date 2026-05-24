@@ -1446,12 +1446,9 @@ body {
   }
 
   .prose .table-wrapper {
-    margin: 1rem -1rem;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
+    margin: 1rem 0;
+    border-radius: 10px;
     position: relative;
-    padding: 0 0.5rem;
     overflow-x: auto;
   }
 
@@ -1460,10 +1457,8 @@ body {
     -webkit-overflow-scrolling: touch;
     font-size: 0.72rem;
     padding: 0.65rem 0.75rem;
-    margin: 0.75rem -1rem;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
+    margin: 0.75rem 0;
+    border-radius: 10px;
     /* モバイルでは折り返しを有効化して全コードを表示 */
     white-space: pre-wrap;
     word-break: break-word;
@@ -1504,14 +1499,13 @@ body {
   }
 
   .prose figure[data-rehype-pretty-code-figure].mdn-code {
-    margin: 0.75rem -1rem;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
+    margin: 0.75rem 0;
+    border-radius: 10px;
   }
 
   .prose figure[data-rehype-pretty-code-figure].mdn-code pre {
     margin: 0;
+    border-radius: 0;
   }
 
   /* インラインcode の改行制御（長い識別子の溢れ防止） */
