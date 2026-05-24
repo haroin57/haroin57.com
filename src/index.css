@@ -1406,13 +1406,33 @@ body {
 @media (max-width: 640px) {
   /* ----- テーブル ----- */
   .prose table {
-    min-width: 340px;
-    font-size: 0.875rem;
+    min-width: 0;
+    width: 100%;
+    font-size: 0.78rem;
+    table-layout: auto;
   }
 
   .prose table th,
   .prose table td {
-    padding: 0.5rem 0.75rem;
+    padding: 0.45rem 0.55rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
+    vertical-align: top;
+  }
+
+  /* セル内のインラインcodeをコンパクトに */
+  .prose table :not(pre) > code {
+    font-size: 0.72rem;
+    padding: 0.05rem 0.25rem;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+
+  /* 3列以上はかなり狭くなるので最初の列を強調しつつ折り返し可能に */
+  .prose table th:first-child,
+  .prose table td:first-child {
+    font-weight: 600;
   }
 
   .prose .table-wrapper {
@@ -1421,18 +1441,8 @@ body {
     border-left: none;
     border-right: none;
     position: relative;
-  }
-
-  /* テーブル右端のスクロール指示シャドウ */
-  .prose .table-wrapper::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 8px;
-    width: 24px;
-    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.6));
-    pointer-events: none;
+    padding: 0 0.5rem;
+    overflow-x: auto;
   }
 
   /* ----- コードブロック ----- */
