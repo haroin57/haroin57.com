@@ -1548,7 +1548,7 @@ body {
   max-height: 80vh;
   width: auto;
   height: auto;
-  will-change: transform;
+  /* will-change: transform は SVG をラスタライズしてしまうため指定しない */
 }
 
 .mermaid-modal-close {

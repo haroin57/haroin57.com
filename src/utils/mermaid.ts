@@ -220,20 +220,11 @@ function attachPanZoom(container: HTMLElement, svg: SVGElement): void {
   let tx = 0
   let ty = 0
 
-  // Get SVG natural dimensions from viewBox or rect
-  const viewBox = svg.getAttribute('viewBox')?.split(/\s+/).map(Number) ?? null
-  const naturalWidth = viewBox && viewBox.length === 4 ? viewBox[2] : svg.getBoundingClientRect().width
-  const naturalHeight = viewBox && viewBox.length === 4 ? viewBox[3] : svg.getBoundingClientRect().height
-
-  // Initial fit to container
-  const containerRect = container.getBoundingClientRect()
-  const baseFit = Math.min(containerRect.width * 0.9 / naturalWidth, containerRect.height * 0.8 / naturalHeight)
-  const baseWidth = naturalWidth * baseFit
-  const baseHeight = naturalHeight * baseFit
-
-  // SVG is centered initially
-  tx = (containerRect.width - baseWidth) / 2
-  ty = (containerRect.height - baseHeight) / 2
+  // Remove width/height attributes — let CSS control display size
+  svg.removeAttribute('width')
+  svg.removeAttribute('height')
+  svg.style.willChange = 'auto'   // 重要: ラスタライズを防ぐ
+  svg.style.transformOrigin = '0 0'
 
   // Pointer tracking
   const pointers = new Map<number, { x: number; y: number }>()
@@ -243,17 +234,8 @@ function attachPanZoom(container: HTMLElement, svg: SVGElement): void {
   let panning = false
 
   const applyTransform = () => {
-    // SVG width/height attributes for vector-quality rendering
-    svg.setAttribute('width', String(baseWidth * scale))
-    svg.setAttribute('height', String(baseHeight * scale))
-    svg.style.position = 'absolute'
-    svg.style.left = '0'
-    svg.style.top = '0'
-    svg.style.maxWidth = 'none'
-    svg.style.maxHeight = 'none'
-    svg.style.transformOrigin = '0 0'
-    // Only translate via transform (sharp positioning)
-    svg.style.transform = `translate(${tx}px, ${ty}px)`
+    // CSS transform で平行移動 + 拡大。順序: translate -> scale (transform-origin: 0 0)
+    svg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`
   }
   applyTransform()
 
