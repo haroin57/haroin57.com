@@ -220,11 +220,27 @@ function attachPanZoom(container: HTMLElement, svg: SVGElement): void {
   let tx = 0
   let ty = 0
 
-  // Remove width/height attributes — let CSS control display size
-  svg.removeAttribute('width')
-  svg.removeAttribute('height')
-  svg.style.willChange = 'auto'   // 重要: ラスタライズを防ぐ
+  // Get natural dimensions from viewBox (Mermaid SVGs always have viewBox)
+  const vbAttr = svg.getAttribute('viewBox')
+  const vb = vbAttr ? vbAttr.split(/[\s,]+/).map(Number) : null
+  const naturalW = vb && vb.length === 4 ? vb[2] : svg.getBoundingClientRect().width
+  const naturalH = vb && vb.length === 4 ? vb[3] : svg.getBoundingClientRect().height
+
+  // Fit SVG to ~90% width / 80% height of container
+  const rect = container.getBoundingClientRect()
+  const fit = Math.min((rect.width * 0.9) / naturalW, (rect.height * 0.85) / naturalH)
+  const baseW = naturalW * fit
+  const baseH = naturalH * fit
+
+  // Lock SVG to base display size (CSS controls layout; transform handles zoom/pan)
+  svg.setAttribute('width', String(baseW))
+  svg.setAttribute('height', String(baseH))
+  svg.style.willChange = 'auto'
   svg.style.transformOrigin = '0 0'
+
+  // Initial position: centered in container (offset baseW/2 from middle of container)
+  tx = (rect.width - baseW) / 2
+  ty = (rect.height - baseH) / 2
 
   // Pointer tracking
   const pointers = new Map<number, { x: number; y: number }>()
@@ -234,7 +250,8 @@ function attachPanZoom(container: HTMLElement, svg: SVGElement): void {
   let panning = false
 
   const applyTransform = () => {
-    // CSS transform で平行移動 + 拡大。順序: translate -> scale (transform-origin: 0 0)
+    // SVG element top-left is at CSS (0,0). Transform shifts it by (tx,ty) and scales by s.
+    // transform-origin: 0 0 → scale grows from top-left.
     svg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`
   }
   applyTransform()
@@ -243,7 +260,7 @@ function attachPanZoom(container: HTMLElement, svg: SVGElement): void {
   container.style.userSelect = 'none'
 
   container.addEventListener('pointerdown', (e) => {
-    container.setPointerCapture(e.pointerId)
+    // setPointerCapture はマルチタッチで干渉するため使わない
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (pointers.size === 1) {
       panning = true

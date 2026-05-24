@@ -1543,9 +1543,6 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   cursor: grab;
 }
 
@@ -1554,11 +1551,12 @@ body {
 }
 
 .mermaid-modal-inner svg {
-  max-width: 90vw;
-  max-height: 80vh;
-  width: auto;
-  height: auto;
-  /* will-change: transform は SVG をラスタライズしてしまうため指定しない */
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  max-height: none;
+  /* JSが width/height とtransformで配置・拡大を制御 */
 }
 
 .mermaid-modal-close {
