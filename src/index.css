@@ -1448,29 +1448,24 @@ body {
   /* ----- コードブロック ----- */
   .prose pre {
     -webkit-overflow-scrolling: touch;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     padding: 0.65rem 0.75rem;
     margin: 0.75rem -1rem;
     border-radius: 0;
     border-left: none;
     border-right: none;
-    /* スクロールバーを視覚的に常時表示 */
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    /* モバイルでは折り返しを有効化して全コードを表示 */
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    overflow-x: hidden;
   }
 
-  .prose pre::-webkit-scrollbar {
-    height: 6px;
-    -webkit-appearance: none;
-  }
-
-  .prose pre::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
-  }
-
-  .prose pre::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+  .prose pre code,
+  .prose pre code .line {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .prose figure[data-rehype-pretty-code-figure].mdn-code {
@@ -1478,6 +1473,10 @@ body {
     border-radius: 0;
     border-left: none;
     border-right: none;
+  }
+
+  .prose figure[data-rehype-pretty-code-figure].mdn-code pre {
+    margin: 0;
   }
 
   /* インラインcode の改行制御（長い識別子の溢れ防止） */
