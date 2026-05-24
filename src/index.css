@@ -1500,43 +1500,19 @@ body {
     border-radius: 0;
     border-left: none;
     border-right: none;
-    justify-content: flex-start;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-  }
-
-  .mermaid-block::-webkit-scrollbar {
-    height: 6px;
-    -webkit-appearance: none;
-  }
-
-  .mermaid-block::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
-  }
-
-  .mermaid-block::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+    justify-content: center;
+    /* 縦スクロールは必ずページに通す (Mermaid上でも) */
+    touch-action: pan-y;
+    overflow: hidden;
   }
 
   .mermaid-block svg {
-    /* デフォルトはfit-width。.zoomedクラスで拡大表示 */
+    /* モバイルでは常にfit-width。拡大は拡大ボタン (モーダル) で対応 */
     min-width: 0;
     max-width: 100%;
     width: auto;
     height: auto;
-    touch-action: pinch-zoom;
-  }
-
-  .mermaid-block.zoomed svg {
-    min-width: 720px;
-    max-width: none;
-  }
-
-  .mermaid-block.zoomed::after {
-    /* 拡大時にスクロールシャドウ表示 */
-    opacity: 1;
+    touch-action: pan-y;
   }
 }
 
@@ -1652,19 +1628,6 @@ body {
     opacity: 1;
   }
 
-  /* スクロール可能な右端ヒント */
-  .mermaid-block::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 8px;
-    width: 24px;
-    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.65));
-    pointer-events: none;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-  }
 
   /* ----- 段落・本文の文字サイズ調整 ----- */
   .prose p {
