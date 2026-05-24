@@ -1,5 +1,6 @@
 import { useEffect, useRef, memo, useCallback } from 'react'
 import { useMermaidBlocks } from '../hooks/useMermaidBlocks'
+import { watchResponsiveFit } from '../utils/responsive-fit'
 
 // KaTeX CSSを遅延ロード（数式を含むページでのみ読み込み）
 let katexCssLoaded = false
@@ -176,6 +177,16 @@ const PostContent = memo(function PostContent({
 
   useMermaidBlocks(proseRef, html)
   useTwitterEmbeds(proseRef, html)
+
+  // Mobile fallback: detect overflow on tables/code and scale to fit
+  useEffect(() => {
+    const el = proseRef.current
+    if (!el) return
+    // Only enable on narrow viewports (mobile)
+    if (window.innerWidth > 640) return
+    const cleanup = watchResponsiveFit(el)
+    return cleanup
+  }, [html])
 
   return (
     <div
