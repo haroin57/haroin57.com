@@ -1,4 +1,4 @@
-import { useRef, useCallback, useMemo } from 'react'
+import { useRef, useCallback, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PrefetchLink from '../components/PrefetchLink'
 import ArrowRightIcon from '../components/icons/ArrowRightIcon'
@@ -114,6 +114,11 @@ function Home() {
   useScrollToTop()
   useReveal(pageRef)
 
+  useEffect(() => {
+    document.body.classList.add('home-page')
+    return () => document.body.classList.remove('home-page')
+  }, [])
+
   // タイムラインデータを作成（Posts + Products を日付順にソート）
   // updatedAtがある場合は「更新」、ない場合は「新規」としてcreatedAtを使用
   const timelineItems = useMemo(() => {
@@ -227,7 +232,7 @@ function Home() {
             {/* Contents見出し + ナビゲーション - 画面中央に配置 */}
             <div className="flex flex-col items-center justify-center min-h-[40vh] sm:min-h-[55vh]">
               <div className="flex flex-col items-start">
-                <h1 className="reveal text-2xl sm:text-3xl md:text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)] mb-8 sm:mb-12 -ml-[50px] sm:-ml-[80px]">
+                <h1 className="reveal text-2xl sm:text-3xl md:text-4xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)] mb-8 sm:mb-12 sm:-ml-[80px]">
                   Contents
                 </h1>
 
@@ -266,7 +271,7 @@ function Home() {
                   サイト更新ログ
                 </h2>
 
-                <div className="space-y-4 inline-block">
+                <div className="space-y-4 inline-block max-w-full sm:max-w-none">
                   {years.map((year) => (
                     <div key={year} className="space-y-2">
                       <h3 className="text-[10px] font-semibold text-[color:var(--fg)] opacity-40">
@@ -300,7 +305,7 @@ function Home() {
                                   <span>·</span>
                                   <span>{formatRelativeDate(item.date)}</span>
                                 </div>
-                                <h4 className="text-xs sm:text-sm font-medium text-[color:var(--fg-strong,inherit)] opacity-80 group-hover:text-[color:var(--accent,inherit)] group-hover:opacity-100 transition-colors">
+                                <h4 className="[overflow-wrap:anywhere] sm:[overflow-wrap:normal] text-xs sm:text-sm font-medium text-[color:var(--fg-strong,inherit)] opacity-80 group-hover:text-[color:var(--accent,inherit)] group-hover:opacity-100 transition-colors">
                                   {item.title}
                                 </h4>
                               </PrefetchLink>
