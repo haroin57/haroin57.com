@@ -1,7 +1,7 @@
 ---
-title: "haroin57.com - ポートフォリオサイトの技術解説"
-summary: "React 19とViteで構築したポートフォリオサイトの実装について"
-date: "2025-12-18"
+title: "haroin57.com — 記事と制作物、日々の記録をまとめる個人サイト"
+summary: "React 19とTypeScriptを土台に、Markdown生成・ビルド時SSR・Cloudflare Workers APIを組み合わせた個人サイトの構成と実装。"
+date: "2026-11-17"
 product: "haroin57-com"
 tags:
 - React
@@ -10,430 +10,87 @@ tags:
 - Cloudflare
 ---
 
-## 目次
+## このサイトで扱うもの
 
-<br />
+haroin57.comは、技術記事、制作物、写真、プロフィールをまとめる個人サイトです。コンテンツを読むための画面に加えて、掲示板や日々の習慣を記録する機能も同じサイトに置いています。
 
-## はじめに
+記事の本文はリポジトリ内のMarkdownで管理し、閲覧画面はReactで実装しています。更新頻度の低いコンテンツはビルドで用意し、アクセス数や掲示板、習慣の実績といった変化するデータはCloudflare WorkersのAPIで扱う構成です。
 
-このサイト（haroin57.com）自体がProductsの1つです。React 19とViteを使って構築し、Cloudflare Pagesにデプロイしています。
+## 実装に使っている技術
 
-パフォーマンスとユーザー体験を重視して設計しました。モダンなReactの機能をフル活用しつつ、Web Vitals（特にINP）の最適化に注力しています。
+| 領域 | リポジトリの構成 |
+| --- | --- |
+| 画面 | React 19、TypeScript、React Router 7 |
+| スタイル | Tailwind CSS 3.4、CSS変数による色やサーフェスの管理 |
+| ビルド | `vite`を`rolldown-vite@7.2.5`へのnpm aliasとして指定 |
+| Reactのコンパイル | `babel-plugin-react-compiler`をReact 19向けに設定 |
+| Markdown | gray-matter、remark、rehypeの生成処理 |
+| HTML生成 | `react-dom/server`とビルド後のプリレンダースクリプト |
+| 配信 | Cloudflare PagesとWorkers |
+| データ保存 | Workers KV、D1。R2の画像ストレージ用bindingも設定 |
 
-<br />
+パッケージが入っていることと、その機能がすべて公開されていることは分けて考えています。例えば、現在のスタイル基盤はTailwind CSS 3系です。また、R2や記事用D1の設定はありますが、現在のWorkerエントリにはCMS APIのルート処理はありません。
 
-## 技術スタック
+## Markdownを公開画面へ届ける流れ
 
-<br />
+記事は`content/posts/`、制作物の解説は`content/products/`に保存しています。各Markdownには、タイトル、概要、日付、タグなどをfrontmatterとして記述します。制作物の記事では`product`で対象のプロダクトを指定します。
 
-### フロントエンド
+`npm run build`では型チェックの後、記事と制作物の生成スクリプトを実行します。生成処理はfrontmatterと本文を読み取り、MarkdownをHTMLに変換し、画面から参照するJSONを書き出します。
 
-| 技術 | 説明 |
-|------|------|
-| **React 19** | 最新のReact。React Compilerによる自動最適化を有効化 |
-| **TypeScript** | 型安全な開発。strict modeで運用 |
-| **Tailwind CSS v4** | ユーティリティファーストなスタイリング |
-| **React Router v7** | クライアントサイドルーティング |
+```text
+content/posts/*.md
+  → scripts/deploy-posts.ts --gen-json
+  → src/data/posts.json
 
-<br />
-
-### ビルドツール
-
-| 技術 | 説明 |
-|------|------|
-| **Vite 7** | 高速な開発サーバーとビルド |
-| **Rolldown** | ESBuildの代替。Rustベースでさらなる高速化 |
-| **React Compiler** | useMemo/useCallbackの自動挿入 |
-
-<br />
-
-### デプロイ・インフラ
-
-| 技術 | 説明 |
-|------|------|
-| **Cloudflare Pages** | グローバルCDNによる高速配信 |
-| **Cloudflare Workers** | アクセスカウンターのバックエンド |
-| **Cloudflare KV** | いいね数などの永続化ストレージ |
-
-<br />
-
-## アーキテクチャ
-
-```mermaid
-flowchart TB
-    subgraph Edge["Cloudflare Edge"]
-        Pages["Pages<br/>(静的配信)"]
-        Workers["Workers<br/>(API処理)"]
-        KV["KV<br/>(データ保存)"]
-    end
-
-    subgraph Client["React SPA (Client)"]
-        Router["Router<br/>(React Router v7)"]
-        PageComponents["Pages<br/>(Home, Posts, Products)"]
-        Components["Components<br/>(UI部品)"]
-    end
-
-    Pages --> Router
-    Router --> PageComponents
-    PageComponents --> Components
-    PageComponents <--> Workers
-    Workers <--> KV
-
-    style Pages fill:#f97316,stroke:#fdba74,stroke-width:2px,color:#fff
-    style Router fill:#134e4a,stroke:#5eead4,stroke-width:2px
-    style KV fill:#3b2f4a,stroke:#a78bfa,stroke-width:2px
+content/products/*.md
+  → scripts/gen-product-posts.ts
+  → src/data/product-posts.json / products.json
 ```
 
-<br />
+生成処理には表などを扱うGFM、数式用のremark-mathとrehype-katex、コード表示用のrehype-pretty-codeなどを組み込んでいます。目次用の情報もJSONに含め、記事詳細の表示に使います。
 
-## 主な機能と実装詳細
+このページも同じ経路で生成されます。表示を修正するときはMarkdownまたは生成スクリプトを変更し、生成JSONを直接編集しない運用です。
 
-<br />
+## クライアントの画面遷移とビルド時SSR
 
-### 1. ページ遷移アニメーション
+ブラウザ内のルーティングはReact Routerで処理します。`AnimatedRoutes.tsx`にクライアント用のルートを定義し、`ServerRoutes.tsx`にもSSR用のルートを置いています。画面ごとの動的importに加え、`preloadRoutes.ts`で遷移先のコンポーネントを事前に読み込める構成です。
 
-`react-transition-group` の `CSSTransition` を使用してページ間の遷移をスムーズにしています。
+ビルドはクライアント用ファイルの生成だけでは終わりません。`src/entry-server.tsx`をSSR向けにビルドし、`scripts/prerender.ts`が対象URLを`StaticRouter`と`renderToString`に渡して、ルートごとのHTMLを書き出します。対象はトップ、Home、記事一覧、制作物一覧、写真と、生成データから列挙した記事・制作物の詳細ページです。
 
-```tsx
-import { CSSTransition, TransitionGroup } from 'react-transition-group'
+これはビルド時のHTML生成です。閲覧リクエストごとにReactを実行するSSRサーバーを常駐させる構成にはしていません。プリレンダー対象外の画面には、Pagesの`_redirects`によるSPAフォールバックを使います。
 
-<TransitionGroup component={null}>
-  <CSSTransition
-    key={location.pathname}
-    classNames="page-transition"
-    timeout={300}
-  >
-    <Routes location={location}>
-      {/* ルート定義 */}
-    </Routes>
-  </CSSTransition>
-</TransitionGroup>
-```
+## Workersが担当する動的な処理
 
-CSSでは以下のようにアニメーションを定義：
+`src/workers/index.ts`でAPIのパスを判定し、処理を各モジュールに振り分けます。現在の入口にはPV、Good、BBS、CyaniteのWebhook、習慣トラッカーのルートがあります。
 
-```css
-.page-transition-enter {
-  opacity: 0;
-  transform: translateY(10px);
-}
-.page-transition-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 300ms, transform 300ms;
-}
-.page-transition-exit {
-  opacity: 1;
-}
-.page-transition-exit-active {
-  opacity: 0;
-  transition: opacity 200ms;
-}
-```
+| 保存先 | 役割 |
+| --- | --- |
+| `HAROIN_PV`（KV） | アクセス数やGood、レート制限に使うデータ |
+| `BBS_DB`（D1） | スレッドと投稿を持つ掲示板 |
+| `HABIT_DB`（D1） | 習慣の実績と非公開To-Do |
+| `POSTS_DB`（D1） | 記事・制作物用に設定されたDB |
+| `CMS_IMAGES`（R2） | 画像用に設定されたバケット |
 
-<br />
+BBSはスレッド一覧、スレッド作成、返信、管理者による削除を扱います。管理者認証には`ADMIN_SECRET`を使用します。通常のAPIではOrigin/Refererの確認を通し、習慣APIではiOSショートカットからの利用に合わせてBearer認証を使います。
 
-### 2. INP（Interaction to Next Paint）最適化
+CMSについては、記事の取得先を表す定数やデプロイスクリプト、DBの初期化SQLが残っています。一方、現在のWorkerには`/api/cms/*`の実装がありません。したがって、今回の構成説明では、動作するCMS管理画面があるとは扱いません。記事や制作物の公開データはMarkdownからの生成経路で更新します。
 
-ユーザーインタラクションの応答性を向上させるため、複数の最適化を実施しています。
+## 日々の実績を記録するIf-Then Habit
 
-<br />
+[記録画面](/habit)では、SQ30回、腕立て1セット、英語1レッスンなどをボタンで加算できます。トイレ後のSQと英語を一度に記録する複合アクションも用意しています。夜はバイク時間やクロッキーなどをまとめて保存し、翌日の最重要To-Doを最大3件登録できます。
 
-#### startTransitionによる優先度制御
+記録日はJSTの午前4時で切り替えます。午前0時から3時59分までの記録は前日分として扱います。クイック記録はD1のUPSERTで加算し、夜の総括と翌日To-Doの置き換えは一括処理にしています。
 
-状態更新の優先度を制御し、UIのブロッキングを防止：
+保存後には、その日の実績や連続達成日数を含むX投稿文を返します。画面内のWeb Intentリンクをタップして投稿画面を開き、X側で投稿を確定します。同じAPIはBearerトークン付きのiOSショートカットからも利用できます。
 
-```tsx
-import { startTransition } from 'react'
+[公開ログ](/logs)には、過去365日のヒートマップ、累計実績、連続達成日数、直近30日間のログとメモを表示します。翌日To-Doはオーナー用APIで扱い、公開ログには含めません。ホーム画面追加用のmanifestも用意しています。画像アップロード、Service Workerによるオフライン対応、X APIによる自動投稿はこの段階には含めていません。
 
-const handleTagSelect = (tag: string) => {
-  startTransition(() => {
-    // 低優先度の状態更新
-    setSearchParams(nextParams)
-  })
-}
-```
+## 変更と確認の単位
 
-<br />
+画面、API、記事の元原稿を同じリポジトリで管理することで、機能を追加したときに、その使い方や制作物の解説も一緒に更新できます。
 
-#### content-visibilityによる遅延レンダリング
+変更後の最低条件は`npm run build`の成功です。このコマンドでTypeScript、MarkdownからJSONへの生成、クライアントビルド、SSRビルド、プリレンダーをまとめて確認します。習慣APIには、日付境界、認証、加算、To-Do保存のロールバック、公開データの範囲を確認するテストも用意しています。
 
-オフスクリーンのコンテンツをレンダリングスキップ：
+PagesのフロントエンドとWorkerのAPIは別々にデプロイします。新しいDBを使う機能にはSQLの適用とsecretの設定も必要です。If-Then Habitの構成と導入手順は`docs/habit/README.md`に記載しています。
 
-```css
-.post-content {
-  content-visibility: auto;
-  contain-intrinsic-size: 0 500px;
-}
-```
-
-<br />
-
-#### React.lazyによる動的インポート
-
-重いコンポーネントを必要時にのみ読み込み：
-
-```tsx
-const PostDetail = lazy(() => import('./routes/PostDetail'))
-const ProductDetail = lazy(() => import('./routes/ProductDetail'))
-```
-
-<br />
-
-### 3. Markdownブログシステム
-
-`remark` / `rehype` エコシステムを使用してMarkdownをHTMLに変換しています。
-
-<br />
-
-#### 使用プラグイン
-
-| プラグイン | 用途 |
-|-----------|------|
-| **remark-gfm** | GitHub Flavored Markdown（テーブル、タスクリストなど） |
-| **remark-math** | 数式記法のパース |
-| **rehype-katex** | KaTeXによる数式レンダリング |
-| **rehype-pretty-code** | shikiによるシンタックスハイライト |
-| **remark-toc** | 目次の自動生成 |
-
-<br />
-
-#### ビルド時処理フロー
-
-```mermaid
-flowchart LR
-    MD[".md files<br/>(content/)"] --> Matter["gray-matter<br/>(frontmatter)"]
-    Matter --> Remark["remark<br/>(parse MD)"]
-    Remark --> Rehype["rehype<br/>(HTML変換)"]
-    Rehype --> JSON["posts.json<br/>(出力)"]
-
-    style MD fill:#1e3a5f,stroke:#60a5fa,stroke-width:2px
-    style JSON fill:#134e4a,stroke:#5eead4,stroke-width:2px
-```
-
-<br />
-
-#### 数式レンダリング例
-
-```markdown
-$$
-E = mc^2
-$$
-```
-
-のような記法で数式が書けます。実際の表示例:
-
-$$
-E = mc^2
-$$
-
-インライン数式も対応しています：$f(x) = ax^2 + bx + c$
-
-<br />
-
-### 4. スクロール連動背景エフェクト
-
-投稿詳細ページでは、スクロールに応じて背景にブラーエフェクトを適用しています。
-
-```tsx
-useEffect(() => {
-  const startPx = 48
-  const rangePx = 420
-  const maxBlurPx = 5
-
-  const update = () => {
-    const y = window.scrollY || 0
-    const t = Math.max(0, Math.min(1, (y - startPx) / rangePx))
-    const blur = t * maxBlurPx
-
-    document.body.style.setProperty('--bg-blur', `${blur}px`)
-  }
-
-  const onScroll = () => {
-    requestAnimationFrame(update)
-  }
-
-  window.addEventListener('scroll', onScroll, { passive: true })
-  return () => window.removeEventListener('scroll', onScroll)
-}, [])
-```
-
-<br />
-
-### 5. Adobe Fontsの最適化
-
-Adobe Fontsを使用していますが、ロード時間を最小化するために以下を実施：
-
-- **dns-prefetch / preconnect** でDNS解決を事前に実行
-- フォント読み込み前はシステムフォントにフォールバック
-- **font-display: swap** で表示のブロッキングを回避
-
-```html
-<link rel="preconnect" href="https://use.typekit.net" crossorigin />
-<link rel="dns-prefetch" href="https://use.typekit.net" />
-```
-
-<br />
-
-## パフォーマンス最適化
-
-<br />
-
-### Cloudflare Edge Caching
-
-| リソース | キャッシュ戦略 |
-|---------|---------------|
-| 静的アセット（JS/CSS/画像） | 長期キャッシュ（1年）+ immutable |
-| HTML | 短いTTL（5分）で鮮度維持 |
-| API レスポンス | KVによる永続化 |
-
-<br />
-
-### 画像最適化
-
-- **WebP形式**を採用（JPEG比30-40%軽量化）
-- `loading="lazy"` で遅延読み込み
-- 適切なサイズの画像を提供（srcset未使用だが検討中）
-
-<br />
-
-### バンドルサイズ削減
-
-| 手法 | 効果 |
-|------|------|
-| Tree Shaking | 未使用コードの除去 |
-| Code Splitting | ルートベースの分割 |
-| Dynamic Import | 必要時のみロード |
-
-<br />
-
-## 開発体験
-
-<br />
-
-### HMR（Hot Module Replacement）
-
-Vite + Rolldownにより、ファイル変更から画面反映まで**50ms以下**を実現。
-
-<br />
-
-### 型安全性
-
-TypeScript strict modeに加え、以下で型安全性を強化：
-
-- eslint-plugin-react-compiler による React Compiler互換性チェック
-- 明示的な型アノテーション必須化
-
-<br />
-
-## UI/UX設計のリファレンス
-
-このサイトのUI/UX設計では、以下のサイト・作者を参考にしました。
-
-<br />
-
-### catnose氏のプロダクト群（Zenn, catnose.me）
-
-[catnose氏](https://catnose.me)は、技術情報共有サービス「[Zenn](https://zenn.dev)」の作者です。[インタビュー記事](https://levtech.jp/media/article/interview/detail_283/)で語られている開発哲学に強く影響を受けました。
-
-参考にした点：
-
-- **デザインとエンジニアリングの統合** - 「ボタンを押したときのページ遷移やローディング表示など、動作とデザインが一致していないと、違和感につながりやすい」という考え方。設計やプログラムを理解した上でUIを設計する重要性
-- **インタラクション設計** - ボタン押下時の即時フィードバック、ページ遷移のスムーズさなど、ユーザーが「気持ちよく使える」体験の追求
-- **ミニマリスト美学** - 不要な装飾を排除しながら、要所で視覚的アクセントを入れる手法。余白を活かしたシンプルな構造
-- **タイムライン形式のコンテンツ配置** - catnose.meの更新履歴（Changelog）のデザインを参考に、Homeページのタイムラインを実装
-- **タイポグラフィ** - システムフォントをベースにした可読性重視の設計
-
-<br />
-
-### namachan10777.dev
-
-[namachan10777.dev](https://www.namachan10777.dev/)は、シンプルながら洗練されたデザインのポートフォリオサイトです。
-
-参考にした点：
-
-- **Markdownのレンダリング方法** - remark/rehypeを使ったMarkdownからHTMLへの変換パイプライン
-- **サイトの構成** - シンプルで見やすいポートフォリオサイトの構造
-- **Tailwind CSSの活用** - ユーティリティファーストなCSSフレームワークによるスタイリング
-
-<br />
-
-## UI/UX改善の実装詳細
-
-上記のリファレンスを参考に、以下の改善を実装しました。
-
-<br />
-
-### インタラクション設計
-
-| 手法 | 説明 |
-|------|------|
-| `touch-action: manipulation` | タッチ応答性の向上（INP最適化） |
-| GPU アクセラレーション | `transform: translateZ(0)` でスムーズなホバーアニメーション |
-| `active:scale-*` | ボタン押下時の即時視覚フィードバック |
-| `will-change` 動的切り替え | ホバー時のみ `will-change: transform, opacity` を適用 |
-
-<br />
-
-### アニメーション
-
-| 手法 | 説明 |
-|------|------|
-| ease-out-expo | `cubic-bezier(0.16, 1, 0.3, 1)` による自然な減速 |
-| reveal アニメーション | スタガードフェードインで要素を順次表示 |
-| prefers-reduced-motion | アクセシビリティ対応でアニメーション無効化をサポート |
-| p5.js ハイパーキューブ | `mix-blend-mode: screen` で背景に融合する3Dアニメーション |
-
-<br />
-
-### レイアウト・タイポグラフィ
-
-| 手法 | 説明 |
-|------|------|
-| `max-w-4xl` (896px) | 読みやすいコンテンツ幅 |
-| Adobe Fonts | ab-countryroad, vdl-logomaru による日本語タイポグラフィ |
-| CSS変数 | `--fg`, `--ui-border` 等による一貫したデザイントークン管理 |
-| glass-panel | 統一されたカード表現コンポーネント |
-
-<br />
-
-### パフォーマンス最適化
-
-| 手法 | 説明 |
-|------|------|
-| `content-visibility: auto` | 画面外要素のレンダリング遅延 |
-| `contain: layout style` | レイアウト計算の最適化 |
-| `startTransition` | ノンブロッキングな状態更新 |
-| `font-synthesis: none` | フォント読み込み中のレイアウトシフト防止 |
-
-<br />
-
-### ダークテーマ設計
-
-| 手法 | 説明 |
-|------|------|
-| `body::before` オーバーレイ | 一貫した暗さの制御 |
-| `rgba()` 透過 | `--ui-surface: rgba(0, 0, 0, 0.35)` で背景を透かす |
-| `::selection` カスタマイズ | teal系アクセントの選択色 |
-
-<br />
-
-## 今後の改善予定
-
-- [ ] 記事の検索機能追加
-- [ ] ダークモード/ライトモードの切り替えボタン
-- [ ] 記事の目次をサイドバーに表示
-- [ ] コードブロックのファイル名表示
-- [ ] 関連記事の表示
-
-<br />
-
-## まとめ
-
-モダンなReactの機能を活用しつつ、パフォーマンスにも気を配ったサイトを構築できました。
-
-特にReact 19 + React Compilerの組み合わせは、手動でのメモ化を不要にし、開発体験を大幅に向上させてくれます。Vite + Rolldownによるビルドも高速で、開発イテレーションが非常にスムーズです。
-
-<br />
-
-ソースコードはGitHubで公開しています: [haroin57/haroin57.com](https://github.com/haroin57/haroin57.com)
+ソースコードは[GitHubのharoin57/haroin57.com](https://github.com/haroin57/haroin57.com)で公開しています。

@@ -1,5 +1,43 @@
 [
   {
+    "slug": "discord-bot",
+    "name": "kanae-bot",
+    "description": "Claude APIリバースエンジニアリング + Mem0独自最適化 + 感情エンジンを搭載したDiscord AIコンパニオン",
+    "language": "Python",
+    "tags": [
+      "Python",
+      "Claude API",
+      "Reverse Engineering",
+      "mitmproxy",
+      "Mem0",
+      "ChromaDB",
+      "Discord",
+      "LLM",
+      "OAuth",
+      "MCP"
+    ],
+    "url": "https://github.com/haroin57",
+    "createdAt": "2026-05-24"
+  },
+  {
+    "slug": "x-scraper",
+    "name": "x-scraper",
+    "description": "X (Twitter) GraphQL APIをcookie認証で叩くMCP Server。JSバンドルからクエリハッシュを自動抽出",
+    "language": "Python",
+    "tags": [
+      "Python",
+      "MCP",
+      "Reverse Engineering",
+      "GraphQL",
+      "httpx",
+      "Twitter",
+      "X",
+      "Web Scraping"
+    ],
+    "url": "https://github.com/haroin57",
+    "createdAt": "2026-05-24"
+  },
+  {
     "slug": "calm-todo",
     "name": "Calm Todo",
     "description": "AIが人格を持って通知してくれるToDoアプリ",
