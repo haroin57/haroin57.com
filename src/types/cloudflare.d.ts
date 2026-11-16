@@ -20,13 +20,13 @@ declare global {
   interface D1PreparedStatement {
     bind(...values: unknown[]): D1PreparedStatement
     first<T = unknown>(): Promise<T | null>
-    all<T = unknown>(): Promise<{ results?: T[] }>
+    all<T = unknown>(): Promise<{ results: T[] }>
     run(): Promise<unknown>
   }
 
   interface D1Database {
     prepare(query: string): D1PreparedStatement
-    batch(statements: D1PreparedStatement[]): Promise<unknown>
+    batch<T = unknown>(statements: D1PreparedStatement[]): Promise<{ results: T[] }[]>
   }
 
   type R2HTTPMetadata = {

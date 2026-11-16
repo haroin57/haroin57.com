@@ -13,6 +13,9 @@ const About = lazy(() => import('../routes/About'))
 const BBSList = lazy(() => import('../routes/BBSList'))
 const BBSThread = lazy(() => import('../routes/BBSThread'))
 
+const Habit = lazy(() => import('../routes/Habit'))
+const Logs = lazy(() => import('../routes/Logs'))
+
 function ServerRoutes() {
   const location = useLocation()
 
@@ -21,6 +24,8 @@ function ServerRoutes() {
       <Suspense fallback={null}>
         <Routes location={location}>
           <Route path="/" element={<App />} />
+          <Route path="/habit" element={<Habit />} />
+          <Route path="/logs" element={<Logs />} />
           <Route path="/home" element={<Home />} />
           <Route path="/posts" element={<Posts />} />
           <Route path="/posts/:slug" element={<PostDetail />} />

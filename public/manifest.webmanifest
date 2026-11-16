@@ -1,0 +1,10 @@
+{
+  "name": "If-Then Habit",
+  "short_name": "Habit",
+  "start_url": "/habit",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101818",
+  "theme_color": "#101818",
+  "icons": [{ "src": "/profile.webp", "sizes": "any", "type": "image/webp", "purpose": "any" }]
+}

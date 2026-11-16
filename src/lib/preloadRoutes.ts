@@ -10,6 +10,9 @@ const About = lazyWithPreload(() => import('../routes/About'))
 const BBSList = lazyWithPreload(() => import('../routes/BBSList'))
 const BBSThread = lazyWithPreload(() => import('../routes/BBSThread'))
 
+const Habit = lazyWithPreload(() => import('../routes/Habit'))
+const Logs = lazyWithPreload(() => import('../routes/Logs'))
+
 export async function preloadRoutesForPath(pathname: string): Promise<void> {
   const segments = pathname.split('/').filter(Boolean)
   const first = segments[0]
@@ -29,6 +32,9 @@ export async function preloadRoutesForPath(pathname: string): Promise<void> {
     await BBSThread.preload()
     return
   }
+
+  if (first === 'habit') { await Habit.preload(); return }
+  if (first === 'logs') { await Logs.preload(); return }
 
   if (first === 'home') {
     await Home.preload()
@@ -65,4 +71,6 @@ export {
   About,
   BBSList,
   BBSThread,
+  Habit,
+  Logs,
 }

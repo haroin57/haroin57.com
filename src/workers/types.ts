@@ -7,6 +7,8 @@ export type Env = {
   // D1 Database
   POSTS_DB: D1Database
   BBS_DB: D1Database
+  HABIT_DB: D1Database
+  HABIT_TOKEN?: string
 
   // R2 (画像ストレージ)
   CMS_IMAGES?: R2Bucket

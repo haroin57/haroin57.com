@@ -30,6 +30,11 @@ binding = "BBS_DB"
 database_name = "BBS"
 database_id = "839bf128-78bb-46a3-913b-34a203b3d926"  # TODO: wrangler d1 listで確認して更新
 
+[[d1_databases]]
+binding = "HABIT_DB"
+database_name = "Habit"
+database_id = "0613c2b8-a849-4baf-8a81-61090eccd26c"
+
 # ============================================
 # R2 Bucket (画像ストレージ)
 # ============================================
@@ -51,3 +56,5 @@ ALLOWED_ORIGIN = "https://haroin57.com"
 # - FIREBASE_PROJECT_ID: Firebase プロジェクトID
 # - ADMIN_EMAILS: 管理者メールアドレス（カンマ区切り）
 # - CYANITE_WEBHOOK_SECRET: Cyanite Webhook 署名検証用シークレット
+
+# - HABIT_TOKEN: 習慣トラッカー用Bearerトークン

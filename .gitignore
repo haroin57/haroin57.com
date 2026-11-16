@@ -30,3 +30,7 @@ dist-ssr
 # Windows reserved names
 nul
 NUL
+
+# Local Worker secrets
+.dev.vars
+.dev.vars.*

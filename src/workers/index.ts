@@ -4,6 +4,7 @@
 import type { Env } from './types'
 import { DEFAULT_ORIGIN } from './types'
 import { buildCorsHeaders, checkOrigin } from './utils'
+import { handleHabit } from './habit'
 import { handlePv, handleGood } from './pv'
 import { handleBbs } from './bbs'
 import { handleCyaniteWebhook } from './cyanite'
@@ -13,12 +14,13 @@ export default {
     const url = new URL(req.url)
 
     // サポートするパス
+    const isHabit = url.pathname.startsWith('/api/habit/')
     const isPv = url.pathname.startsWith('/api/pv')
     const isGood = url.pathname.startsWith('/api/good')
     const isBbs = url.pathname.startsWith('/api/bbs')
     const isCyaniteWebhook = url.pathname.startsWith('/api/cyanite/webhook')
 
-    if (!isPv && !isGood && !isBbs && !isCyaniteWebhook) {
+    if (!isHabit && !isPv && !isGood && !isBbs && !isCyaniteWebhook) {
       return new Response('not found', { status: 404 })
     }
 
@@ -29,6 +31,8 @@ export default {
     if (req.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders })
     }
+
+    if (isHabit) return handleHabit(req, env, corsHeaders, url.pathname)
 
     // Origin / Referer チェック
     if (!checkOrigin(req, env)) {
