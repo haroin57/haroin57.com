@@ -54,9 +54,10 @@ function ScrollingBackground({ baseOpacity }: { baseOpacity: number }) {
 
 export default function GlobalBackground() {
   const location = useLocation()
-  // Keep Habit solid gray above body::before (z-index: 2), below page content (10).
-  // Do not mount either animated background on this route.
-  if (location.pathname.replace(/\/$/, '') === '/habit') {
+  // Keep Habit and Logs solid gray above body::before (z-index: 2), below page content (10).
+  // Do not mount either animated background on these routes.
+  const pathname = location.pathname.replace(/\/$/, '')
+  if (pathname === '/habit' || pathname === '/logs') {
     return <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[3] bg-[#808080]" />
   }
   const baseOpacity = location.pathname === '/' ? 1 : 0.45
