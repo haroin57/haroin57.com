@@ -25,6 +25,7 @@ declare global {
   }
 
   interface D1Database {
+    withSession(constraint?: string): Pick<D1Database, 'prepare' | 'batch'>
     prepare(query: string): D1PreparedStatement
     batch<T = unknown>(statements: D1PreparedStatement[]): Promise<{ results: T[] }[]>
   }

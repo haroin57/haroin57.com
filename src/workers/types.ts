@@ -9,6 +9,7 @@ export type Env = {
   BBS_DB: D1Database
   HABIT_DB: D1Database
   HABIT_TOKEN?: string
+  BECS_ADMIN_SECRET?: string
 
   // R2 (画像ストレージ)
   CMS_IMAGES?: R2Bucket

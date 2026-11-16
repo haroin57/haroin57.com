@@ -12,6 +12,7 @@ import {
   BBSList,
   BBSThread,
   Habit,
+  Control,
 } from '../lib/preloadRoutes'
 
 function AnimatedRoutes() {
@@ -22,6 +23,10 @@ function AnimatedRoutes() {
       <Suspense fallback={null}>
         <Routes location={location}>
           <Route path="/" element={<App />} />
+          <Route path="/control" element={<Control />} />
+          <Route path="/control/tags" element={<Control />} />
+          <Route path="/focus" element={<Control />} />
+          <Route path="/tap/:tagId" element={<Control />} />
           <Route path="/habit" element={<Habit />} />
           <Route path="/logs" element={<Navigate to="/habit" replace />} />
           <Route path="/home" element={<Home />} />

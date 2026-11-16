@@ -58,3 +58,12 @@ ALLOWED_ORIGIN = "https://haroin57.com"
 # - CYANITE_WEBHOOK_SECRET: Cyanite Webhook 署名検証用シークレット
 
 # - HABIT_TOKEN: 習慣トラッカー用Bearerトークン
+
+# BECS maintenance is inert until BECS_ADMIN_SECRET is configured.
+[triggers]
+crons = ["* * * * *"]
+
+[observability]
+enabled = true
+
+# - BECS_ADMIN_SECRET: BECS owner login only; never put it in NFC tags/Shortcuts.

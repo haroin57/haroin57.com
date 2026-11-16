@@ -38,6 +38,7 @@ const navItems: NavItem[] = [
   { to: '/photos', label: 'Photos', type: 'photo' },
   { to: '/bbs', label: 'BBS', type: 'bbs' },
   { to: '/habit', label: 'Habit', type: 'post' },
+  { to: '/control', label: 'Control', type: 'site' },
 ]
 
 /** タイプごとのラベル */

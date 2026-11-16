@@ -10,6 +10,7 @@ const About = lazyWithPreload(() => import('../routes/About'))
 const BBSList = lazyWithPreload(() => import('../routes/BBSList'))
 const BBSThread = lazyWithPreload(() => import('../routes/BBSThread'))
 
+const Control = lazyWithPreload(() => import('../routes/Control'))
 const Habit = lazyWithPreload(() => import('../routes/Habit'))
 
 export async function preloadRoutesForPath(pathname: string): Promise<void> {
@@ -31,6 +32,8 @@ export async function preloadRoutesForPath(pathname: string): Promise<void> {
     await BBSThread.preload()
     return
   }
+
+  if (first === 'control' || first === 'focus' || first === 'tap') { await Control.preload(); return }
 
   if (first === 'habit' || first === 'logs') { await Habit.preload(); return }
 
@@ -70,4 +73,5 @@ export {
   BBSList,
   BBSThread,
   Habit,
+  Control,
 }

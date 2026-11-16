@@ -1,0 +1,11 @@
+{
+  "id": "/control",
+  "name": "生活チェックポイント",
+  "short_name": "BECS",
+  "start_url": "/control",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#808080",
+  "theme_color": "#808080",
+  "icons": [{ "src": "/profile.webp", "sizes": "any", "type": "image/webp" }]
+}

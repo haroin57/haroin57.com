@@ -1,3 +1,5 @@
+import { maintainBecs } from './becs/scheduler'
+import { handleBecs } from './becs/api'
 // メインWorkerエントリーポイント
 // PVカウンター + Goodボタン + BBS + CMS API を統合
 
@@ -10,8 +12,13 @@ import { handleBbs } from './bbs'
 import { handleCyaniteWebhook } from './cyanite'
 
 export default {
+  async scheduled(_controller: unknown, env: Env): Promise<void> {
+    await maintainBecs(env)
+  },
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url)
+
+    if (url.pathname.startsWith('/api/v1/')) return handleBecs(req, env)
 
     // サポートするパス
     const isHabit = url.pathname.startsWith('/api/habit/')

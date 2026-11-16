@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haroin57.com/schemas/becs-nfc-scan.schema.json",
+  "title": "BECS NFC scan v2.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scan_id", "tag_id", "device_id", "source", "occurred_at"],
+  "properties": {
+    "scan_id": { "type": "string", "format": "uuid" },
+    "tag_id": { "type": "string", "pattern": "^nfc_[0-9a-f-]{36}$" },
+    "device_id": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "source": { "enum": ["IOS_SHORTCUTS", "NDEF_WEB", "NATIVE_APP"] },
+    "occurred_at": { "type": "string", "format": "date-time" }
+  }
+}

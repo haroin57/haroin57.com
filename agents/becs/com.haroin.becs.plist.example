@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.haroin.becs</string>
+  <key>ProgramArguments</key><array><string>/ABSOLUTE/PATH/TO/python3</string><string>/ABSOLUTE/PATH/TO/becs-agent.py</string><string>poll</string></array>
+  <key>EnvironmentVariables</key><dict>
+    <key>BECS_BASE_URL</key><string>https://haroin57.com</string>
+    <key>BECS_DEVICE_ID</key><string>REPLACE_WITH_DEVICE_ID</string>
+    <key>BECS_TOKEN_FILE</key><string>/ABSOLUTE/PATH/TO/token-file-0600</string>
+  </dict>
+  <key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
+</dict></plist>
