@@ -40,7 +40,6 @@ export default function Logs() {
               <Link to="/habit" className="underline-thin hover:text-accent" style={{ color: 'var(--fg)' }}>記録画面</Link>
             </nav>
           </header>
-          <h1 className="reveal text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">If-Then 習慣ログ</h1>
           <div className="font-vdl-logomaru text-xs sm:text-sm text-[color:var(--fg,inherit)] space-y-6">
             <p className="opacity-80">日々の運動・学習・創作の積み上げです。JST午前4時に記録日が切り替わります。</p>
             {error && <div role="alert" className="space-y-2 py-4"><p className="text-red-400">{error}</p><button className={buttonClass} onClick={() => { setError(''); setRetry(retry + 1) }}>再取得する</button></div>}
