@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { HabitLog, HabitResult, HabitToday } from '../types/habit'
 import { habitButton, habitInput, habitRequest } from '../lib/habit'
@@ -28,6 +28,15 @@ export default function Habit() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const lock = useRef(false)
+  const closeTargetDate = useRef<string | null>(null)
+  const resyncCloseForDate = useCallback((targetDate: string, log: HabitLog | null) => {
+    if (closeTargetDate.current === targetDate) return false
+    closeTargetDate.current = targetDate
+    setClose(closeFromLog(log))
+    setTodos(['', '', ''])
+    setTodosEdited(false)
+    return true
+  }, [])
   useEffect(() => {
     try { setToken(localStorage.getItem('habit_token') || '') } catch { setError('端末のストレージを利用できません。') }
   }, [])
@@ -35,12 +44,13 @@ export default function Habit() {
     if (!token) return
     const controller = new AbortController()
     setToday(null)
+    closeTargetDate.current = null
     setError('')
     habitRequest<HabitToday>('today', token, undefined, controller.signal).then(data => {
-      setToday(data); setClose(closeFromLog(data.log))
+      setToday(data); resyncCloseForDate(data.target_date, data.log)
     }).catch((err: Error) => { if (!controller.signal.aborted) setError(err.message) })
     return () => controller.abort()
-  }, [token])
+  }, [token, resyncCloseForDate])
 
   async function save(path: string, body: unknown) {
     if (lock.current) return
@@ -48,13 +58,15 @@ export default function Habit() {
     try {
       const result = await habitRequest<HabitResult>(path, token, body)
       setTweet(result.tweet_text)
-      setToday(previous => previous ? { ...previous, target_date: result.target_date, log: result.today_summary, streak_days: result.streak_days } : previous)
-      // Quick actions may set the work flag. Preserve unsaved evening edits.
+      const dateChanged = resyncCloseForDate(result.target_date, result.today_summary)
+      setToday(previous => previous ? { ...previous, target_date: result.target_date, log: result.today_summary, streak_days: result.streak_days, todos: dateChanged ? [] : previous.todos } : previous)
+      // Preserve unsaved evening edits only while the form still targets the same day.
       if (path === 'daily-close') { setClose(closeFromLog(result.today_summary)); setTodosEdited(false) }
       else if (result.today_summary.work_focus_done) setClose(previous => ({ ...previous, work_focus_done: true }))
       try {
         const data = await habitRequest<HabitToday>('today', token)
         setToday(data)
+        resyncCloseForDate(data.target_date, data.log)
       } catch { setError('保存済みです。最新のTo-Do取得に失敗しました。画面を再読み込みしてください。') }
     } catch (err) { setError(err instanceof Error ? err.message : '保存に失敗しました。') }
     finally { lock.current = false; setBusy(false) }
