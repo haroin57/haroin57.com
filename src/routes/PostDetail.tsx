@@ -9,7 +9,6 @@ import TableOfContents from '../components/TableOfContents'
 import { GoodIcon, XLogoIcon } from '../components/SvgIcons'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
-import { useScrollBlur } from '../hooks/useScrollBlur'
 import { CMS_ENDPOINT, GOOD_ENDPOINT } from '../lib/endpoints'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
@@ -144,7 +143,6 @@ function PostDetail() {
   useCodeBlockCopy(proseRef, post?.html)
 
   // スクロール時の背景ブラーエフェクト（モバイル最適化済み）
-  useScrollBlur()
 
   const handleGood = useCallback(async () => {
     if (!slug || isVoting) return
@@ -240,7 +238,7 @@ function PostDetail() {
                       <PrefetchLink
                         key={tag}
                         to={`/posts?tag=${encodeURIComponent(tag)}`}
-                        className="px-2 py-1 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
+                        className="px-2 py-1 rounded-full border ui-surface transition-colors ui-surface-interactive"
                       >
                         {tag}
                       </PrefetchLink>
@@ -261,7 +259,7 @@ function PostDetail() {
                   className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm sm:text-base font-semibold transition border ${
                     hasVoted
                       ? 'border-[color:var(--ui-border-strong)] bg-[color:var(--ui-surface)] hover:bg-[color:var(--ui-surface-hover)]'
-                      : 'border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]'
+                      : 'ui-surface ui-surface-interactive'
                   }`}
                   style={{ color: 'var(--fg)' }}
                 >
@@ -276,7 +274,7 @@ function PostDetail() {
                   href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(post.title ?? '')}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] text-sm sm:text-base"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded border ui-surface transition-colors ui-surface-interactive text-sm sm:text-base"
                   aria-label="Share on X"
                   style={{ color: 'var(--fg)' }}
                 >

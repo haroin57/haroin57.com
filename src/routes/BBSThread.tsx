@@ -212,7 +212,7 @@ function BBSThread() {
             <div className="flex justify-center">
               <PrefetchLink
                 to="/bbs"
-                className="px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
+                className="px-4 py-2 rounded border ui-surface text-[color:var(--fg)] font-semibold transition-colors ui-surface-interactive"
               >
                 スレッド一覧に戻る
               </PrefetchLink>
@@ -268,7 +268,7 @@ function BBSThread() {
                       onChange={(e) => setName(e.target.value)}
                       placeholder="名無しさん"
                       maxLength={50}
-                      className="w-full sm:w-48 px-3 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] placeholder:opacity-50 focus:outline-none focus:border-[color:var(--ui-border-strong)]"
+                      className="w-full sm:w-48 px-3 py-2 rounded ui-field"
                     />
                   </div>
                 </div>
@@ -283,14 +283,14 @@ function BBSThread() {
                     placeholder="書き込む内容を入力..."
                     rows={4}
                     maxLength={2000}
-                    className="w-full px-3 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] placeholder:opacity-50 focus:outline-none focus:border-[color:var(--ui-border-strong)] resize-vertical"
+                    className="w-full px-3 py-2 rounded ui-field resize-vertical"
                   />
                 </div>
                 <div className="flex justify-end">
                   <button
                     type="submit"
                     disabled={!content.trim() || isSubmitting}
-                    className="px-6 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 rounded border ui-surface text-[color:var(--fg)] font-semibold transition-colors ui-surface-interactive disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? '送信中...' : '書き込む'}
                   </button>

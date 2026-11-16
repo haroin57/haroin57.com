@@ -8,15 +8,9 @@
 :root {
   color-scheme: light;
   scrollbar-gutter: stable;
+  --page-background: #808080;
   --fg: #e2e8f0;
   --fg-strong: #ffffff;
-  --bg-wash: 0.45;
-  --bg-overlay-color: 0, 0, 0;
-  --bg-overlay-max: 0.65;
-  --p5-opacity: 0.3;
-  --home-progress: 0;
-  --home-wash-start: 0;
-  --home-wash-end: 0;
   --ui-border: rgba(255, 255, 255, 0.28);
   --ui-border-strong: rgba(255, 255, 255, 0.6);
   --ui-surface: rgba(0, 0, 0, 0.35);
@@ -39,188 +33,18 @@
   --duration-slow: 500ms;
 }
 
-/* 背景オーバーレイ - body上に常に表示（ページ遷移で変化しない） */
-/* レイヤー順: 背景画像(0) < p5アニメーション(1) < オーバーレイ(2) < コンテンツ(10+) */
-/* --bg-overlay-color: RGB値（例: "0, 0, 0" で黒、"20, 10, 30" で紫がかった色） */
-/* --bg-wash: 不透明度（スクロールで動的に変化） */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background: rgb(var(--bg-overlay-color));
-  opacity: var(--bg-wash);
-  z-index: 2;
-  transition: opacity 200ms ease-out;
-}
-
-/* スクロール中に頻繁に更新するため、detailページではtransitionを無効化 */
-body.post-detail-page::before {
-  transition: none;
-}
-
-/* Topページ（/）: オーバーレイなし、p5を強調 */
-body.top-page {
-  --p5-opacity: 1;
-}
-body.top-page::before {
-  opacity: 0;
-}
-body.top-page .p5-bg {
-  mix-blend-mode: normal;
-}
-
-/* 背景画像のトランジション */
-.pointer-events-none.fixed img {
-  transition:
-    filter 300ms var(--ease-out-quart),
-    opacity 400ms var(--ease-out-quart);
-}
-
-/* グローバル背景コンテナ */
+/* 全ルートで同じ背景を使用する。 */
 .global-bg-container {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-/* グローバル背景画像 - ルートに応じてopacityが変わる */
-.global-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  transition: opacity 600ms var(--ease-out-quart);
-}
-
-/* 横スクロール背景（PC/スマホ共通） */
-.scrolling-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  /* モバイル: lvh（最大ビューポート）で常に画面全体をカバー */
-  /* デスクトップ: vhで動的対応 */
-  height: 100vh;
-  height: 100lvh;
-  opacity: calc(var(--bg-base-opacity, 1) * var(--bg-opacity, 1));
-  filter: var(--bg-filter, none);
-  /* GPUレイヤー化でスクロール時のパフォーマンス向上 */
-  transform: translateZ(0) scale(var(--bg-scale, 1));
-  will-change: opacity, transform;
-  /* ちらつき防止 */
-  backface-visibility: hidden;
-}
-
-.scrolling-bg-track {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  flex-direction: row;
-  width: max-content;
-  /* モバイル: lvh（最大ビューポート）で常に画面全体をカバー */
-  height: 100vh;
-  height: 100lvh;
-  animation: bgScroll 100s linear infinite;
-  animation-play-state: var(--bg-animation-route, var(--bg-animation-state, running));
-  will-change: transform;
-}
-
-.scrolling-bg-image {
-  flex-shrink: 0;
-  /* モバイル: lvh（最大ビューポート）で常に画面全体をカバー */
-  height: 100vh;
-  height: 100lvh;
-  width: auto;
-  max-width: none;
-  object-fit: cover;
-}
-
-/* デスクトップではウィンドウリサイズに動的対応 */
-@media (hover: hover) and (pointer: fine) {
-  .scrolling-bg,
-  .scrolling-bg-track,
-  .scrolling-bg-image {
-    height: 100vh;
-  }
-}
-
-@media (max-aspect-ratio: 4/3) {
-  .scrolling-bg-track {
-    animation-duration: 80s;
-  }
-}
-
-@media (orientation: landscape) {
-  .scrolling-bg-track {
-    animation-duration: 140s;
-  }
-}
-
-/* Home on phones: crop the six-photo strip to its first photo. Moving the
-   strip exposes the hard boundaries between photos even in a narrow viewport. */
-@media (max-width: 639px) {
-  body.home-page .scrolling-bg-track {
-    width: 100%;
-    animation: none;
-  }
-
-  body.home-page .scrolling-bg-track > picture {
-    width: 100%;
-    height: 100%;
-    flex-shrink: 0;
-  }
-
-  body.home-page .scrolling-bg-track > picture ~ picture {
-    display: none;
-  }
-
-  body.home-page .scrolling-bg-image {
-    width: 600%;
-    height: 100%;
-    object-position: left center;
-  }
-}
-
-@keyframes bgScroll {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-  100% {
-    /* CSS変数があれば固定値を使用、なければ50%（フォールバック） */
-    transform: translate3d(calc(-1 * var(--scroll-width, 50%)), 0, 0);
-  }
-}
-
-/* ハイパーキューブ */
-.p5-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  opacity: var(--p5-opacity, 0.3);
-  mix-blend-mode: screen;
-  filter: blur(var(--bg-blur, 0px));
-  pointer-events: none;
-  transition: opacity 200ms ease-out;
-  /* GPUレイヤー化 */
-  transform: translateZ(0);
-  contain: strict;
-}
-
-.p5-bg canvas {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
+  background-color: var(--page-background);
 }
 
 body {
-  @apply bg-ink text-slate-100 font-sans antialiased;
-  background-color: #222222;
+  @apply text-slate-100 font-sans antialiased;
+  background-color: var(--page-background);
   min-height: 100vh;
   /* iOS Safari の pre/code auto-inflate を無効化 */
   -webkit-text-size-adjust: 100%;
@@ -320,34 +144,6 @@ code {
     animation: none;
   }
 
-  /* P5.jsアニメーションを非表示 */
-  .p5-bg {
-    display: none;
-  }
-
-  /* スクロールブラーを無効化 */
-  .scrolling-bg {
-    filter: none !important;
-  }
-}
-
-/* モバイル向けパフォーマンス最適化 */
-@media (max-width: 768px) {
-  /* モバイルではP5.jsの不透明度を下げてGPU負荷を軽減 */
-  :root {
-    --p5-opacity: 0.2;
-  }
-
-  /* モバイルではblurをより軽量なグラデーションオーバーレイで代替 */
-  .scrolling-bg {
-    /* filterの代わりにopacityで軽量にフェード */
-    filter: none;
-  }
-
-  /* 背景アニメーションを遅くして負荷軽減 */
-  .scrolling-bg-track {
-    animation-duration: 150s;
-  }
 }
 
 /* Adobe Fonts (Typekit) applied to English text when kit loads */
@@ -2235,4 +2031,42 @@ body {
 
 .toc-mobile-dropdown::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* 共通UIの色・状態・操作領域を一元管理する。 */
+@layer components {
+  .ui-surface {
+    border-color: var(--ui-border);
+    background-color: var(--ui-surface);
+  }
+  .ui-surface-interactive:hover {
+    border-color: var(--ui-border-strong);
+    background-color: var(--ui-surface-hover);
+  }
+  .ui-field {
+    @apply border;
+    border-color: var(--ui-border);
+    background-color: var(--ui-surface);
+    color: var(--fg);
+  }
+  .ui-field::placeholder { opacity: 0.5; }
+  .ui-field:focus {
+    outline: none;
+    border-color: var(--ui-border-strong);
+  }
+  .habit-control {
+    @apply min-h-12 px-3 py-1 rounded-full border text-xs sm:text-sm transition-colors ui-surface ui-surface-interactive disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation;
+  }
+  .section-heading {
+    @apply text-base sm:text-xl;
+    color: var(--fg-strong, inherit);
+  }
+  .content-section {
+    @apply space-y-4 py-4 border-t;
+    border-color: var(--ui-border);
+  }
+  .round-navigation {
+    @apply left-1/2 z-30 -translate-x-1/2 inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full font-medium text-neutral-200 active:scale-95 transition-transform;
+    background-color: var(--nav-button-bg);
+  }
 }

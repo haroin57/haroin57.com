@@ -119,7 +119,7 @@ function Posts() {
                   className={`px-3 py-1 rounded-full border text-xs sm:text-sm transition-colors ${
                     selectedTag === 'all'
                       ? 'border-[color:var(--ui-border-strong)] bg-[color:var(--ui-surface-hover)]'
-                      : 'border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]'
+                      : 'ui-surface ui-surface-interactive'
                   }`}
                 >
                   All
@@ -132,7 +132,7 @@ function Posts() {
                     className={`px-3 py-1 rounded-full border text-xs sm:text-sm transition-colors ${
                       selectedTag === tag
                         ? 'border-[color:var(--ui-border-strong)] bg-[color:var(--ui-surface-hover)]'
-                        : 'border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]'
+                        : 'ui-surface ui-surface-interactive'
                     }`}
                   >
                     {tag}
@@ -167,7 +167,7 @@ function Posts() {
                         {p.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="px-2 py-1 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)]"
+                            className="px-2 py-1 rounded-full border ui-surface"
                           >
                             {tag}
                           </span>

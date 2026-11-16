@@ -8,10 +8,10 @@ import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
 
 // Posts tag controls and BBS form fields, with the existing Habit touch target size.
-const buttonClass = 'min-h-12 px-3 py-1 rounded-full border text-xs sm:text-sm transition-colors border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation'
-const inputClass = 'w-full min-h-12 px-3 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] placeholder:opacity-50 focus:outline-none focus:border-[color:var(--ui-border-strong)]'
-const headingClass = 'text-base sm:text-xl text-[color:var(--fg-strong,inherit)]'
-const sectionClass = 'space-y-4 py-4 border-t border-[color:var(--ui-border)]'
+const buttonClass = 'habit-control'
+const inputClass = 'w-full min-h-12 px-3 py-2 rounded ui-field'
+const headingClass = 'section-heading'
+const sectionClass = 'content-section'
 
 const quickActions = [
   ['toilet_sq_en', 'トイレSQ30＋英語'], ['jump_sq', 'ジャンプSQ20'], ['squat30', 'SQ30'],

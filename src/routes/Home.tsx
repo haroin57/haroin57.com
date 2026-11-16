@@ -1,7 +1,6 @@
-import { useRef, useCallback, useMemo, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRef, useMemo, useEffect } from 'react'
 import PrefetchLink from '../components/PrefetchLink'
-import ArrowRightIcon from '../components/icons/ArrowRightIcon'
+import BackButton from '../components/BackButton'
 import SiteFooter from '../components/SiteFooter'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useReveal } from '../hooks/useReveal'
@@ -104,11 +103,6 @@ function NavIcon({ type, className = "w-4 h-4" }: { type: NavIconType; className
 
 function Home() {
   const pageRef = useRef<HTMLDivElement | null>(null)
-  const navigate = useNavigate()
-
-  const handleBack = useCallback(() => {
-    navigate('/')
-  }, [navigate])
 
   usePageMeta()
   useScrollToTop()
@@ -208,20 +202,7 @@ function Home() {
   return (
     <div ref={pageRef} className="relative overflow-hidden">
       {/* 戻るボタン */}
-      <button
-        type="button"
-        onClick={handleBack}
-        aria-label="トップページへ戻る"
-        className="group fixed left-1/2 top-6 z-30 -translate-x-1/2 inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full font-medium text-neutral-200 active:scale-95 transition-transform"
-        style={{ backgroundColor: 'var(--nav-button-bg)' }}
-      >
-        <div className="transition-transform duration-300 group-hover:-translate-y-[300%]">
-          <ArrowRightIcon className="h-5 w-5 -rotate-90" />
-        </div>
-        <div className="absolute translate-y-[300%] transition-transform duration-300 group-hover:translate-y-0">
-          <ArrowRightIcon className="h-5 w-5 -rotate-90" />
-        </div>
-      </button>
+      <BackButton to="/" />
 
       <main
         className="relative z-10 min-h-screen flex flex-col page-fade"

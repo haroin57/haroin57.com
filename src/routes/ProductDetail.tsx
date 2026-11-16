@@ -1,3 +1,4 @@
+import LanguageBadge from '../components/LanguageBadge'
 import { useRef, useCallback } from 'react'
 import { useParams} from 'react-router-dom'
 import PrefetchLink from '../components/PrefetchLink'
@@ -9,7 +10,6 @@ import TableOfContents from '../components/TableOfContents'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
-import { useScrollBlur } from '../hooks/useScrollBlur'
 import { MAIN_FONT_STYLE, MAIN_TEXT_STYLE } from '../styles/typography'
 import { useCodeBlockCopy } from '../hooks/useCodeBlockCopy'
 
@@ -51,15 +51,6 @@ type ProductPost = {
 const products: Product[] = Array.isArray(productsData) ? (productsData as Product[]) : []
 const productPosts: ProductPost[] = Array.isArray(productPostsData) ? (productPostsData as ProductPost[]) : []
 
-const languageColors: Record<string, string> = {
-  TypeScript: '#3178c6',
-  JavaScript: '#f7df1e',
-  Python: '#3572A5',
-  Java: '#b07219',
-  Go: '#00ADD8',
-  Rust: '#dea584',
-}
-
 function ProductDetail() {
   const { slug } = useParams<{ slug: string }>()
   const product = products.find((p) => p.slug === slug)
@@ -90,7 +81,6 @@ function ProductDetail() {
   )
 
   // スクロール時の背景ブラーエフェクト（モバイル最適化済み）
-  useScrollBlur()
 
   // コードブロックのコピーボタン機能
   useCodeBlockCopy(proseRef, productPost?.html)
@@ -125,13 +115,7 @@ function ProductDetail() {
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-ab-countryroad font-medium leading-tight text-[color:var(--fg-strong,inherit)]">
                       {product.name}
                     </h1>
-                    <span className="flex items-center gap-1.5 text-sm sm:text-base">
-                      <span
-                        className="h-3 w-3 sm:h-4 sm:w-4 rounded-full"
-                        style={{ backgroundColor: languageColors[product.language] || '#6e7681' }}
-                      />
-                      {product.language}
-                    </span>
+                    <LanguageBadge language={product.language} large />
                   </div>
 
                   <p className="text-sm sm:text-base opacity-85">{product.description}</p>
@@ -141,7 +125,7 @@ function ProductDetail() {
                       {product.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="px-2.5 py-1 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-xs sm:text-sm"
+                          className="px-2.5 py-1 rounded-full border ui-surface text-xs sm:text-sm"
                         >
                           {tag}
                         </span>
@@ -154,7 +138,7 @@ function ProductDetail() {
                       href={product.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-sm sm:text-base font-medium transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded border ui-surface text-sm sm:text-base font-medium transition-colors ui-surface-interactive"
                     >
                       <svg
                         width="16"
@@ -172,7 +156,7 @@ function ProductDetail() {
                         href={product.demo}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-sm sm:text-base font-medium transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded border ui-surface text-sm sm:text-base font-medium transition-colors ui-surface-interactive"
                       >
                         <svg
                           width="15"
@@ -244,7 +228,7 @@ function ProductDetail() {
                                 {stack.items.map((item) => (
                                   <span
                                     key={item}
-                                    className="px-3 py-1.5 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-xs sm:text-sm"
+                                    className="px-3 py-1.5 rounded border ui-surface text-xs sm:text-sm"
                                   >
                                     {item}
                                   </span>

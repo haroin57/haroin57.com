@@ -8,9 +8,9 @@ import { useReveal } from '../hooks/useReveal'
 import { useScrollToTop } from '../hooks/useScrollToTop'
 
 // Match the Posts controls and the section styling used on Habit.
-const buttonClass = 'min-h-12 px-3 py-1 rounded-full border text-xs sm:text-sm transition-colors border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation'
-const headingClass = 'text-base sm:text-xl text-[color:var(--fg-strong,inherit)]'
-const sectionClass = 'space-y-4 py-4 border-t border-[color:var(--ui-border)]'
+const buttonClass = 'habit-control'
+const headingClass = 'section-heading'
+const sectionClass = 'content-section'
 
 const colors = ['#263238', '#165546', '#208367', '#32b38a', '#69e2b0']
 export default function Logs() {

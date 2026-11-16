@@ -134,7 +134,7 @@ function BBSList() {
               <button
                 type="button"
                 onClick={() => setShowCreateForm((v) => !v)}
-                className="px-4 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] font-semibold text-sm transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)]"
+                className="px-4 py-2 rounded border ui-surface text-[color:var(--fg)] font-semibold text-sm transition-colors ui-surface-interactive"
               >
                 {showCreateForm ? 'キャンセル' : 'スレッドを立てる'}
               </button>
@@ -157,7 +157,7 @@ function BBSList() {
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="スレッドのタイトル（必須）"
                     maxLength={100}
-                    className="w-full px-3 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] placeholder:opacity-50 focus:outline-none focus:border-[color:var(--ui-border-strong)]"
+                    className="w-full px-3 py-2 rounded ui-field"
                   />
                 </div>
                 <div>
@@ -171,7 +171,7 @@ function BBSList() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="名無しさん"
                     maxLength={50}
-                    className="w-full sm:w-48 px-3 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] placeholder:opacity-50 focus:outline-none focus:border-[color:var(--ui-border-strong)]"
+                    className="w-full sm:w-48 px-3 py-2 rounded ui-field"
                   />
                 </div>
                 <div>
@@ -185,14 +185,14 @@ function BBSList() {
                     placeholder="スレッドの最初の投稿内容（必須）"
                     rows={4}
                     maxLength={2000}
-                    className="w-full px-3 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] placeholder:opacity-50 focus:outline-none focus:border-[color:var(--ui-border-strong)] resize-vertical"
+                    className="w-full px-3 py-2 rounded ui-field resize-vertical"
                   />
                 </div>
                 <div className="flex justify-end">
                   <button
                     type="submit"
                     disabled={!title.trim() || !content.trim() || isSubmitting}
-                    className="px-6 py-2 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--fg)] font-semibold transition-colors hover:border-[color:var(--ui-border-strong)] hover:bg-[color:var(--ui-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2 rounded border ui-surface text-[color:var(--fg)] font-semibold transition-colors ui-surface-interactive disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? '作成中...' : 'スレッドを作成'}
                   </button>

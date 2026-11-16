@@ -1,3 +1,4 @@
+import LanguageBadge from '../components/LanguageBadge'
 import { useRef, useMemo } from 'react'
 import PrefetchLink from '../components/PrefetchLink'
 import productsData from '../data/products.json' with { type: 'json' }
@@ -20,15 +21,6 @@ type Product = {
 }
 
 const staticProducts: Product[] = Array.isArray(productsData) ? (productsData as Product[]) : []
-
-const languageColors: Record<string, string> = {
-  TypeScript: '#3178c6',
-  JavaScript: '#f7df1e',
-  Python: '#3572A5',
-  Java: '#b07219',
-  Go: '#00ADD8',
-  Rust: '#dea584',
-}
 
 function Products() {
   const pageRef = useRef<HTMLDivElement | null>(null)
@@ -88,13 +80,7 @@ function Products() {
                 {products.map((product) => (
                   <li key={product.slug} className="space-y-2 py-4 group">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 text-xs sm:text-sm text-[color:var(--fg,inherit)] opacity-75">
-                        <span
-                          className="h-3 w-3 rounded-full"
-                          style={{ backgroundColor: languageColors[product.language] || '#6e7681' }}
-                        />
-                        {product.language}
-                      </div>
+                      <LanguageBadge language={product.language} />
                     </div>
                     <h2 className="text-base sm:text-xl text-[color:var(--fg-strong,inherit)]">
                       <PrefetchLink
@@ -111,7 +97,7 @@ function Products() {
                         {product.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="px-2 py-1 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)]"
+                            className="px-2 py-1 rounded-full border ui-surface"
                           >
                             {tag}
                           </span>
