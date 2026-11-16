@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Suspense } from 'react'
 import App from '../App'
 import {
@@ -12,7 +12,6 @@ import {
   BBSList,
   BBSThread,
   Habit,
-  Logs,
 } from '../lib/preloadRoutes'
 
 function AnimatedRoutes() {
@@ -24,7 +23,7 @@ function AnimatedRoutes() {
         <Routes location={location}>
           <Route path="/" element={<App />} />
           <Route path="/habit" element={<Habit />} />
-          <Route path="/logs" element={<Logs />} />
+          <Route path="/logs" element={<Navigate to="/habit" replace />} />
           <Route path="/home" element={<Home />} />
           <Route path="/posts" element={<Posts />} />
           <Route path="/posts/:slug" element={<PostDetail />} />

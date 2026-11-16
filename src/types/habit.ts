@@ -10,8 +10,6 @@ export type HabitLog = Record<HabitField, number> & {
   updated_at: string
 }
 export type HabitTodo = { id: number; target_date: string; priority: number; title: string; is_completed: number }
-export type HabitToday = { target_date: string; log: HabitLog | null; todos: HabitTodo[]; streak_days: number }
-export type HabitResult = { status: string; target_date: string; today_summary: HabitLog; streak_days: number; tweet_text: string }
 export type HabitStats = {
   days: { date: string; score: number }[]
   totals: { total_squat: number; total_bike_minutes: number; total_english: number; drawing_days: number }
