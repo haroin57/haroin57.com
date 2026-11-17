@@ -1,4 +1,3 @@
-import HabitActivity from '../components/HabitActivity'
 import { useRef, useMemo, useEffect } from 'react'
 import PrefetchLink from '../components/PrefetchLink'
 import BackButton from '../components/BackButton'
@@ -246,8 +245,6 @@ function Home() {
               </nav>
               </div>
             </div>
-
-            <HabitActivity compact />
 
             {/* タイムライン */}
             {timelineItems.length > 0 && (
