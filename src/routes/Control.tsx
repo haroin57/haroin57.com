@@ -33,9 +33,13 @@ export default function Control() {
   const interruptionNeeded = useRef(false)
   const refresh = useCallback(async () => {
     try {
+      if (!sessionStorage.getItem('becs_csrf')) { setData(null); return }
       const result = await becsRequest<ControlState>('/state'); setData(result)
       if (!loaded.current) { setTop3(result.tomorrowTop3); setReview(result.review); loaded.current = true }
-    } catch (err) { if (err instanceof BecsError && err.status === 401) setData(null); throw err }
+    } catch (err) {
+      if (err instanceof BecsError && err.status === 401) { sessionStorage.removeItem('becs_csrf'); setData(null); setCredential('') }
+      throw err
+    }
   }, [])
   useEffect(() => {
     try { const saved = sessionStorage.getItem('becs_pending'); if (saved) setPending(JSON.parse(saved) as Pending) } catch { setError('未確認操作の保存領域を利用できません。') }
@@ -63,7 +67,12 @@ export default function Control() {
       await refresh()
     } catch (err) {
       if (err instanceof BecsError && err.status < 500) { sessionStorage.removeItem('becs_pending'); setPending(null) }
-      setError(err instanceof BecsError ? err.message : '通信失敗です。受理の有無は未確認です。同じ操作IDで再確認してください。')
+      if (err instanceof BecsError && err.status === 401) {
+        sessionStorage.removeItem('becs_csrf'); setData(null); setCredential(''); setNotice('')
+        setError('操作の認証を確認できません。このタブで本人認証を行ってから再操作してください。')
+      } else {
+        setError(err instanceof BecsError ? err.message : '通信失敗です。受理の有無は未確認です。同じ操作IDで再確認してください。')
+      }
     } finally { lock.current = false; setBusy(false) }
   }, [refresh])
   function act(path: string, body: Record<string, unknown> = {}, method = 'POST') {
@@ -98,7 +107,7 @@ export default function Control() {
     {error && <p role="alert" className="whitespace-pre-wrap">{error}</p>}
     {notice && <p role="status">{notice}</p>}
     {pending && <Section title="未確認の操作"><p>通信の結果を確認できません。同じ操作IDで照会・再試行します。古いタッチは拒否されます。</p><Button disabled={busy} onClick={() => void send(pending)}>同じ操作を再確認する</Button></Section>}
-    {!data ? <form onSubmit={login} className="space-y-4"><Input label="本人用の管理者シークレット" type="password" autoComplete="current-password" value={secret} onChange={e => setSecret(e.target.value)} required /><Button type="submit" disabled={busy}>本人認証</Button><p className="text-sm">認証情報をタグURLへ含めないでください。Webセッションの有効期間は1時間です。</p></form> : <>
+    {!data ? <form onSubmit={login} className="space-y-4"><Input label="本人用の管理者シークレット" type="password" autoComplete="current-password" value={secret} onChange={e => setSecret(e.target.value)} required /><Button type="submit" disabled={busy}>本人認証</Button><p className="text-sm">認証情報をタグURLへ含めないでください。Webセッションの有効期間は1時間です。新しいタブでは操作のために本人認証を行ってください。</p></form> : <>
       <Button disabled={busy} onClick={() => void becsRequest('/auth/session', 'DELETE', {}).then(() => { sessionStorage.removeItem('becs_csrf'); setData(null); setCredential(''); setAudit([]); setDraft(''); setReview(''); setTop3(['', '', '']); loaded.current = false }).catch(err => setError(String(err)))}>ログアウト</Button>
       <Section title="解除・休養"><div className="flex flex-wrap gap-3"><Button disabled={busy} onClick={() => {
         // Emergency actions are never blocked by an unrelated unconfirmed checkpoint.

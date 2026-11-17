@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && node --experimental-strip-types scripts/deploy-posts.ts --gen-json && node --experimental-strip-types scripts/gen-product-posts.ts && vite build && vite build --ssr src/entry-server.tsx --outDir dist/server && node --experimental-strip-types scripts/prerender.ts",
-    "test:becs": "node --experimental-strip-types tests/becs.test.mjs && python3 tests/becs-agent.test.py && g++ -std=c++17 -Wall -Wextra -Werror tests/becs-bike.cpp -o /tmp/haroin-becs-bike-test && /tmp/haroin-becs-bike-test",
+    "test:becs": "node --experimental-strip-types tests/becs.test.mjs && node --experimental-strip-types tests/becs-client.test.mjs && python3 tests/becs-agent.test.py && g++ -std=c++17 -Wall -Wextra -Werror tests/becs-bike.cpp -o /tmp/haroin-becs-bike-test && /tmp/haroin-becs-bike-test",
     "lint": "eslint .",
     "preview": "vite preview",
     "posts:gen": "node --experimental-strip-types scripts/deploy-posts.ts --gen-json",
