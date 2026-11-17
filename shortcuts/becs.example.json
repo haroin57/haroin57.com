@@ -1,0 +1,9 @@
+{
+  "origin": "https://haroin57.com",
+  "device_id": "CONFIGURE_IPHONE_DEVICE_ID",
+  "tags": {
+    "wake": "CONFIGURE_NFC_WAKE_TAG_ID",
+    "departure": "CONFIGURE_NFC_DEPARTURE_TAG_ID",
+    "lab-arrival": "CONFIGURE_NFC_LAB_ARRIVAL_TAG_ID"
+  }
+}

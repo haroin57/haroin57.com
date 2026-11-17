@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ショートカットの設定 | haroin57 web</title><style>body{background:#808080;color:#fff;font:1rem/1.8 sans-serif;max-width:48rem;margin:3rem auto;padding:1rem}a{color:inherit}code{overflow-wrap:anywhere}</style></head><body>
+<h1>ショートカットの設定</h1>
+<p>次の6本は本人MacでAppleのCLIによりmode anyoneで署名済みです。iPhoneで内容を確認して追加してください。NFC用は追加後に端末ID・タグID・端末資格情報の設定が必要です。実際のNFC読み取りとiPhone上の動作確認は別途必要です。</p>
+<ul>
+<li><a href="signed/wake.shortcut" download>BECS 起床</a></li><li><a href="signed/departure.shortcut" download>BECS 外出</a></li><li><a href="signed/lab-arrival.shortcut" download>BECS 研究室到着</a></li>
+<li><a href="signed/habit-public-log.shortcut" download>Habit 公開ログを取得</a></li><li><a href="signed/control.shortcut" download>BECS 管理画面</a></li><li><a href="signed/focus.shortcut" download>BECS 集中画面</a></li>
+</ul>
+<p><a href="signed/artifact-manifest.json">署名済みファイルのSHA-256一覧</a>を公開しています。再生成用の署名前テンプレートとCherriソースもリポジトリで管理しています。</p>
+<h2>NFC用の設定</h2>
+<ol><li><a href="/control/tags">タグ・端末台帳</a>で本人認証し、iPhoneとタグを登録・有効化してShortcuts方式で紐付けます。</li><li>署名したファイルをiPhoneへ追加し、各リクエスト内の<code>CONFIGURE_IPHONE_DEVICE_ID</code>とタグIDを台帳の値に置き換えます。</li><li>Authorizationの<code>CONFIGURE_DEVICE_SCOPED_TOKEN</code>を、そのiPhone専用の資格情報に置き換えます。管理者シークレットは設定しません。設定後のショートカットは共有しません。</li><li>iPhoneのNFCオートメーションで実物タグを読み取り、対応するショートカットの実行に紐付けます。</li></ol>
+<p>ショートカットは準備APIで新しいscan_idを取得してから申告します。表示される実際の応答を確認してください。通信失敗は未確認です。全体の再実行は別タッチになるため、自動再試行しません。端末への適用はACKまで未確認です。</p>
+<p><a href="/habit">公開ログ</a> / <a href="/home">Home</a></p>
+</body></html>

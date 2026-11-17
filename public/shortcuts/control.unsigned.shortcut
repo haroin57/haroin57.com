@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>WFWorkflowName</key>
+	<string>BECS 管理画面</string>
+	<key>WFWorkflowMinimumClientVersion</key>
+	<integer>900</integer>
+	<key>WFWorkflowIcon</key>
+	<dict>
+		<key>WFWorkflowIconStartColor</key>
+		<integer>4286611584</integer>
+		<key>WFWorkflowIconGlyphNumber</key>
+		<integer>59511</integer>
+	</dict>
+	<key>WFWorkflowInputContentItemClasses</key>
+	<array/>
+	<key>WFWorkflowTypes</key>
+	<array>
+		<string>NCWidget</string>
+	</array>
+	<key>WFWorkflowActions</key>
+	<array>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.openurl</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFURL</key>
+				<string>https://haroin57.com/control</string>
+				<key>UUID</key>
+				<string>f0e9d3f7-27fa-582f-a235-6ce2801690ef</string>
+			</dict>
+		</dict>
+	</array>
+</dict>
+</plist>

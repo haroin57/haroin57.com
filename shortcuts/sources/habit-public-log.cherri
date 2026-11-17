@@ -1,0 +1,43 @@
+#define name Habit 公開ログを取得
+
+// Generated raw action parameters. Compile and validate on the owner Mac.
+rawAction("is.workflow.actions.downloadurl", {
+  "WFURL": "https://haroin57.com/api/habit/stats",
+  "WFHTTPMethod": "GET",
+  "UUID": "a840162e-a9d1-5bfa-a083-1d9eebcd75b4"
+})
+
+rawAction("is.workflow.actions.getvalueforkey", {
+  "WFDictionaryKey": "streak_days",
+  "WFInput": {
+    "Value": {
+      "OutputUUID": "a840162e-a9d1-5bfa-a083-1d9eebcd75b4",
+      "OutputName": "公開ログ",
+      "Type": "ActionOutput"
+    },
+    "WFSerializationType": "WFTextTokenAttachment"
+  },
+  "UUID": "84836daf-f1ec-5b2c-bec7-3c7374bf6b97"
+})
+
+rawAction("is.workflow.actions.showresult", {
+  "Text": {
+    "Value": {
+      "string": "連続達成日数: ￼",
+      "attachmentsByRange": {
+        "{8, 1}": {
+          "OutputUUID": "84836daf-f1ec-5b2c-bec7-3c7374bf6b97",
+          "OutputName": "連続達成日数",
+          "Type": "ActionOutput"
+        }
+      }
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "6bb45866-7b63-5544-bf9e-e4f5ad061dfb"
+})
+
+rawAction("is.workflow.actions.openurl", {
+  "WFURL": "https://haroin57.com/habit",
+  "UUID": "a877f828-d66e-5c2e-87b3-148a65f712d0"
+})

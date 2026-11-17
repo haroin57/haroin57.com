@@ -34,6 +34,8 @@
 
 ## iPhone Shortcuts
 
+新しい6本の成果物と設定は[shortcuts.md](shortcuts.md)、本人Macでのコンパイル・署名は[mac-signing.md](mac-signing.md)、本番配備は[deployment.md](deployment.md)に記載します。
+
 各タグについて「個人用オートメーション→NFC」で登録します。タグのNDEF内容からtag_idを取り出すと仮定せず、APIに発行されたIDを固定して設定します。
 
 「URLの内容を取得」で、`POST https://haroin57.com/api/v1/nfc/scans`へ以下を送ります。`Authorization: Bearer <そのiPhoneの端末資格情報>`と`Content-Type: application/json`を指定します。管理者シークレットを使用しません。
@@ -71,6 +73,7 @@
 | `POST /api/v1/nfc/tags/:id/replace` | 本人のみ。旧IDをREPLACEDにし、新しいDRAFT IDを発行します。 |
 | `POST /api/v1/nfc/bindings` | 本人のみ。tag_id/device_id/modeを登録します。 |
 | `DELETE /api/v1/nfc/bindings/:id` | 本人のみ。紐付け停止。 |
+| `POST /api/v1/nfc/prepare` | 登録したiPhoneのみ。有効なShortcuts紐付けを検査して新しいscan_idと準備時刻を返します。生活状態は変更しません。 |
 | `POST /api/v1/nfc/scans` | iPhoneの資格情報または本人セッション。サーバーのタグ用途を解決します。 |
 | `POST /api/v1/devices` | 本人のみ。label/typeから端末を登録します。 |
 | `POST /api/v1/devices/:id/revoke` | 本人のみ。端末と紐付けを失効します。 |

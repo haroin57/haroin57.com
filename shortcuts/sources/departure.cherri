@@ -1,0 +1,291 @@
+#define name BECS 外出
+
+// Generated raw action parameters. Compile and validate on the owner Mac.
+rawAction("is.workflow.actions.comment", {
+  "WFCommentActionText": "本人用iPhoneの端末ID・端末資格情報・公開tag_idを設定してください。ネットワーク失敗は未確認です。全体を自動再実行しません。",
+  "UUID": "33d0e470-4475-5831-bda7-2b441b1bf586"
+})
+
+rawAction("is.workflow.actions.downloadurl", {
+  "WFURL": "https://haroin57.com/api/v1/nfc/prepare",
+  "WFHTTPMethod": "POST",
+  "WFHTTPBodyType": "JSON",
+  "WFHTTPHeaders": {
+    "Value": {
+      "WFDictionaryFieldValueItems": [
+        {
+          "WFKey": {
+            "Value": {
+              "string": "Content-Type",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          },
+          "WFItemType": 0,
+          "WFValue": {
+            "Value": {
+              "string": "application/json",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          }
+        },
+        {
+          "WFKey": {
+            "Value": {
+              "string": "Authorization",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          },
+          "WFItemType": 0,
+          "WFValue": {
+            "Value": {
+              "string": "Bearer CONFIGURE_DEVICE_SCOPED_TOKEN",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          }
+        }
+      ]
+    },
+    "WFSerializationType": "WFDictionaryFieldValue"
+  },
+  "WFJSONValues": {
+    "Value": {
+      "WFDictionaryFieldValueItems": [
+        {
+          "WFKey": {
+            "Value": {
+              "string": "tag_id",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          },
+          "WFItemType": 0,
+          "WFValue": {
+            "Value": {
+              "string": "CONFIGURE_NFC_DEPARTURE_TAG_ID",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          }
+        },
+        {
+          "WFKey": {
+            "Value": {
+              "string": "device_id",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          },
+          "WFItemType": 0,
+          "WFValue": {
+            "Value": {
+              "string": "CONFIGURE_IPHONE_DEVICE_ID",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          }
+        }
+      ]
+    },
+    "WFSerializationType": "WFDictionaryFieldValue"
+  },
+  "UUID": "e595abe9-0640-5b23-adc1-06d0a38db95d"
+})
+
+rawAction("is.workflow.actions.getvalueforkey", {
+  "WFDictionaryKey": "scan_id",
+  "WFInput": {
+    "Value": {
+      "OutputUUID": "e595abe9-0640-5b23-adc1-06d0a38db95d",
+      "OutputName": "準備応答",
+      "Type": "ActionOutput"
+    },
+    "WFSerializationType": "WFTextTokenAttachment"
+  },
+  "UUID": "188f96b7-6dc0-5d8b-a1de-08bd23419bab"
+})
+
+rawAction("is.workflow.actions.getvalueforkey", {
+  "WFDictionaryKey": "occurred_at",
+  "WFInput": {
+    "Value": {
+      "OutputUUID": "e595abe9-0640-5b23-adc1-06d0a38db95d",
+      "OutputName": "準備応答",
+      "Type": "ActionOutput"
+    },
+    "WFSerializationType": "WFTextTokenAttachment"
+  },
+  "UUID": "c5f69e76-2299-5e2b-a1f2-a79db3905e55"
+})
+
+rawAction("is.workflow.actions.downloadurl", {
+  "WFURL": "https://haroin57.com/api/v1/nfc/scans",
+  "WFHTTPMethod": "POST",
+  "WFHTTPBodyType": "JSON",
+  "WFHTTPHeaders": {
+    "Value": {
+      "WFDictionaryFieldValueItems": [
+        {
+          "WFKey": {
+            "Value": {
+              "string": "Content-Type",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          },
+          "WFItemType": 0,
+          "WFValue": {
+            "Value": {
+              "string": "application/json",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          }
+        },
+        {
+          "WFKey": {
+            "Value": {
+              "string": "Authorization",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          },
+          "WFItemType": 0,
+          "WFValue": {
+            "Value": {
+              "string": "Bearer CONFIGURE_DEVICE_SCOPED_TOKEN",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          }
+        }
+      ]
+    },
+    "WFSerializationType": "WFDictionaryFieldValue"
+  },
+  "WFJSONValues": {
+    "Value": {
+      "WFDictionaryFieldValueItems": [
+        {
+          "WFKey": {
+            "Value": {
+              "string": "scan_id",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          },
+          "WFItemType": 0,
+          "WFValue": {
+            "Value": {
+              "string": "￼",
+              "attachmentsByRange": {
+                "{0, 1}": {
+                  "OutputUUID": "188f96b7-6dc0-5d8b-a1de-08bd23419bab",
+                  "OutputName": "scan_id",
+                  "Type": "ActionOutput"
+                }
+              }
+            },
+            "WFSerializationType": "WFTextTokenString"
+          }
+        },
+        {
+          "WFKey": {
+            "Value": {
+              "string": "tag_id",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          },
+          "WFItemType": 0,
+          "WFValue": {
+            "Value": {
+              "string": "CONFIGURE_NFC_DEPARTURE_TAG_ID",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          }
+        },
+        {
+          "WFKey": {
+            "Value": {
+              "string": "device_id",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          },
+          "WFItemType": 0,
+          "WFValue": {
+            "Value": {
+              "string": "CONFIGURE_IPHONE_DEVICE_ID",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          }
+        },
+        {
+          "WFKey": {
+            "Value": {
+              "string": "source",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          },
+          "WFItemType": 0,
+          "WFValue": {
+            "Value": {
+              "string": "IOS_SHORTCUTS",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          }
+        },
+        {
+          "WFKey": {
+            "Value": {
+              "string": "occurred_at",
+              "attachmentsByRange": {}
+            },
+            "WFSerializationType": "WFTextTokenString"
+          },
+          "WFItemType": 0,
+          "WFValue": {
+            "Value": {
+              "string": "￼",
+              "attachmentsByRange": {
+                "{0, 1}": {
+                  "OutputUUID": "c5f69e76-2299-5e2b-a1f2-a79db3905e55",
+                  "OutputName": "occurred_at",
+                  "Type": "ActionOutput"
+                }
+              }
+            },
+            "WFSerializationType": "WFTextTokenString"
+          }
+        }
+      ]
+    },
+    "WFSerializationType": "WFDictionaryFieldValue"
+  },
+  "UUID": "7d8ffdc7-f9f1-59ad-9482-b0a0f4659022"
+})
+
+rawAction("is.workflow.actions.showresult", {
+  "Text": {
+    "Value": {
+      "string": "￼",
+      "attachmentsByRange": {
+        "{0, 1}": {
+          "OutputUUID": "7d8ffdc7-f9f1-59ad-9482-b0a0f4659022",
+          "OutputName": "受付結果",
+          "Type": "ActionOutput"
+        }
+      }
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "8a21826d-3a84-5bd9-9e7f-09a1c7bc92ef"
+})

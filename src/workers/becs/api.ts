@@ -70,11 +70,22 @@ export async function handleBecs(req: Request, env: Env, now = new Date().toISOS
     if (bearer && req.headers.has('Origin')) return reply({ error: '端末APIはブラウザ認証では利用できません。' }, 403)
     const ownDevicePath = device && path === `/devices/${device.device_id}/policy`
     const allowedDevice = device && (
-      (device.type === 'IPHONE' && path === '/nfc/scans' && req.method === 'POST') ||
+      (device.type === 'IPHONE' && (path === '/nfc/scans' || path === '/nfc/prepare') && req.method === 'POST') ||
       (device.type !== 'IPHONE' && ownDevicePath && req.method === 'GET') ||
       ((device.type === 'MAC' || device.type === 'DNS' || device.type === 'ESP32') && /^\/device-commands\/[^/]+\/ack$/.test(path) && req.method === 'POST') ||
       (device.type === 'ESP32' && path === `/devices/${device.device_id}/telemetry` && req.method === 'POST'))
     if (!isWeb && !allowedDevice) return reply({ error: '資格情報のスコープ外です。' }, 403)
+    // Shortcuts can obtain a fresh envelope without relying on an optional UUID action.
+    // Preparing a scan never accepts a checkpoint or changes the routine.
+    if (path === '/nfc/prepare' && req.method === 'POST') {
+      if (!device || device.type !== 'IPHONE' || body.device_id !== device.device_id) return reply({ error: '登録したiPhoneの資格情報とIDが必要です。' }, 403)
+      const tagId = string(body, 'tag_id')
+      const tag = control.tags.find(item => item.tag_id === tagId && item.status === 'ACTIVE')
+      if (!tag || !control.bindings.some(item => item.tag_id === tagId && item.device_id === device.device_id && item.mode === 'IOS_SHORTCUTS' && !item.disabled_at)) return reply({ error: '有効なタグとShortcuts紐付けが必要です。' }, 403)
+      const rate = await db.prepare('INSERT INTO becs_login_limits(bucket,attempts,expires_at) VALUES(?,1,?) ON CONFLICT(bucket) DO UPDATE SET attempts=attempts+1 RETURNING attempts').bind(`prepare:${device.device_id}:${now.slice(0,16)}`, new Date(Date.parse(now) + 120000).toISOString()).first<{ attempts: number }>()
+      if (!rate || rate.attempts > 120) return reply({ error: '準備要求の回数を超えました。' }, 429)
+      return reply({ scan_id: crypto.randomUUID(), tag_id: tagId, device_id: device.device_id, source: 'IOS_SHORTCUTS', occurred_at: now })
+    }
     if (path === '/auth/session' && req.method === 'DELETE' && isWeb) {
       const raw = req.headers.get('Cookie')?.split(';').map(item => item.trim()).find(item => item.startsWith('__Host-becs='))?.slice(12)
       if (raw) await db.prepare('DELETE FROM becs_web_sessions WHERE token_hash=?').bind(await hash(raw)).run()

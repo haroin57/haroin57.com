@@ -1,0 +1,30 @@
+# 本人Macでのコンパイル・署名
+
+本人MacへTailscale SSHで接続し、Cherri 2.4.0とAppleの`shortcuts` CLIを確認しました。6本の配布用ファイルは、本人Mac上でAppleのCLIにより`--mode anyone`で署名済みです。iPhoneへの追加とNFCの実機確認は別途必要です。
+
+## 実施結果
+
+- 既存ショートカットを上書きせず、Macの`/tmp/haroin-becs-release-20261117`で作業しました。Macの既存設定やKeychainは変更していません。
+- Cherriでは`control.cherri`のコンパイルと署名に成功しました。一方、NFC用の複雑な辞書・変数参照を含むソースは、Cherri 2.4.0内部の辞書変換処理でpanicになりました。6本すべてのCherriコンパイルに成功したとは扱いません。
+- XML plistの直接署名ではApple CLIのタイムアウトが発生しました。同じワークフローをバイナリplistへ変換し、Apple CLIで署名する方式では6本すべて成功しました。配布版はこの経路で作成したファイルです。
+- Apple CLIはエラー表示後にも終了コード0を返す場合があるため、署名スクリプトは終了コードだけでなく、新しく生成されたファイルの存在・サイズ・`AEA1`ヘッダーも確認します。
+- Macから取得したファイルは`public/shortcuts/signed/`に保存しています。Macの拡張属性・AppleDoubleファイルは配布に含めません。
+- `artifact-manifest.json`には6本のサイズ、署名済みファイルのSHA-256、元の署名前plistのSHA-256、署名モードを記録しました。署名後のバイト列は変更していません。
+
+## 再署名
+
+リポジトリの`shortcuts/sources/`、`public/shortcuts/*.unsigned.shortcut`、署名用スクリプトを本人Macの新しい作業ディレクトリへ転送し、そこで実行します。資格情報はiPhoneに追加した後に設定し、署名用ファイルへ埋め込みません。
+
+```bash
+bash scripts/sign-shortcuts.sh public/shortcuts /tmp/haroin-signed-shortcuts
+```
+
+Cherri経由のコンパイル確認も行う場合は以下を使用します。
+
+```bash
+bash scripts/build-shortcuts-mac.sh /tmp/haroin-becs-shortcuts-release
+```
+
+このスクリプトは各Cherriソースのログを`cherri/`へ残し、コンパイル失敗時も検証済みplistからのApple署名を続けます。配布用の`signed/`は6本が揃い、署名形式を確認できた場合だけ成功とします。Cherriの成功分は代替成果物で、配布用6本とは区別します。
+
+Appleの署名では、ファイルが検証のためAppleへ送信されます。[Apple公式CLI手順](https://support.apple.com/guide/shortcuts-mac/run-shortcuts-from-the-command-line-apd455c82f02/mac)に従い、共有用ファイルへ資格情報を含めません。

@@ -283,3 +283,20 @@ test('virtual NFC day runs wake → research → measured focus → three sets �
   const state = (await f.call('/state', undefined, { now: time(3310) })).data.state
   assert.equal(state.routinePhase, 'SLEEPING'); assert.equal(state.progress.focusSessionsCompleted, 1); assert.equal(state.progress.bikeActiveSeconds, 1440)
 })
+
+test('Shortcuts preparation issues fresh runtime envelopes without a state change and requires a live binding', async () => {
+  const f=setup(); await f.login(); const tag=await f.tag('NFC_WAKE'); const phone=await f.device()
+  const body={tag_id:tag.tag_id,device_id:phone.device.device_id}
+  assert.equal((await f.call('/nfc/prepare',body,{token:phone.token})).status,403)
+  await f.call('/nfc/bindings',{...body,mode:'IOS_SHORTCUTS'})
+  const before=(await f.call('/state')).data.state.revision
+  const a=await f.call('/nfc/prepare',body,{token:phone.token})
+  const b=await f.call('/nfc/prepare',body,{token:phone.token})
+  assert.equal(a.status,200); assert.notEqual(a.data.scan_id,b.data.scan_id)
+  assert.equal((await f.call('/state')).data.state.revision,before)
+  const accepted=await f.call('/nfc/scans',a.data,{token:phone.token})
+  assert.equal(accepted.status,200)
+  assert.deepEqual((await f.call('/nfc/scans',a.data,{token:phone.token})).data,accepted.data)
+  await f.call(`/devices/${phone.device.device_id}/revoke`,{})
+  assert.equal((await f.call('/nfc/prepare',body,{token:phone.token})).status,401)
+})

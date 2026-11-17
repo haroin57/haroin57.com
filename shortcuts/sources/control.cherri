@@ -1,0 +1,7 @@
+#define name BECS 管理画面
+
+// Generated raw action parameters. Compile and validate on the owner Mac.
+rawAction("is.workflow.actions.openurl", {
+  "WFURL": "https://haroin57.com/control",
+  "UUID": "f0e9d3f7-27fa-582f-a235-6ce2801690ef"
+})

@@ -1,0 +1,50 @@
+[
+  {
+    "file": "control.shortcut",
+    "bytes": 21727,
+    "sha256": "6903449ea1080f851938115a3c837c96b08d7b614bab7d2d5d3ef09fc01ac4b1",
+    "source_sha256": "c74921f1b86a47c0f37fc5c392630e5aa34f47098efa08594ccc9c7f1630d031",
+    "signing_mode": "anyone",
+    "signer": "Apple shortcuts CLI"
+  },
+  {
+    "file": "departure.shortcut",
+    "bytes": 23118,
+    "sha256": "47956627d8862a384763f07b9ff4943b675fd9eb2eaec2842e3accb8384db5d0",
+    "source_sha256": "b5ee346ecd97de0dbc1061816683e78cd84300db4bb4eda10b20a342e1a6611d",
+    "signing_mode": "anyone",
+    "signer": "Apple shortcuts CLI"
+  },
+  {
+    "file": "focus.shortcut",
+    "bytes": 21721,
+    "sha256": "05a7f9ffd7b6b9402ea5f2ee0f4c8d954d14c6246df601108fedc2db86ba5a3d",
+    "source_sha256": "fcea9e5c1ddcebcb1c417f2a45f67eb29347b6a213637943379d9edee2cd66bc",
+    "signing_mode": "anyone",
+    "signer": "Apple shortcuts CLI"
+  },
+  {
+    "file": "habit-public-log.shortcut",
+    "bytes": 22192,
+    "sha256": "93175925e9981e8aa31b847670a5cba36a00fead91af44a629ad50acaeee498e",
+    "source_sha256": "30f33949ce9baeff120269c54328682737b8b91d86810b078fd35701f24496f0",
+    "signing_mode": "anyone",
+    "signer": "Apple shortcuts CLI"
+  },
+  {
+    "file": "lab-arrival.shortcut",
+    "bytes": 23124,
+    "sha256": "86829e631d46856cef9e6514c9c7c2bd6b091ee75614ac87bcc2fd336953f626",
+    "source_sha256": "1bc09e534cacb5e10551e3a02f7664d5795427b67c561bc6f6644e813c78fb74",
+    "signing_mode": "anyone",
+    "signer": "Apple shortcuts CLI"
+  },
+  {
+    "file": "wake.shortcut",
+    "bytes": 23115,
+    "sha256": "f4396cc628ad84f8378e0594782e4568a5a2c415294295b5c584ded942077a79",
+    "source_sha256": "a1915cdbf46872d633751fa0e142a6801e0e7644f98c20605c44eaf2bad1ef89",
+    "signing_mode": "anyone",
+    "signer": "Apple shortcuts CLI"
+  }
+]
