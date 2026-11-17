@@ -19,6 +19,45 @@
 	<array>
 		<string>NCWidget</string>
 	</array>
+	<key>WFWorkflowImportQuestions</key>
+	<array>
+		<dict>
+			<key>ActionIndex</key>
+			<integer>1</integer>
+			<key>Category</key>
+			<string>Parameter</string>
+			<key>ParameterKey</key>
+			<string>WFTextActionText</string>
+			<key>Text</key>
+			<string>このiPhoneの端末IDを入力してください。/control/tagsで発行します。</string>
+			<key>DefaultValue</key>
+			<string></string>
+		</dict>
+		<dict>
+			<key>ActionIndex</key>
+			<integer>2</integer>
+			<key>Category</key>
+			<string>Parameter</string>
+			<key>ParameterKey</key>
+			<string>WFTextActionText</string>
+			<key>Text</key>
+			<string>この操作に紐付けたタグIDを入力してください。</string>
+			<key>DefaultValue</key>
+			<string></string>
+		</dict>
+		<dict>
+			<key>ActionIndex</key>
+			<integer>3</integer>
+			<key>Category</key>
+			<string>Parameter</string>
+			<key>ParameterKey</key>
+			<string>WFTextActionText</string>
+			<key>Text</key>
+			<string>このiPhone専用の資格情報を入力してください。管理者シークレットは使用しません。</string>
+			<key>DefaultValue</key>
+			<string></string>
+		</dict>
+	</array>
 	<key>WFWorkflowActions</key>
 	<array>
 		<dict>
@@ -30,6 +69,585 @@
 				<string>本人用iPhoneの端末ID・端末資格情報・公開tag_idを設定してください。ネットワーク失敗は未確認です。全体を自動再実行しません。</string>
 				<key>UUID</key>
 				<string>33d0e470-4475-5831-bda7-2b441b1bf586</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFTextActionText</key>
+				<string>CONFIGURE_IPHONE_DEVICE_ID</string>
+				<key>UUID</key>
+				<string>e595abe9-0640-5b23-adc1-06d0a38db95d</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFTextActionText</key>
+				<string>CONFIGURE_NFC_DEPARTURE_TAG_ID</string>
+				<key>UUID</key>
+				<string>188f96b7-6dc0-5d8b-a1de-08bd23419bab</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFTextActionText</key>
+				<string>CONFIGURE_DEVICE_SCOPED_TOKEN</string>
+				<key>UUID</key>
+				<string>c5f69e76-2299-5e2b-a1f2-a79db3905e55</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>ab3add00-1e99-5849-9f9c-b6140626c7d2</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>4</integer>
+				<key>WFConditionalActionString</key>
+				<string></string>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>OutputUUID</key>
+							<string>e595abe9-0640-5b23-adc1-06d0a38db95d</string>
+							<key>OutputName</key>
+							<string>device_id</string>
+							<key>Type</key>
+							<string>ActionOutput</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>UUID</key>
+				<string>7d8ffdc7-f9f1-59ad-9482-b0a0f4659022</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.showresult</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>Text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>初期設定が必要です。このiPhoneの端末IDを入力してください。/control/tagsで発行します。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>8a21826d-3a84-5bd9-9e7f-09a1c7bc92ef</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.output</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFOutput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>CONFIGURATION_REQUIRED: device_id</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>0eeae0e6-fc62-527b-9e3a-3c76546296e7</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>ab3add00-1e99-5849-9f9c-b6140626c7d2</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>UUID</key>
+				<string>3971a3b3-cfbd-54d0-a5ec-3c0dc007657c</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>455e9eee-65f5-59ac-9093-6f334a1f74fe</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>4</integer>
+				<key>WFConditionalActionString</key>
+				<string>CONFIGURE_IPHONE_DEVICE_ID</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>OutputUUID</key>
+							<string>e595abe9-0640-5b23-adc1-06d0a38db95d</string>
+							<key>OutputName</key>
+							<string>device_id</string>
+							<key>Type</key>
+							<string>ActionOutput</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>UUID</key>
+				<string>5c03084f-1297-5e7d-a5a8-77c3d8f96cef</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.showresult</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>Text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>初期設定が必要です。このiPhoneの端末IDを入力してください。/control/tagsで発行します。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>5483a06c-3925-56ac-9880-0f0cee8f82bb</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.output</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFOutput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>CONFIGURATION_REQUIRED: device_id</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>41b423da-998c-5b64-91b5-6078e9c7d4dd</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>455e9eee-65f5-59ac-9093-6f334a1f74fe</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>UUID</key>
+				<string>ac48d499-4c14-5642-a6ba-070ad70b1768</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>576cbbd6-7945-5715-9d4a-e171a54df3d9</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>4</integer>
+				<key>WFConditionalActionString</key>
+				<string></string>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>OutputUUID</key>
+							<string>188f96b7-6dc0-5d8b-a1de-08bd23419bab</string>
+							<key>OutputName</key>
+							<string>tag_id</string>
+							<key>Type</key>
+							<string>ActionOutput</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>UUID</key>
+				<string>6882f6f5-f4ed-5277-b2c9-193d2538fcc0</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.showresult</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>Text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>初期設定が必要です。この操作に紐付けたタグIDを入力してください。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>6043f84f-5c02-5a4f-a981-f5d530e64f88</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.output</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFOutput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>CONFIGURATION_REQUIRED: tag_id</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>d7477e0d-ad1f-58fc-8c90-e3dcccd6bcc4</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>576cbbd6-7945-5715-9d4a-e171a54df3d9</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>UUID</key>
+				<string>21f871bd-e772-59a2-9423-c921b12ae25e</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>f0fcb453-90c5-59ea-b4f4-45a918de60dc</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>4</integer>
+				<key>WFConditionalActionString</key>
+				<string>CONFIGURE_NFC_DEPARTURE_TAG_ID</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>OutputUUID</key>
+							<string>188f96b7-6dc0-5d8b-a1de-08bd23419bab</string>
+							<key>OutputName</key>
+							<string>tag_id</string>
+							<key>Type</key>
+							<string>ActionOutput</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>UUID</key>
+				<string>b27d5c03-272c-5f14-9ce3-17e482795732</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.showresult</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>Text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>初期設定が必要です。この操作に紐付けたタグIDを入力してください。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>0a912936-030e-5e69-baae-b336d2631132</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.output</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFOutput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>CONFIGURATION_REQUIRED: tag_id</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>61c36bcc-2899-57d4-83b3-bd255cbc8d2c</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>f0fcb453-90c5-59ea-b4f4-45a918de60dc</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>UUID</key>
+				<string>158258a5-44b2-57be-8d3a-5a7a1c3bc498</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>28ecc1bc-b88b-5f64-aa47-f243ded22c36</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>4</integer>
+				<key>WFConditionalActionString</key>
+				<string></string>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>OutputUUID</key>
+							<string>c5f69e76-2299-5e2b-a1f2-a79db3905e55</string>
+							<key>OutputName</key>
+							<string>token</string>
+							<key>Type</key>
+							<string>ActionOutput</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>UUID</key>
+				<string>1597e3b5-d39f-53c2-93ce-165efdfdee9f</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.showresult</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>Text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>初期設定が必要です。このiPhone専用の資格情報を入力してください。管理者シークレットは使用しません。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>8999437c-e272-53f0-85cf-b5bbfe465c7b</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.output</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFOutput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>CONFIGURATION_REQUIRED: token</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>688f45ba-8041-5cd7-b653-75b864258225</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>28ecc1bc-b88b-5f64-aa47-f243ded22c36</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>UUID</key>
+				<string>92b5571a-c2f7-5252-948d-7c8fc30b15d4</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>49d40301-d861-58a2-97c0-131c9a220328</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>4</integer>
+				<key>WFConditionalActionString</key>
+				<string>CONFIGURE_DEVICE_SCOPED_TOKEN</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>OutputUUID</key>
+							<string>c5f69e76-2299-5e2b-a1f2-a79db3905e55</string>
+							<key>OutputName</key>
+							<string>token</string>
+							<key>Type</key>
+							<string>ActionOutput</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>UUID</key>
+				<string>0f012b78-040b-53aa-83c0-fbad5c0f799b</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.showresult</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>Text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>初期設定が必要です。このiPhone専用の資格情報を入力してください。管理者シークレットは使用しません。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>6a5cb247-a1f7-5c87-9241-24257c7979f9</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.output</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFOutput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>CONFIGURATION_REQUIRED: token</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>3e842d60-2c5d-556f-9c92-218ee1097d85</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>49d40301-d861-58a2-97c0-131c9a220328</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>UUID</key>
+				<string>54ca2952-b9a4-5b60-b415-67a1118948ed</string>
 			</dict>
 		</dict>
 		<dict>
@@ -97,9 +715,19 @@
 									<key>Value</key>
 									<dict>
 										<key>string</key>
-										<string>Bearer CONFIGURE_DEVICE_SCOPED_TOKEN</string>
+										<string>Bearer ￼</string>
 										<key>attachmentsByRange</key>
-										<dict/>
+										<dict>
+											<key>{7, 1}</key>
+											<dict>
+												<key>OutputUUID</key>
+												<string>c5f69e76-2299-5e2b-a1f2-a79db3905e55</string>
+												<key>OutputName</key>
+												<string>token</string>
+												<key>Type</key>
+												<string>ActionOutput</string>
+											</dict>
+										</dict>
 									</dict>
 									<key>WFSerializationType</key>
 									<string>WFTextTokenString</string>
@@ -136,9 +764,19 @@
 									<key>Value</key>
 									<dict>
 										<key>string</key>
-										<string>CONFIGURE_NFC_DEPARTURE_TAG_ID</string>
+										<string>￼</string>
 										<key>attachmentsByRange</key>
-										<dict/>
+										<dict>
+											<key>{0, 1}</key>
+											<dict>
+												<key>OutputUUID</key>
+												<string>188f96b7-6dc0-5d8b-a1de-08bd23419bab</string>
+												<key>OutputName</key>
+												<string>tag_id</string>
+												<key>Type</key>
+												<string>ActionOutput</string>
+											</dict>
+										</dict>
 									</dict>
 									<key>WFSerializationType</key>
 									<string>WFTextTokenString</string>
@@ -164,9 +802,19 @@
 									<key>Value</key>
 									<dict>
 										<key>string</key>
-										<string>CONFIGURE_IPHONE_DEVICE_ID</string>
+										<string>￼</string>
 										<key>attachmentsByRange</key>
-										<dict/>
+										<dict>
+											<key>{0, 1}</key>
+											<dict>
+												<key>OutputUUID</key>
+												<string>e595abe9-0640-5b23-adc1-06d0a38db95d</string>
+												<key>OutputName</key>
+												<string>device_id</string>
+												<key>Type</key>
+												<string>ActionOutput</string>
+											</dict>
+										</dict>
 									</dict>
 									<key>WFSerializationType</key>
 									<string>WFTextTokenString</string>
@@ -178,7 +826,7 @@
 					<string>WFDictionaryFieldValue</string>
 				</dict>
 				<key>UUID</key>
-				<string>e595abe9-0640-5b23-adc1-06d0a38db95d</string>
+				<string>622d8c9b-d346-5c85-8593-97d011edd7b0</string>
 			</dict>
 		</dict>
 		<dict>
@@ -193,7 +841,7 @@
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>e595abe9-0640-5b23-adc1-06d0a38db95d</string>
+						<string>622d8c9b-d346-5c85-8593-97d011edd7b0</string>
 						<key>OutputName</key>
 						<string>準備応答</string>
 						<key>Type</key>
@@ -203,7 +851,7 @@
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>UUID</key>
-				<string>188f96b7-6dc0-5d8b-a1de-08bd23419bab</string>
+				<string>015a32a7-78cd-592a-9fbf-d5ab0b920d6c</string>
 			</dict>
 		</dict>
 		<dict>
@@ -218,7 +866,7 @@
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>e595abe9-0640-5b23-adc1-06d0a38db95d</string>
+						<string>622d8c9b-d346-5c85-8593-97d011edd7b0</string>
 						<key>OutputName</key>
 						<string>準備応答</string>
 						<key>Type</key>
@@ -228,7 +876,7 @@
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>UUID</key>
-				<string>c5f69e76-2299-5e2b-a1f2-a79db3905e55</string>
+				<string>fa7826f2-76aa-59e7-84cd-26ce3811014b</string>
 			</dict>
 		</dict>
 		<dict>
@@ -296,9 +944,19 @@
 									<key>Value</key>
 									<dict>
 										<key>string</key>
-										<string>Bearer CONFIGURE_DEVICE_SCOPED_TOKEN</string>
+										<string>Bearer ￼</string>
 										<key>attachmentsByRange</key>
-										<dict/>
+										<dict>
+											<key>{7, 1}</key>
+											<dict>
+												<key>OutputUUID</key>
+												<string>c5f69e76-2299-5e2b-a1f2-a79db3905e55</string>
+												<key>OutputName</key>
+												<string>token</string>
+												<key>Type</key>
+												<string>ActionOutput</string>
+											</dict>
+										</dict>
 									</dict>
 									<key>WFSerializationType</key>
 									<string>WFTextTokenString</string>
@@ -341,7 +999,7 @@
 											<key>{0, 1}</key>
 											<dict>
 												<key>OutputUUID</key>
-												<string>188f96b7-6dc0-5d8b-a1de-08bd23419bab</string>
+												<string>015a32a7-78cd-592a-9fbf-d5ab0b920d6c</string>
 												<key>OutputName</key>
 												<string>scan_id</string>
 												<key>Type</key>
@@ -373,9 +1031,19 @@
 									<key>Value</key>
 									<dict>
 										<key>string</key>
-										<string>CONFIGURE_NFC_DEPARTURE_TAG_ID</string>
+										<string>￼</string>
 										<key>attachmentsByRange</key>
-										<dict/>
+										<dict>
+											<key>{0, 1}</key>
+											<dict>
+												<key>OutputUUID</key>
+												<string>188f96b7-6dc0-5d8b-a1de-08bd23419bab</string>
+												<key>OutputName</key>
+												<string>tag_id</string>
+												<key>Type</key>
+												<string>ActionOutput</string>
+											</dict>
+										</dict>
 									</dict>
 									<key>WFSerializationType</key>
 									<string>WFTextTokenString</string>
@@ -401,9 +1069,19 @@
 									<key>Value</key>
 									<dict>
 										<key>string</key>
-										<string>CONFIGURE_IPHONE_DEVICE_ID</string>
+										<string>￼</string>
 										<key>attachmentsByRange</key>
-										<dict/>
+										<dict>
+											<key>{0, 1}</key>
+											<dict>
+												<key>OutputUUID</key>
+												<string>e595abe9-0640-5b23-adc1-06d0a38db95d</string>
+												<key>OutputName</key>
+												<string>device_id</string>
+												<key>Type</key>
+												<string>ActionOutput</string>
+											</dict>
+										</dict>
 									</dict>
 									<key>WFSerializationType</key>
 									<string>WFTextTokenString</string>
@@ -463,7 +1141,7 @@
 											<key>{0, 1}</key>
 											<dict>
 												<key>OutputUUID</key>
-												<string>c5f69e76-2299-5e2b-a1f2-a79db3905e55</string>
+												<string>fa7826f2-76aa-59e7-84cd-26ce3811014b</string>
 												<key>OutputName</key>
 												<string>occurred_at</string>
 												<key>Type</key>
@@ -481,7 +1159,7 @@
 					<string>WFDictionaryFieldValue</string>
 				</dict>
 				<key>UUID</key>
-				<string>7d8ffdc7-f9f1-59ad-9482-b0a0f4659022</string>
+				<string>01fd8616-a00f-5688-a661-bebb2ae6782b</string>
 			</dict>
 		</dict>
 		<dict>
@@ -500,7 +1178,7 @@
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>7d8ffdc7-f9f1-59ad-9482-b0a0f4659022</string>
+								<string>01fd8616-a00f-5688-a661-bebb2ae6782b</string>
 								<key>OutputName</key>
 								<string>受付結果</string>
 								<key>Type</key>
@@ -512,7 +1190,7 @@
 					<string>WFTextTokenString</string>
 				</dict>
 				<key>UUID</key>
-				<string>8a21826d-3a84-5bd9-9e7f-09a1c7bc92ef</string>
+				<string>d5fc9f7a-a579-51b9-89a7-c4af1ba1b7d3</string>
 			</dict>
 		</dict>
 	</array>

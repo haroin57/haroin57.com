@@ -39,6 +39,7 @@ def build(config, token):
     names = {'wake': 'BECS 起床', 'departure': 'BECS 外出', 'lab-arrival': 'BECS 研究室到着'}
     for key in [*names, 'habit-public-log', 'control', 'focus']:
         actions = []
+        questions = []
 
         def action(identifier, **parameters):
             parameters['UUID'] = str(uuid.uuid5(NAMESPACE, key + ':' + str(len(actions))))
@@ -48,27 +49,48 @@ def build(config, token):
 
         if key in names:
             action('comment', WFCommentActionText='本人用iPhoneの端末ID・端末資格情報・公開tag_idを設定してください。ネットワーク失敗は未確認です。全体を自動再実行しません。')
-            headers = dictionary({'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token})
-            tag = config['tags'][key]
-            prepared = action('downloadurl', WFURL=origin + '/api/v1/nfc/prepare', WFHTTPMethod='POST', WFHTTPBodyType='JSON', WFHTTPHeaders=headers, WFJSONValues=dictionary({'tag_id': tag, 'device_id': config['device_id']}))
+            configured = {}
+            fields = [
+                ('device_id', config['device_id'], 'CONFIGURE_IPHONE_DEVICE_ID', 'このiPhoneの端末IDを入力してください。/control/tagsで発行します。'),
+                ('tag_id', config['tags'][key], 'CONFIGURE_NFC_' + {'wake':'WAKE','departure':'DEPARTURE','lab-arrival':'LAB_ARRIVAL'}[key] + '_TAG_ID', 'この操作に紐付けたタグIDを入力してください。'),
+                ('token', token, 'CONFIGURE_DEVICE_SCOPED_TOKEN', 'このiPhone専用の資格情報を入力してください。管理者シークレットは使用しません。'),
+            ]
+            for field, value, placeholder, prompt in fields:
+                index = len(actions)
+                configured[field] = action('gettext', WFTextActionText=value)
+                questions.append({'ActionIndex': index, 'Category': 'Parameter', 'ParameterKey': 'WFTextActionText', 'Text': prompt, 'DefaultValue': '' if value == placeholder else value})
+            for field, value, placeholder, prompt in fields:
+                for invalid in ['', placeholder]:
+                    group = str(uuid.uuid5(NAMESPACE, key + ':guard:' + field + ':' + invalid))
+                    check = {'Type': 'Variable', 'Variable': {'Value': reference(configured[field], field), 'WFSerializationType': 'WFTextTokenAttachment'}}
+                    action('conditional', GroupingIdentifier=group, WFControlFlowMode=0, WFCondition=4, WFConditionalActionString=invalid, WFInput=check)
+                    message = '初期設定が必要です。' + prompt + ' ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。'
+                    action('showresult', Text=text(message))
+                    action('output', WFOutput=text('CONFIGURATION_REQUIRED: ' + field))
+                    action('conditional', GroupingIdentifier=group, WFControlFlowMode=2)
+            device = text('', reference(configured['device_id'], 'device_id'))
+            tag = text('', reference(configured['tag_id'], 'tag_id'))
+            authorization = text('', reference(configured['token'], 'token'), 'Bearer ')
+            headers = dictionary({'Content-Type': 'application/json', 'Authorization': authorization})
+            prepared = action('downloadurl', WFURL=origin + '/api/v1/nfc/prepare', WFHTTPMethod='POST', WFHTTPBodyType='JSON', WFHTTPHeaders=headers, WFJSONValues=dictionary({'tag_id': tag, 'device_id': device}))
             scan_id = action('getvalueforkey', WFDictionaryKey='scan_id', WFInput={'Value': reference(prepared, '準備応答'), 'WFSerializationType': 'WFTextTokenAttachment'})
             occurred = action('getvalueforkey', WFDictionaryKey='occurred_at', WFInput={'Value': reference(prepared, '準備応答'), 'WFSerializationType': 'WFTextTokenAttachment'})
             submitted = action('downloadurl', WFURL=origin + '/api/v1/nfc/scans', WFHTTPMethod='POST', WFHTTPBodyType='JSON', WFHTTPHeaders=headers,
-                   WFJSONValues=dictionary({'scan_id': text('', reference(scan_id, 'scan_id')), 'tag_id': tag, 'device_id': config['device_id'], 'source': 'IOS_SHORTCUTS', 'occurred_at': text('', reference(occurred, 'occurred_at'))}))
+                   WFJSONValues=dictionary({'scan_id': text('', reference(scan_id, 'scan_id')), 'tag_id': tag, 'device_id': device, 'source': 'IOS_SHORTCUTS', 'occurred_at': text('', reference(occurred, 'occurred_at'))}))
             action('showresult', Text=text('', reference(submitted, '受付結果')))  # Show the actual outcome, never a synthetic success.
             name = names[key]
         elif key == 'habit-public-log':
             fetched = action('downloadurl', WFURL=origin + '/api/habit/stats', WFHTTPMethod='GET')
             streak = action('getvalueforkey', WFDictionaryKey='streak_days', WFInput={'Value': reference(fetched, '公開ログ'), 'WFSerializationType': 'WFTextTokenAttachment'})
             action('showresult', Text=text('', reference(streak, '連続達成日数'), '連続達成日数: '))
-            action('openurl', WFURL=origin + '/habit')
+            action('openurl', WFInput=origin + '/habit', **{'Show-WFInput': True})
             name = 'Habit 公開ログを取得'
         else:
-            action('openurl', WFURL=origin + '/' + key)
+            action('openurl', WFInput=origin + '/' + key, **{'Show-WFInput': True})
             name = 'BECS ' + ('管理画面' if key == 'control' else '集中画面')
         outputs[key] = {'WFWorkflowName': name, 'WFWorkflowMinimumClientVersion': 900,
                         'WFWorkflowIcon': {'WFWorkflowIconStartColor': 4286611584, 'WFWorkflowIconGlyphNumber': 59511},
-                        'WFWorkflowInputContentItemClasses': [], 'WFWorkflowTypes': ['NCWidget'], 'WFWorkflowActions': actions}
+                        'WFWorkflowInputContentItemClasses': [], 'WFWorkflowTypes': ['NCWidget'], 'WFWorkflowImportQuestions': questions, 'WFWorkflowActions': actions}
     return outputs
 
 

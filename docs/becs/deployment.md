@@ -4,10 +4,10 @@
 
 ## 今回の状態
 
-- ホーム`/home`は`/habit`と同じ`GET /api/habit/stats`を取得し、共通UIで累計・365日ヒートマップ・最近3件を表示します。公開Habitへ記録フォームを戻していません。
+- ホーム`/home`のHabitデータ表示は削除しました。`/habit`へのナビゲーションボタンと他のUIを維持しています。公開ログの取得・表示は`/habit`に残しています。
 - 本番配備はMuse側VMでマナが実行します。`cf-wrangler`が保管済みAccount API Tokenを`CLOUDFLARE_API_TOKEN`として注入します。UbuntuでOAuthログインを行わず、Account API TokenをUbuntuへ転送しません。
 - `deploy-production.sh`のCloudflare操作はすべて`cf-wrangler`を経由します。ラッパーがない環境では、DBや本番へ接続する前に停止します。
-- Codex側ではビルド・テスト・Worker dry run・署名成果物・コミットを準備します。本番配備は未実施で、新しいWorker/Pages配備IDは未発行です。
+- Codex側ではビルド・テスト・Worker dry run・署名成果物・コミットを準備します。本番の`release.json`では前回コミット`c821cc84eee96023289f5bca110b477592ceede8`の配備を確認しました。今回のショートカット修正・ホーム変更の配備はMuse側VMでの実行待ちです。
 - Mac署名の結果は[mac-signing.md](mac-signing.md)に記録します。
 
 ## 配備手順
@@ -31,7 +31,7 @@ PAGES_PROJECT=haroin bash scripts/deploy-production.sh --apply
 8. `--project-name haroin --branch main`で直接配備します。Git pushは実行しません。`release.json`に記録した差分の有無を`--commit-dirty`へ渡します。
 9. `scripts/verify-production.py`で公開APIの365日、本人APIの無認証401、各画面、資格情報を含まないテンプレート、署名済み6本のハッシュ、release IDを確認します。検証はGETのみで、本番の生活フェーズや習慣データを進めません。
 
-公開APIの取得と認証境界は、ローカルのmockだけで本番確認済みと扱いません。実ブラウザで`/home`と`/habit`のfetch・エラー・再取得も確認します。
+公開APIの取得と認証境界は、ローカルのmockだけで本番確認済みと扱いません。実ブラウザで`/habit`のfetch・エラー・再取得と、`/home`がHabitデータを表示せずボタンを維持していることも確認します。
 
 ## 個別のローカル確認
 

@@ -15,10 +15,28 @@ for workflow in "$input_dir"/*.unsigned.shortcut; do
   python3 - "$workflow" "$signing_dir/$basename.input.shortcut" <<'PY'
 import plistlib, sys
 workflow = plistlib.load(open(sys.argv[1], 'rb'))
+by_id = {action.get('WFWorkflowActionParameters', {}).get('UUID'): action.get('WFWorkflowActionParameters', {}) for action in workflow['WFWorkflowActions']}
+def resolved_text(field):
+    value = field.get('Value', {})
+    string = value.get('string', '')
+    attachments = value.get('attachmentsByRange', {})
+    if not attachments:
+        return string
+    if string != 'Bearer \ufffc' or set(attachments) != {'{7, 1}'}:
+        return None
+    reference = attachments['{7, 1}']
+    if reference.get('Type') != 'ActionOutput':
+        return None
+    return 'Bearer ' + str(by_id.get(reference.get('OutputUUID'), {}).get('WFTextActionText', ''))
+for question in workflow.get('WFWorkflowImportQuestions', []):
+    index = question['ActionIndex']
+    params = workflow['WFWorkflowActions'][index].get('WFWorkflowActionParameters', {})
+    if params.get('WFTextActionText') == 'CONFIGURE_DEVICE_SCOPED_TOKEN' and question.get('DefaultValue') not in ('', 'CONFIGURE_DEVICE_SCOPED_TOKEN'):
+        raise SystemExit('資格情報を含む初期設定は共有用に署名しません。')
 for action in workflow['WFWorkflowActions']:
     headers = action['WFWorkflowActionParameters'].get('WFHTTPHeaders', {}).get('Value', {}).get('WFDictionaryFieldValueItems', [])
     for entry in headers:
-        if entry['WFKey']['Value']['string'] == 'Authorization' and entry['WFValue']['Value']['string'] != 'Bearer CONFIGURE_DEVICE_SCOPED_TOKEN':
+        if entry['WFKey']['Value']['string'] == 'Authorization' and resolved_text(entry['WFValue']) != 'Bearer CONFIGURE_DEVICE_SCOPED_TOKEN':
             raise SystemExit('端末資格情報を含むファイルは共有用に署名しません。')
 # Apple signing accepts legacy binary plists reliably; keep XML as editable sources.
 with open(sys.argv[2], 'wb') as output:

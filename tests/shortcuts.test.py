@@ -68,7 +68,37 @@ class ShortcutTests(unittest.TestCase):
         self.assertEqual(request['WFHTTPMethod'],'GET')
         self.assertTrue(request['WFURL'].endswith('/api/habit/stats'))
         self.assertNotIn('WFHTTPHeaders',request)
-        self.assertTrue(actions[-1]['WFWorkflowActionParameters']['WFURL'].endswith('/habit'))
+        self.assertTrue(actions[-1]['WFWorkflowActionParameters']['WFInput'].endswith('/habit'))
+
+    def test_nfc_setup_questions_bind_shared_values_before_any_network_action(self):
+        for name in ['wake','departure','lab-arrival']:
+            workflow=self.workflows[name]
+            actions=workflow['WFWorkflowActions']
+            questions=workflow['WFWorkflowImportQuestions']
+            self.assertEqual(len(questions),3)
+            self.assertEqual({q['ParameterKey'] for q in questions},{'WFTextActionText'})
+            self.assertTrue(all(q['DefaultValue']=='' for q in questions))
+            request_index=next(i for i,a in enumerate(actions) if a['WFWorkflowActionIdentifier'].endswith('.downloadurl'))
+            self.assertTrue(all(q['ActionIndex']<request_index for q in questions))
+            guards=[a for a in actions[:request_index] if a['WFWorkflowActionIdentifier'].endswith('.output')]
+            self.assertTrue(all(a['WFWorkflowActionParameters']['WFOutput']['Value']['string'].startswith('CONFIGURATION_REQUIRED') for a in guards))
+            self.assertTrue(guards)
+            token_action=actions[questions[2]['ActionIndex']]['WFWorkflowActionParameters']
+            self.assertEqual(token_action['WFTextActionText'],'CONFIGURE_DEVICE_SCOPED_TOKEN')
+            for action in actions:
+                if action['WFWorkflowActionIdentifier'].endswith('.downloadurl'):
+                    entries=action['WFWorkflowActionParameters']['WFHTTPHeaders']['Value']['WFDictionaryFieldValueItems']
+                    auth=next(item['WFValue'] for item in entries if item['WFKey']['Value']['string']=='Authorization')
+                    self.assertEqual(auth['Value']['string'],'Bearer \ufffc')
+                    self.assertEqual(auth['Value']['attachmentsByRange']['{7, 1}']['OutputUUID'],token_action['UUID'])
+
+    def test_open_url_uses_explicit_runtime_input_instead_of_inheriting_previous_result(self):
+        for name,path in [('habit-public-log','/habit'),('control','/control'),('focus','/focus')]:
+            action=self.workflows[name]['WFWorkflowActions'][-1]
+            self.assertEqual(action['WFWorkflowActionIdentifier'],'is.workflow.actions.openurl')
+            self.assertEqual(action['WFWorkflowActionParameters']['WFInput'],self.config['origin']+path)
+            self.assertTrue(action['WFWorkflowActionParameters']['Show-WFInput'])
+            self.assertNotIn('WFURL',action['WFWorkflowActionParameters'])
 
     def test_origin_rejects_credentials_and_unexpected_path(self):
         for origin in ['http://example.com','https://token@example.com','https://example.com/private']:

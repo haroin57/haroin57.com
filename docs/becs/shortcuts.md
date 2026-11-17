@@ -19,14 +19,9 @@
 
 1. 配備後の`/control/tags`でiPhoneを登録します。端末IDと端末別資格情報を管理します。管理者シークレットをShortcutsに使用しません。
 2. 起床・外出・研究室到着の3タグを登録して有効化し、そのiPhoneと`IOS_SHORTCUTS`方式で紐付けます。
-3. `shortcuts/becs.example.json`を本人用の設定ファイルへコピーし、device_idと各tag_idを台帳の公開IDに置き換えます。この設定にtokenを追加しません。
-4. 次の生成を行い、本人Macで署名します。公開IDも公開配布版へ反映したくない場合は、既存テンプレートのIDをiPhoneへの追加後に変更します。
-
-```bash
-python3 scripts/gen-shortcuts.py --config /tmp/becs-iphone-config.json
-```
-
-5. 署名済みショートカットを本人iPhoneへ追加してから、各Authorizationヘッダーの`CONFIGURE_DEVICE_SCOPED_TOKEN`をそのiPhoneの資格情報に変更します。設定後のショートカットを共有しません。新しい資格情報を署名用ファイルへ埋め込まない方式を推奨します。
+3. 署名済みショートカットを追加すると、端末ID・タグID・そのiPhone専用の資格情報を入力する3つの設定項目が表示されます。管理者シークレットは使用しません。入力値は冒頭の3つのテキストアクションに保存され、準備・申告の両方で共有されます。Authorizationを2か所編集する必要はありません。
+4. 後から変更する場合はショートカット冒頭の3つのテキスト欄を変更します。空欄または配布時のプレースホルダーのまま実行すると、初期設定の案内を表示してAPI送信前に停止します。設定後のショートカットを共有しません。
+5. 公開IDを設定済みのテンプレートが必要な場合は、`shortcuts/becs.example.json`を本人用設定へコピーし、`python3 scripts/gen-shortcuts.py --config /tmp/becs-iphone-config.json`で生成して本人Macで再署名します。公開配布物へ実資格情報を埋め込みません。
 6. iPhoneのNFCオートメーションで物理タグを登録し、「ショートカットを実行」に対応する1本を設定します。タグ内部からURLやtag_idを自動取得すると仮定しません。OS・ロック状態ごとの動作は実機で確認します。[Appleのオートメーション手順](https://support.apple.com/guide/shortcuts/add-automations-apdfbdbd7123/ios)を参照します。
 
 ## 準備APIと結果の確認
@@ -47,3 +42,15 @@ python3 tests/shortcuts.test.py
 ```
 
 非公開の個人用トークンファイルを使うオプションは、出力とCherriソースの両方をリポジトリ外へ指定し、ファイル権限0600に限定します。公開資産へ書き込もうとすると停止します。共有用署名スクリプトは本人の実資格情報を含むファイルを拒否します。配布用ファイルは常にプレースホルダー版です。
+
+## Mac E2Eと修正版への更新
+
+URLを開くアクションに`WFURL`を指定していたため、直前のリッチテキストをURLとして扱って失敗していました。修正版は`WFInput`と`Show-WFInput`で遷移先を明示します。公開ログ取得・管理画面・集中画面の3本が対象です。
+
+Mac E2EはAppleの実際の署名・インポート・CLI実行を使用し、実WorkerハンドラーとSQLiteをMacのループバック上で実行します。端末ID・資格情報・タグは検証専用です。本番の状態を変更しません。Macのアクセシビリティ許可と、初回実行時の接続・出力許可が必要です。検証用ショートカットは`BECS-E2E-`で始まる名前で追加されます。検証結果は[実行記録](shortcuts-e2e-report.json)に保存します。iPhoneの物理NFC検出や端末適用ACKまで確認した記録ではありません。
+
+```bash
+bash scripts/shortcuts-e2e/start-mac.sh
+```
+
+修正版は配布ページから6本を追加し直します。NFC用3本では初期設定を実施し、必要に応じてNFCオートメーションの実行対象を更新します。

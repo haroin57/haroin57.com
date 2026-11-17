@@ -6,6 +6,303 @@ rawAction("is.workflow.actions.comment", {
   "UUID": "05205b99-4be9-5243-9d81-7d0c7dae0a0c"
 })
 
+rawAction("is.workflow.actions.gettext", {
+  "WFTextActionText": "CONFIGURE_IPHONE_DEVICE_ID",
+  "UUID": "56c54fd4-8d82-5f0d-b906-932578f0fe57"
+})
+
+rawAction("is.workflow.actions.gettext", {
+  "WFTextActionText": "CONFIGURE_NFC_LAB_ARRIVAL_TAG_ID",
+  "UUID": "64417dea-d59f-5866-b845-f4a15c798f4e"
+})
+
+rawAction("is.workflow.actions.gettext", {
+  "WFTextActionText": "CONFIGURE_DEVICE_SCOPED_TOKEN",
+  "UUID": "bbaa8040-5e75-5858-a244-bbe4b374dc59"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "b846ec26-e337-5b8e-8de5-c810b0a89231",
+  "WFControlFlowMode": 0,
+  "WFCondition": 4,
+  "WFConditionalActionString": "",
+  "WFInput": {
+    "Type": "Variable",
+    "Variable": {
+      "Value": {
+        "OutputUUID": "56c54fd4-8d82-5f0d-b906-932578f0fe57",
+        "OutputName": "device_id",
+        "Type": "ActionOutput"
+      },
+      "WFSerializationType": "WFTextTokenAttachment"
+    }
+  },
+  "UUID": "9a6ca4dd-e909-525c-93be-0d038b8e7779"
+})
+
+rawAction("is.workflow.actions.showresult", {
+  "Text": {
+    "Value": {
+      "string": "初期設定が必要です。このiPhoneの端末IDを入力してください。/control/tagsで発行します。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "b6c5ca41-f82b-5aae-b55e-3e2becd1bbd9"
+})
+
+rawAction("is.workflow.actions.output", {
+  "WFOutput": {
+    "Value": {
+      "string": "CONFIGURATION_REQUIRED: device_id",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "6ebe9cd0-1e69-5b59-9f0f-51bf068b6640"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "b846ec26-e337-5b8e-8de5-c810b0a89231",
+  "WFControlFlowMode": 2,
+  "UUID": "8e97ad84-a519-593b-8a9d-c62596849362"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "04d52cf8-b9fb-542d-a4ce-69da62699121",
+  "WFControlFlowMode": 0,
+  "WFCondition": 4,
+  "WFConditionalActionString": "CONFIGURE_IPHONE_DEVICE_ID",
+  "WFInput": {
+    "Type": "Variable",
+    "Variable": {
+      "Value": {
+        "OutputUUID": "56c54fd4-8d82-5f0d-b906-932578f0fe57",
+        "OutputName": "device_id",
+        "Type": "ActionOutput"
+      },
+      "WFSerializationType": "WFTextTokenAttachment"
+    }
+  },
+  "UUID": "73d0eabf-3c59-59e5-a81d-ff1d8664dd39"
+})
+
+rawAction("is.workflow.actions.showresult", {
+  "Text": {
+    "Value": {
+      "string": "初期設定が必要です。このiPhoneの端末IDを入力してください。/control/tagsで発行します。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "4bd5fba4-db64-5958-a367-2518d1ce6b9b"
+})
+
+rawAction("is.workflow.actions.output", {
+  "WFOutput": {
+    "Value": {
+      "string": "CONFIGURATION_REQUIRED: device_id",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "db23bb15-e836-5264-95ec-5617e0446d50"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "04d52cf8-b9fb-542d-a4ce-69da62699121",
+  "WFControlFlowMode": 2,
+  "UUID": "38ec5e27-21db-5855-8f9a-b3a8960a9266"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "6b84471b-3635-54ce-9799-2249e3824f12",
+  "WFControlFlowMode": 0,
+  "WFCondition": 4,
+  "WFConditionalActionString": "",
+  "WFInput": {
+    "Type": "Variable",
+    "Variable": {
+      "Value": {
+        "OutputUUID": "64417dea-d59f-5866-b845-f4a15c798f4e",
+        "OutputName": "tag_id",
+        "Type": "ActionOutput"
+      },
+      "WFSerializationType": "WFTextTokenAttachment"
+    }
+  },
+  "UUID": "a0c9969b-b40f-5890-b6c4-bc9c9fbea59b"
+})
+
+rawAction("is.workflow.actions.showresult", {
+  "Text": {
+    "Value": {
+      "string": "初期設定が必要です。この操作に紐付けたタグIDを入力してください。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "08d7e28a-c41a-5682-8f41-d0e35f377b05"
+})
+
+rawAction("is.workflow.actions.output", {
+  "WFOutput": {
+    "Value": {
+      "string": "CONFIGURATION_REQUIRED: tag_id",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "2b752573-4124-5b99-bf8e-54676c17d136"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "6b84471b-3635-54ce-9799-2249e3824f12",
+  "WFControlFlowMode": 2,
+  "UUID": "92f34da3-1a08-56a4-8e55-60e3f993cc7e"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "e9b0f7eb-3d59-5759-9f82-529127fbef59",
+  "WFControlFlowMode": 0,
+  "WFCondition": 4,
+  "WFConditionalActionString": "CONFIGURE_NFC_LAB_ARRIVAL_TAG_ID",
+  "WFInput": {
+    "Type": "Variable",
+    "Variable": {
+      "Value": {
+        "OutputUUID": "64417dea-d59f-5866-b845-f4a15c798f4e",
+        "OutputName": "tag_id",
+        "Type": "ActionOutput"
+      },
+      "WFSerializationType": "WFTextTokenAttachment"
+    }
+  },
+  "UUID": "a4dab383-8de4-5829-83ad-95c331eceaf9"
+})
+
+rawAction("is.workflow.actions.showresult", {
+  "Text": {
+    "Value": {
+      "string": "初期設定が必要です。この操作に紐付けたタグIDを入力してください。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "1fa4490d-87c2-53b0-a504-ee00d409762f"
+})
+
+rawAction("is.workflow.actions.output", {
+  "WFOutput": {
+    "Value": {
+      "string": "CONFIGURATION_REQUIRED: tag_id",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "f90b1996-dcd3-5f57-b1ef-b4c4ee977779"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "e9b0f7eb-3d59-5759-9f82-529127fbef59",
+  "WFControlFlowMode": 2,
+  "UUID": "f9a4f345-2862-5d81-93e1-a34a903e88c8"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "0c607b3e-7286-530a-b357-2adb4a3e938b",
+  "WFControlFlowMode": 0,
+  "WFCondition": 4,
+  "WFConditionalActionString": "",
+  "WFInput": {
+    "Type": "Variable",
+    "Variable": {
+      "Value": {
+        "OutputUUID": "bbaa8040-5e75-5858-a244-bbe4b374dc59",
+        "OutputName": "token",
+        "Type": "ActionOutput"
+      },
+      "WFSerializationType": "WFTextTokenAttachment"
+    }
+  },
+  "UUID": "bcd4515b-5588-51f0-a8c2-455dfa151f7b"
+})
+
+rawAction("is.workflow.actions.showresult", {
+  "Text": {
+    "Value": {
+      "string": "初期設定が必要です。このiPhone専用の資格情報を入力してください。管理者シークレットは使用しません。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "cc12150a-491c-5d5c-a9e5-04e48e43c367"
+})
+
+rawAction("is.workflow.actions.output", {
+  "WFOutput": {
+    "Value": {
+      "string": "CONFIGURATION_REQUIRED: token",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "0d8ecafd-95b6-5c06-b6ed-dd6c582cd686"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "0c607b3e-7286-530a-b357-2adb4a3e938b",
+  "WFControlFlowMode": 2,
+  "UUID": "21c43d02-dc45-52cf-9e6c-6d73e35fd1e6"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "a661bb02-106d-59b5-bc83-11b951923395",
+  "WFControlFlowMode": 0,
+  "WFCondition": 4,
+  "WFConditionalActionString": "CONFIGURE_DEVICE_SCOPED_TOKEN",
+  "WFInput": {
+    "Type": "Variable",
+    "Variable": {
+      "Value": {
+        "OutputUUID": "bbaa8040-5e75-5858-a244-bbe4b374dc59",
+        "OutputName": "token",
+        "Type": "ActionOutput"
+      },
+      "WFSerializationType": "WFTextTokenAttachment"
+    }
+  },
+  "UUID": "5314baf1-130a-523d-9816-7f15b628b343"
+})
+
+rawAction("is.workflow.actions.showresult", {
+  "Text": {
+    "Value": {
+      "string": "初期設定が必要です。このiPhone専用の資格情報を入力してください。管理者シークレットは使用しません。 ショートカットの最初の3つのテキスト欄、または詳細の設定タブで変更してください。",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "bcca8e00-00d2-5f15-a4b5-2f661ebf6506"
+})
+
+rawAction("is.workflow.actions.output", {
+  "WFOutput": {
+    "Value": {
+      "string": "CONFIGURATION_REQUIRED: token",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "26a0ea6d-a6c4-57fe-b0cb-e758bb868490"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "a661bb02-106d-59b5-bc83-11b951923395",
+  "WFControlFlowMode": 2,
+  "UUID": "ac496fea-5910-5ba6-8b9d-c7bf7b931ca7"
+})
+
 rawAction("is.workflow.actions.downloadurl", {
   "WFURL": "https://haroin57.com/api/v1/nfc/prepare",
   "WFHTTPMethod": "POST",
@@ -41,8 +338,14 @@ rawAction("is.workflow.actions.downloadurl", {
           "WFItemType": 0,
           "WFValue": {
             "Value": {
-              "string": "Bearer CONFIGURE_DEVICE_SCOPED_TOKEN",
-              "attachmentsByRange": {}
+              "string": "Bearer ￼",
+              "attachmentsByRange": {
+                "{7, 1}": {
+                  "OutputUUID": "bbaa8040-5e75-5858-a244-bbe4b374dc59",
+                  "OutputName": "token",
+                  "Type": "ActionOutput"
+                }
+              }
             },
             "WFSerializationType": "WFTextTokenString"
           }
@@ -65,8 +368,14 @@ rawAction("is.workflow.actions.downloadurl", {
           "WFItemType": 0,
           "WFValue": {
             "Value": {
-              "string": "CONFIGURE_NFC_LAB_ARRIVAL_TAG_ID",
-              "attachmentsByRange": {}
+              "string": "￼",
+              "attachmentsByRange": {
+                "{0, 1}": {
+                  "OutputUUID": "64417dea-d59f-5866-b845-f4a15c798f4e",
+                  "OutputName": "tag_id",
+                  "Type": "ActionOutput"
+                }
+              }
             },
             "WFSerializationType": "WFTextTokenString"
           }
@@ -82,8 +391,14 @@ rawAction("is.workflow.actions.downloadurl", {
           "WFItemType": 0,
           "WFValue": {
             "Value": {
-              "string": "CONFIGURE_IPHONE_DEVICE_ID",
-              "attachmentsByRange": {}
+              "string": "￼",
+              "attachmentsByRange": {
+                "{0, 1}": {
+                  "OutputUUID": "56c54fd4-8d82-5f0d-b906-932578f0fe57",
+                  "OutputName": "device_id",
+                  "Type": "ActionOutput"
+                }
+              }
             },
             "WFSerializationType": "WFTextTokenString"
           }
@@ -92,33 +407,33 @@ rawAction("is.workflow.actions.downloadurl", {
     },
     "WFSerializationType": "WFDictionaryFieldValue"
   },
-  "UUID": "56c54fd4-8d82-5f0d-b906-932578f0fe57"
+  "UUID": "49945d7c-1bce-5162-a7e9-16c438b4d8bd"
 })
 
 rawAction("is.workflow.actions.getvalueforkey", {
   "WFDictionaryKey": "scan_id",
   "WFInput": {
     "Value": {
-      "OutputUUID": "56c54fd4-8d82-5f0d-b906-932578f0fe57",
+      "OutputUUID": "49945d7c-1bce-5162-a7e9-16c438b4d8bd",
       "OutputName": "準備応答",
       "Type": "ActionOutput"
     },
     "WFSerializationType": "WFTextTokenAttachment"
   },
-  "UUID": "64417dea-d59f-5866-b845-f4a15c798f4e"
+  "UUID": "53d7e7d1-8e97-5fd0-a2f3-8aa9a18e2e47"
 })
 
 rawAction("is.workflow.actions.getvalueforkey", {
   "WFDictionaryKey": "occurred_at",
   "WFInput": {
     "Value": {
-      "OutputUUID": "56c54fd4-8d82-5f0d-b906-932578f0fe57",
+      "OutputUUID": "49945d7c-1bce-5162-a7e9-16c438b4d8bd",
       "OutputName": "準備応答",
       "Type": "ActionOutput"
     },
     "WFSerializationType": "WFTextTokenAttachment"
   },
-  "UUID": "bbaa8040-5e75-5858-a244-bbe4b374dc59"
+  "UUID": "d81b1188-e707-5d8a-9bb7-5f39031d9435"
 })
 
 rawAction("is.workflow.actions.downloadurl", {
@@ -156,8 +471,14 @@ rawAction("is.workflow.actions.downloadurl", {
           "WFItemType": 0,
           "WFValue": {
             "Value": {
-              "string": "Bearer CONFIGURE_DEVICE_SCOPED_TOKEN",
-              "attachmentsByRange": {}
+              "string": "Bearer ￼",
+              "attachmentsByRange": {
+                "{7, 1}": {
+                  "OutputUUID": "bbaa8040-5e75-5858-a244-bbe4b374dc59",
+                  "OutputName": "token",
+                  "Type": "ActionOutput"
+                }
+              }
             },
             "WFSerializationType": "WFTextTokenString"
           }
@@ -183,7 +504,7 @@ rawAction("is.workflow.actions.downloadurl", {
               "string": "￼",
               "attachmentsByRange": {
                 "{0, 1}": {
-                  "OutputUUID": "64417dea-d59f-5866-b845-f4a15c798f4e",
+                  "OutputUUID": "53d7e7d1-8e97-5fd0-a2f3-8aa9a18e2e47",
                   "OutputName": "scan_id",
                   "Type": "ActionOutput"
                 }
@@ -203,8 +524,14 @@ rawAction("is.workflow.actions.downloadurl", {
           "WFItemType": 0,
           "WFValue": {
             "Value": {
-              "string": "CONFIGURE_NFC_LAB_ARRIVAL_TAG_ID",
-              "attachmentsByRange": {}
+              "string": "￼",
+              "attachmentsByRange": {
+                "{0, 1}": {
+                  "OutputUUID": "64417dea-d59f-5866-b845-f4a15c798f4e",
+                  "OutputName": "tag_id",
+                  "Type": "ActionOutput"
+                }
+              }
             },
             "WFSerializationType": "WFTextTokenString"
           }
@@ -220,8 +547,14 @@ rawAction("is.workflow.actions.downloadurl", {
           "WFItemType": 0,
           "WFValue": {
             "Value": {
-              "string": "CONFIGURE_IPHONE_DEVICE_ID",
-              "attachmentsByRange": {}
+              "string": "￼",
+              "attachmentsByRange": {
+                "{0, 1}": {
+                  "OutputUUID": "56c54fd4-8d82-5f0d-b906-932578f0fe57",
+                  "OutputName": "device_id",
+                  "Type": "ActionOutput"
+                }
+              }
             },
             "WFSerializationType": "WFTextTokenString"
           }
@@ -257,7 +590,7 @@ rawAction("is.workflow.actions.downloadurl", {
               "string": "￼",
               "attachmentsByRange": {
                 "{0, 1}": {
-                  "OutputUUID": "bbaa8040-5e75-5858-a244-bbe4b374dc59",
+                  "OutputUUID": "d81b1188-e707-5d8a-9bb7-5f39031d9435",
                   "OutputName": "occurred_at",
                   "Type": "ActionOutput"
                 }
@@ -270,7 +603,7 @@ rawAction("is.workflow.actions.downloadurl", {
     },
     "WFSerializationType": "WFDictionaryFieldValue"
   },
-  "UUID": "9a6ca4dd-e909-525c-93be-0d038b8e7779"
+  "UUID": "cbb4098a-08d9-5e72-a0ba-adc8b03ba8d6"
 })
 
 rawAction("is.workflow.actions.showresult", {
@@ -279,7 +612,7 @@ rawAction("is.workflow.actions.showresult", {
       "string": "￼",
       "attachmentsByRange": {
         "{0, 1}": {
-          "OutputUUID": "9a6ca4dd-e909-525c-93be-0d038b8e7779",
+          "OutputUUID": "cbb4098a-08d9-5e72-a0ba-adc8b03ba8d6",
           "OutputName": "受付結果",
           "Type": "ActionOutput"
         }
@@ -287,5 +620,5 @@ rawAction("is.workflow.actions.showresult", {
     },
     "WFSerializationType": "WFTextTokenString"
   },
-  "UUID": "b6c5ca41-f82b-5aae-b55e-3e2becd1bbd9"
+  "UUID": "3b5b2877-e0f7-575a-8294-c1256efb11f1"
 })

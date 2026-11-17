@@ -38,6 +38,7 @@ rawAction("is.workflow.actions.showresult", {
 })
 
 rawAction("is.workflow.actions.openurl", {
-  "WFURL": "https://haroin57.com/habit",
+  "WFInput": "https://haroin57.com/habit",
+  "Show-WFInput": true,
   "UUID": "a877f828-d66e-5c2e-87b3-148a65f712d0"
 })

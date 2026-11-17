@@ -2,6 +2,7 @@
 
 // Generated raw action parameters. Compile and validate on the owner Mac.
 rawAction("is.workflow.actions.openurl", {
-  "WFURL": "https://haroin57.com/focus",
+  "WFInput": "https://haroin57.com/focus",
+  "Show-WFInput": true,
   "UUID": "849d9a96-02c8-5a7d-9bca-74a8b09d05e7"
 })

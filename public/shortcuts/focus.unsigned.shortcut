@@ -19,6 +19,8 @@
 	<array>
 		<string>NCWidget</string>
 	</array>
+	<key>WFWorkflowImportQuestions</key>
+	<array/>
 	<key>WFWorkflowActions</key>
 	<array>
 		<dict>
@@ -26,8 +28,10 @@
 			<string>is.workflow.actions.openurl</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFURL</key>
+				<key>WFInput</key>
 				<string>https://haroin57.com/focus</string>
+				<key>Show-WFInput</key>
+				<true/>
 				<key>UUID</key>
 				<string>849d9a96-02c8-5a7d-9bca-74a8b09d05e7</string>
 			</dict>
