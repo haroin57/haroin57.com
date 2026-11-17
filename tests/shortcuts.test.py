@@ -62,6 +62,25 @@ class ShortcutTests(unittest.TestCase):
             # A failed network operation is not followed by any synthetic success notification.
             self.assertFalse(any(a['WFWorkflowActionIdentifier'].endswith('.notification') for a in actions))
 
+    def test_prepare_errors_and_missing_identifiers_stop_before_scan_submission(self):
+        for name in ['wake','departure','lab-arrival']:
+            actions=self.workflows[name]['WFWorkflowActions']
+            requests=[i for i,a in enumerate(actions) if a['WFWorkflowActionIdentifier'].endswith('.downloadurl')]
+            between=actions[requests[0]+1:requests[1]]
+            self.assertEqual(between[0]['WFWorkflowActionIdentifier'],'is.workflow.actions.detect.dictionary')
+            lookups=[a['WFWorkflowActionParameters'] for a in between if a['WFWorkflowActionIdentifier'].endswith('.getvalueforkey')]
+            self.assertEqual([p['WFDictionaryKey'] for p in lookups],['error','scan_id','occurred_at'])
+            for lookup in lookups:
+                self.assertEqual(lookup['WFGetDictionaryValueType'],'Value')
+                self.assertEqual(lookup['WFInput']['Value']['OutputUUID'],between[0]['WFWorkflowActionParameters']['UUID'])
+            conditions=[a['WFWorkflowActionParameters'] for a in between if a['WFWorkflowActionIdentifier'].endswith('.conditional') and a['WFWorkflowActionParameters']['WFControlFlowMode']==0]
+            self.assertEqual([p['WFCondition'] for p in conditions],[100,101,101])
+            self.assertTrue(all('WFConditionalActionString' not in p for p in conditions))
+            exits=[a['WFWorkflowActionParameters']['WFOutput']['Value']['string'] for a in between if a['WFWorkflowActionIdentifier'].endswith('.output')]
+            self.assertEqual(exits,['PREPARATION_FAILED: error','PREPARATION_FAILED: scan_id','PREPARATION_FAILED: occurred_at'])
+            error_message=next(a['WFWorkflowActionParameters']['Text'] for a in between if a['WFWorkflowActionIdentifier'].endswith('.showresult'))
+            self.assertEqual(error_message['Value']['attachmentsByRange']['{%d, 1}' % len('準備APIで失敗しました: ')]['OutputUUID'],lookups[0]['UUID'])
+
     def test_public_log_uses_get_and_no_auth(self):
         actions=self.workflows['habit-public-log']['WFWorkflowActions']
         request=actions[0]['WFWorkflowActionParameters']

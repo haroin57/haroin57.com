@@ -73,8 +73,28 @@ def build(config, token):
             authorization = text('', reference(configured['token'], 'token'), 'Bearer ')
             headers = dictionary({'Content-Type': 'application/json', 'Authorization': authorization})
             prepared = action('downloadurl', WFURL=origin + '/api/v1/nfc/prepare', WFHTTPMethod='POST', WFHTTPBodyType='JSON', WFHTTPHeaders=headers, WFJSONValues=dictionary({'tag_id': tag, 'device_id': device}))
-            scan_id = action('getvalueforkey', WFDictionaryKey='scan_id', WFInput={'Value': reference(prepared, '準備応答'), 'WFSerializationType': 'WFTextTokenAttachment'})
-            occurred = action('getvalueforkey', WFDictionaryKey='occurred_at', WFInput={'Value': reference(prepared, '準備応答'), 'WFSerializationType': 'WFTextTokenAttachment'})
+            # Preserve the preparation response and stop on its error before constructing a scan.
+            # Otherwise an HTTP 403 body becomes an empty scan_id and hides the original failure.
+            prepared_dictionary = action('detect.dictionary', WFInput={'Value': reference(prepared, '準備応答'), 'WFSerializationType': 'WFTextTokenAttachment'})
+
+            def prepared_value(field):
+                return action('getvalueforkey', WFGetDictionaryValueType='Value', WFDictionaryKey=field,
+                              WFInput={'Value': reference(prepared_dictionary, '準備応答の辞書'), 'WFSerializationType': 'WFTextTokenAttachment'})
+
+            def stop_if(value_action, field, condition, message):
+                group = str(uuid.uuid5(NAMESPACE, key + ':prepare-guard:' + field))
+                check = {'Type': 'Variable', 'Variable': {'Value': reference(value_action, field), 'WFSerializationType': 'WFTextTokenAttachment'}}
+                action('conditional', GroupingIdentifier=group, WFControlFlowMode=0, WFCondition=condition, WFInput=check)
+                action('showresult', Text=message)
+                action('output', WFOutput=text('PREPARATION_FAILED: ' + field))
+                action('conditional', GroupingIdentifier=group, WFControlFlowMode=2)
+
+            prepare_error = prepared_value('error')
+            stop_if(prepare_error, 'error', 100, text('', reference(prepare_error, '準備APIのエラー'), '準備APIで失敗しました: '))
+            scan_id = prepared_value('scan_id')
+            stop_if(scan_id, 'scan_id', 101, text('準備APIからscan_idを取得できませんでした。端末・タグの設定とAPIの配備状況を確認してください。記録は送信していません。'))
+            occurred = prepared_value('occurred_at')
+            stop_if(occurred, 'occurred_at', 101, text('準備APIからoccurred_atを取得できませんでした。APIの配備状況を確認してください。記録は送信していません。'))
             submitted = action('downloadurl', WFURL=origin + '/api/v1/nfc/scans', WFHTTPMethod='POST', WFHTTPBodyType='JSON', WFHTTPHeaders=headers,
                    WFJSONValues=dictionary({'scan_id': text('', reference(scan_id, 'scan_id')), 'tag_id': tag, 'device_id': device, 'source': 'IOS_SHORTCUTS', 'occurred_at': text('', reference(occurred, 'occurred_at'))}))
             action('showresult', Text=text('', reference(submitted, '受付結果')))  # Show the actual outcome, never a synthetic success.

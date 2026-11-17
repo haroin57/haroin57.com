@@ -410,8 +410,7 @@ rawAction("is.workflow.actions.downloadurl", {
   "UUID": "622d8c9b-d346-5c85-8593-97d011edd7b0"
 })
 
-rawAction("is.workflow.actions.getvalueforkey", {
-  "WFDictionaryKey": "scan_id",
+rawAction("is.workflow.actions.detect.dictionary", {
   "WFInput": {
     "Value": {
       "OutputUUID": "622d8c9b-d346-5c85-8593-97d011edd7b0",
@@ -424,16 +423,189 @@ rawAction("is.workflow.actions.getvalueforkey", {
 })
 
 rawAction("is.workflow.actions.getvalueforkey", {
-  "WFDictionaryKey": "occurred_at",
+  "WFGetDictionaryValueType": "Value",
+  "WFDictionaryKey": "error",
   "WFInput": {
     "Value": {
-      "OutputUUID": "622d8c9b-d346-5c85-8593-97d011edd7b0",
-      "OutputName": "準備応答",
+      "OutputUUID": "015a32a7-78cd-592a-9fbf-d5ab0b920d6c",
+      "OutputName": "準備応答の辞書",
       "Type": "ActionOutput"
     },
     "WFSerializationType": "WFTextTokenAttachment"
   },
   "UUID": "fa7826f2-76aa-59e7-84cd-26ce3811014b"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "62919ef4-be81-5cc7-bc8e-a9a49a3ed221",
+  "WFControlFlowMode": 0,
+  "WFCondition": 100,
+  "WFInput": {
+    "Type": "Variable",
+    "Variable": {
+      "Value": {
+        "OutputUUID": "fa7826f2-76aa-59e7-84cd-26ce3811014b",
+        "OutputName": "error",
+        "Type": "ActionOutput"
+      },
+      "WFSerializationType": "WFTextTokenAttachment"
+    }
+  },
+  "UUID": "01fd8616-a00f-5688-a661-bebb2ae6782b"
+})
+
+rawAction("is.workflow.actions.showresult", {
+  "Text": {
+    "Value": {
+      "string": "準備APIで失敗しました: ￼",
+      "attachmentsByRange": {
+        "{14, 1}": {
+          "OutputUUID": "fa7826f2-76aa-59e7-84cd-26ce3811014b",
+          "OutputName": "準備APIのエラー",
+          "Type": "ActionOutput"
+        }
+      }
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "d5fc9f7a-a579-51b9-89a7-c4af1ba1b7d3"
+})
+
+rawAction("is.workflow.actions.output", {
+  "WFOutput": {
+    "Value": {
+      "string": "PREPARATION_FAILED: error",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "b5138bb6-4986-5f07-8c23-4388c431f7a7"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "62919ef4-be81-5cc7-bc8e-a9a49a3ed221",
+  "WFControlFlowMode": 2,
+  "UUID": "0bc807e2-e2b8-5d99-bc35-094f17030c65"
+})
+
+rawAction("is.workflow.actions.getvalueforkey", {
+  "WFGetDictionaryValueType": "Value",
+  "WFDictionaryKey": "scan_id",
+  "WFInput": {
+    "Value": {
+      "OutputUUID": "015a32a7-78cd-592a-9fbf-d5ab0b920d6c",
+      "OutputName": "準備応答の辞書",
+      "Type": "ActionOutput"
+    },
+    "WFSerializationType": "WFTextTokenAttachment"
+  },
+  "UUID": "b56e7649-6977-5f92-9e46-a4a418f7c637"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "57246038-09b7-5d33-9b7a-b24ef193c0b5",
+  "WFControlFlowMode": 0,
+  "WFCondition": 101,
+  "WFInput": {
+    "Type": "Variable",
+    "Variable": {
+      "Value": {
+        "OutputUUID": "b56e7649-6977-5f92-9e46-a4a418f7c637",
+        "OutputName": "scan_id",
+        "Type": "ActionOutput"
+      },
+      "WFSerializationType": "WFTextTokenAttachment"
+    }
+  },
+  "UUID": "c7fa63b1-4092-5ccf-b8ce-6575aa456b29"
+})
+
+rawAction("is.workflow.actions.showresult", {
+  "Text": {
+    "Value": {
+      "string": "準備APIからscan_idを取得できませんでした。端末・タグの設定とAPIの配備状況を確認してください。記録は送信していません。",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "e6d63c55-500e-55d2-ac61-5798cd6dd301"
+})
+
+rawAction("is.workflow.actions.output", {
+  "WFOutput": {
+    "Value": {
+      "string": "PREPARATION_FAILED: scan_id",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "0bf7b556-c2df-54d1-86eb-80d9dfc97d26"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "57246038-09b7-5d33-9b7a-b24ef193c0b5",
+  "WFControlFlowMode": 2,
+  "UUID": "c3586f98-6827-5395-8103-fa71c54dbbf8"
+})
+
+rawAction("is.workflow.actions.getvalueforkey", {
+  "WFGetDictionaryValueType": "Value",
+  "WFDictionaryKey": "occurred_at",
+  "WFInput": {
+    "Value": {
+      "OutputUUID": "015a32a7-78cd-592a-9fbf-d5ab0b920d6c",
+      "OutputName": "準備応答の辞書",
+      "Type": "ActionOutput"
+    },
+    "WFSerializationType": "WFTextTokenAttachment"
+  },
+  "UUID": "150a8ac8-fddc-5f73-938f-3f07f2d3f459"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "5df14be5-8a32-5faa-9c02-f32b713fc567",
+  "WFControlFlowMode": 0,
+  "WFCondition": 101,
+  "WFInput": {
+    "Type": "Variable",
+    "Variable": {
+      "Value": {
+        "OutputUUID": "150a8ac8-fddc-5f73-938f-3f07f2d3f459",
+        "OutputName": "occurred_at",
+        "Type": "ActionOutput"
+      },
+      "WFSerializationType": "WFTextTokenAttachment"
+    }
+  },
+  "UUID": "159adc55-e45a-53fe-a4d2-d252bb12cbac"
+})
+
+rawAction("is.workflow.actions.showresult", {
+  "Text": {
+    "Value": {
+      "string": "準備APIからoccurred_atを取得できませんでした。APIの配備状況を確認してください。記録は送信していません。",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "e42f7ffd-abb7-5a9d-8ca5-69506985aece"
+})
+
+rawAction("is.workflow.actions.output", {
+  "WFOutput": {
+    "Value": {
+      "string": "PREPARATION_FAILED: occurred_at",
+      "attachmentsByRange": {}
+    },
+    "WFSerializationType": "WFTextTokenString"
+  },
+  "UUID": "6d826e09-b0ab-52f9-8ece-b6af6cfd94d4"
+})
+
+rawAction("is.workflow.actions.conditional", {
+  "GroupingIdentifier": "5df14be5-8a32-5faa-9c02-f32b713fc567",
+  "WFControlFlowMode": 2,
+  "UUID": "7e0995fc-799c-5568-8a64-5e5df78723ce"
 })
 
 rawAction("is.workflow.actions.downloadurl", {
@@ -504,7 +676,7 @@ rawAction("is.workflow.actions.downloadurl", {
               "string": "￼",
               "attachmentsByRange": {
                 "{0, 1}": {
-                  "OutputUUID": "015a32a7-78cd-592a-9fbf-d5ab0b920d6c",
+                  "OutputUUID": "b56e7649-6977-5f92-9e46-a4a418f7c637",
                   "OutputName": "scan_id",
                   "Type": "ActionOutput"
                 }
@@ -590,7 +762,7 @@ rawAction("is.workflow.actions.downloadurl", {
               "string": "￼",
               "attachmentsByRange": {
                 "{0, 1}": {
-                  "OutputUUID": "fa7826f2-76aa-59e7-84cd-26ce3811014b",
+                  "OutputUUID": "150a8ac8-fddc-5f73-938f-3f07f2d3f459",
                   "OutputName": "occurred_at",
                   "Type": "ActionOutput"
                 }
@@ -603,7 +775,7 @@ rawAction("is.workflow.actions.downloadurl", {
     },
     "WFSerializationType": "WFDictionaryFieldValue"
   },
-  "UUID": "01fd8616-a00f-5688-a661-bebb2ae6782b"
+  "UUID": "4035c938-bdaa-515a-8d5d-feb24eba4aaa"
 })
 
 rawAction("is.workflow.actions.showresult", {
@@ -612,7 +784,7 @@ rawAction("is.workflow.actions.showresult", {
       "string": "￼",
       "attachmentsByRange": {
         "{0, 1}": {
-          "OutputUUID": "01fd8616-a00f-5688-a661-bebb2ae6782b",
+          "OutputUUID": "4035c938-bdaa-515a-8d5d-feb24eba4aaa",
           "OutputName": "受付結果",
           "Type": "ActionOutput"
         }
@@ -620,5 +792,5 @@ rawAction("is.workflow.actions.showresult", {
     },
     "WFSerializationType": "WFTextTokenString"
   },
-  "UUID": "d5fc9f7a-a579-51b9-89a7-c4af1ba1b7d3"
+  "UUID": "b473e47d-b6ca-5a9a-98e9-2018f435911e"
 })

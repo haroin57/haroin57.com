@@ -1,0 +1,101 @@
+{
+  "status": "PASS",
+  "runtime": "macOS Shortcuts CLI",
+  "backend": "real Worker handlers, isolated SQLite on Mac loopback",
+  "production_changed": false,
+  "macos_version": "26.5.2",
+  "generator_sha256": "ef1c7e0fe848cbacc3b8943d84d285f8ca196489eb73bb0194c5b4815cbe8f20",
+  "results": [
+    {
+      "name": "wake",
+      "status": "PASS",
+      "exit_code": 0,
+      "phase": "MORNING",
+      "revision": 1
+    },
+    {
+      "name": "departure",
+      "status": "PASS",
+      "exit_code": 0,
+      "phase": "TRANSIT",
+      "revision": 2
+    },
+    {
+      "name": "lab-arrival",
+      "status": "PASS",
+      "exit_code": 0,
+      "phase": "RESEARCH",
+      "revision": 3
+    },
+    {
+      "name": "habit-public-log",
+      "status": "PASS",
+      "exit_code": 0,
+      "phase": "RESEARCH",
+      "revision": 3
+    },
+    {
+      "name": "control",
+      "status": "PASS",
+      "exit_code": 0,
+      "phase": "RESEARCH",
+      "revision": 3
+    },
+    {
+      "name": "focus",
+      "status": "PASS",
+      "exit_code": 0,
+      "phase": "RESEARCH",
+      "revision": 3
+    }
+  ],
+  "configuration_guards": [
+    {
+      "field": "device_id",
+      "kind": "blank",
+      "status": "PASS",
+      "network_post_sent": false
+    },
+    {
+      "field": "tag_id",
+      "kind": "blank",
+      "status": "PASS",
+      "network_post_sent": false
+    },
+    {
+      "field": "token",
+      "kind": "blank",
+      "status": "PASS",
+      "network_post_sent": false
+    },
+    {
+      "field": "token",
+      "kind": "placeholder",
+      "status": "PASS",
+      "network_post_sent": false
+    }
+  ],
+  "preparation_failures": [
+    {
+      "case": "device_id",
+      "status": "PASS",
+      "scan_sent": false,
+      "original_error_shown": true
+    },
+    {
+      "case": "tag_id",
+      "status": "PASS",
+      "scan_sent": false,
+      "original_error_shown": true
+    },
+    {
+      "case": "endpoint",
+      "status": "PASS",
+      "scan_sent": false,
+      "original_error_shown": true
+    }
+  ],
+  "final_revision": 3,
+  "final_phase": "RESEARCH",
+  "accepted_scans": 3
+}

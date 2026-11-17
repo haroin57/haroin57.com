@@ -14,6 +14,7 @@ spec=importlib.util.spec_from_file_location('shortcut_builder',ROOT/'scripts/gen
 builder=importlib.util.module_from_spec(spec); spec.loader.exec_module(builder)
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('directory',type=Path)
+parser.add_argument('--configured',action='store_true',help='Test runtime response handling with preconfigured fixture values, without native import questions.')
 args=parser.parse_args()
 config=json.loads((args.directory/'config.json').read_text())
 origin=config['origin']
@@ -32,6 +33,9 @@ manifest={}
 for name,workflow in workflows.items():
     workflow=replace(workflow)
     workflow['WFWorkflowName']='BECS-E2E-'+name+'-setup3'
+    if args.configured:
+        workflow['WFWorkflowImportQuestions']=[]
+        workflow['WFWorkflowName']+='-configured'
     # Force the native import questions to populate the values; prefilled actions would hide setup bugs.
     for question in workflow.get('WFWorkflowImportQuestions', []):
         workflow['WFWorkflowActions'][question['ActionIndex']]['WFWorkflowActionParameters']['WFTextActionText']=''
@@ -52,6 +56,26 @@ for index,field in enumerate(['device_id','tag_id','token']):
         file=out/('BECS-E2E-unset-'+field+'-'+hashlib.sha256(data).hexdigest()[:8]+'.shortcut')
         file.write_bytes(data); file.chmod(0o600)
         guards.append({'field':field,'kind':'blank' if not value else 'placeholder','file':file.name})
+preparation_cases=[]
+for field,value,message in [
+    ('device_id','e2e-wrong-device','登録したiPhoneの資格情報とIDが必要です。'),
+    ('tag_id','nfc_e2e-unregistered','有効なタグとShortcuts紐付けが必要です。'),
+    ('endpoint',None,'資格情報のスコープ外です。'),
+]:
+    workflow=replace(copy.deepcopy(workflows['wake']))
+    questions=workflow.pop('WFWorkflowImportQuestions')
+    if field=='endpoint':
+        request=next(a for a in workflow['WFWorkflowActions'] if a['WFWorkflowActionIdentifier'].endswith('.downloadurl'))
+        request['WFWorkflowActionParameters']['WFURL']=origin+'/api/v1/nfc/unsupported-prepare'
+    else:
+        question=questions[0 if field=='device_id' else 1]
+        workflow['WFWorkflowActions'][question['ActionIndex']]['WFWorkflowActionParameters']['WFTextActionText']=value
+    workflow['WFWorkflowName']='BECS-E2E-prepare-failure-'+field
+    data=plistlib.dumps(workflow,fmt=plistlib.FMT_BINARY,sort_keys=False)
+    file=out/('BECS-E2E-prepare-failure-'+field+'-'+hashlib.sha256(data).hexdigest()[:8]+'.shortcut')
+    file.write_bytes(data); file.chmod(0o600)
+    preparation_cases.append({'case':field,'file':file.name,'expected_message':message})
+(args.directory/'preparation-failures.json').write_text(json.dumps(preparation_cases,ensure_ascii=False,indent=2)+'\n')
 (args.directory/'guard-workflows.json').write_text(json.dumps(guards,indent=2)+'\n')
 (args.directory/'workflows.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print('Created six private localhost E2E workflows from the production generator.')

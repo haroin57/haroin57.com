@@ -20,6 +20,6 @@ for _ in range(100):
     time.sleep(.1)
 else: raise SystemExit('Fixture did not start. Inspect server.log in the run directory.')
 PY
-python3 "$root/scripts/shortcuts-e2e/generate.py" "$run_directory"
+python3 "$root/scripts/shortcuts-e2e/generate.py" "$run_directory" "${@:2}"
 python3 -u "$root/scripts/shortcuts-e2e/run-mac.py" "$run_directory"
 printf 'E2E report: %s/report.json\n' "$run_directory"

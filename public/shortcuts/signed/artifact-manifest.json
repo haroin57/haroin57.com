@@ -9,9 +9,9 @@
   },
   {
     "file": "departure.shortcut",
-    "bytes": 25604,
-    "sha256": "8c6cf8339b5d5b89825690b508e42518d1fe54ec713aee9a47af87754eddfc4b",
-    "source_sha256": "4aef30a70a75b37d0fcd38c79c7497ea70543ba9b2d87c208571adda85e0f8d9",
+    "bytes": 26838,
+    "sha256": "7765d9ee013b29bd43b5e60f7e89ccfc3aceba3615cb1962381beb8ff92f60fe",
+    "source_sha256": "40b1364013507ead27c15abaf8d71ba75c38dd124db1cf0238aab58b6cc8ab41",
     "signing_mode": "anyone",
     "signer": "Apple shortcuts CLI"
   },
@@ -33,17 +33,17 @@
   },
   {
     "file": "lab-arrival.shortcut",
-    "bytes": 25605,
-    "sha256": "cc5fb1fc2d57e3bef076e845313402140859e98c9503710aba1f7091fc46babe",
-    "source_sha256": "a9b16a684644f955d6527bf4eed082cad8560f00de530f5a29503dc1f58aff4d",
+    "bytes": 26839,
+    "sha256": "c40996f8659a0801f03e5e58096d3bf800c81803c30fe361ab4348fa282ff547",
+    "source_sha256": "1c972006e393ce4f04b1907d7fe100f8ec5097f36ae961900265f9a9bbe4a164",
     "signing_mode": "anyone",
     "signer": "Apple shortcuts CLI"
   },
   {
     "file": "wake.shortcut",
-    "bytes": 25621,
-    "sha256": "9e64a5a77e36b8f50d9f671cad7ce7601a999fd8b8eefff46c260ae2d4d08074",
-    "source_sha256": "e4b1a4e07aa326cae8820266001b17583db113575c21d465055f9968261cad15",
+    "bytes": 26840,
+    "sha256": "2cd762c10213bc46ae8de9579ee4a6e844f9a0358e0071e8fa746a63689fc3b9",
+    "source_sha256": "f48eed953f79e3b87656f82a39e82ce41004f50a272970ea1af8e5312c0bbed9",
     "signing_mode": "anyone",
     "signer": "Apple shortcuts CLI"
   }

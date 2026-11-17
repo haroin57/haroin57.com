@@ -175,13 +175,27 @@ def main():
         assert any('初期設定が必要です。' in dialog and prompt in dialog for dialog in result['dialogs']),result
         guard_results.append({'field':case['field'],'kind':case['kind'],'status':'PASS','network_post_sent':False})
         print('PASS: missing configuration prevented POST:',case['field'],case['kind'],flush=True)
+    preparation_results=[]
+    for case in json.loads((root/'preparation-failures.json').read_text()):
+        source=root/'unsigned'/case['file']; target=signed/source.name
+        if not target.exists(): sign(source,target)
+        before=read_state(origin)
+        name=import_workflow(target)
+        result=execute(name,root)
+        after=read_state(origin)
+        assert after['state']['revision']==before['state']['revision']==3
+        assert len(after['scans'])==len(before['scans'])==3
+        assert len([r for r in after['requests'] if r['path']=='/api/v1/nfc/scans'])==len([r for r in before['requests'] if r['path']=='/api/v1/nfc/scans'])
+        assert any('準備APIで失敗しました:' in dialog and case['expected_message'] in dialog for dialog in result['dialogs']),result
+        preparation_results.append({'case':case['case'],'status':'PASS','scan_sent':False,'original_error_shown':True})
+        print('PASS: preparation failure preserved; no scan sent:',case['case'],flush=True)
     state=read_state(origin)
     scans=[item for item in state['requests'] if item['path']=='/api/v1/nfc/scans']
     assert len(scans)==3,state
     assert len({item['body']['scan_id'] for item in scans})==3
-    report={'status':'PASS','runtime':'macOS Shortcuts CLI','backend':'real Worker handlers, isolated SQLite on Mac loopback','production_changed':False,'macos_version':platform.mac_ver()[0],'generator_sha256':hashlib.sha256((Path(__file__).resolve().parents[1]/'gen-shortcuts.py').read_bytes()).hexdigest(),'results':results,'configuration_guards':guard_results,'final_revision':state['state']['revision'],'final_phase':state['state']['routinePhase'],'accepted_scans':len(state['scans'])}
+    report={'status':'PASS','runtime':'macOS Shortcuts CLI','backend':'real Worker handlers, isolated SQLite on Mac loopback','production_changed':False,'macos_version':platform.mac_ver()[0],'generator_sha256':hashlib.sha256((Path(__file__).resolve().parents[1]/'gen-shortcuts.py').read_bytes()).hexdigest(),'results':results,'configuration_guards':guard_results,'preparation_failures':preparation_results,'final_revision':state['state']['revision'],'final_phase':state['state']['routinePhase'],'accepted_scans':len(state['scans'])}
     (root/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
-    print('PASS: all six real Shortcuts workflows and four configuration guards; final revision 3 / RESEARCH; production untouched.',flush=True)
+    print('PASS: all six real Shortcuts workflows and four configuration guards and three preparation failures; final revision 3 / RESEARCH; production untouched.',flush=True)
 
 if __name__=='__main__':
     try: main()

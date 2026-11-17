@@ -831,11 +831,9 @@
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.getvalueforkey</string>
+			<string>is.workflow.actions.detect.dictionary</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFDictionaryKey</key>
-				<string>scan_id</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -859,16 +857,18 @@
 			<string>is.workflow.actions.getvalueforkey</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
+				<key>WFGetDictionaryValueType</key>
+				<string>Value</string>
 				<key>WFDictionaryKey</key>
-				<string>occurred_at</string>
+				<string>error</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>4a86608e-f239-5685-b02c-96af2869cd51</string>
+						<string>96706868-ed71-507d-a31f-4089ac75e7bd</string>
 						<key>OutputName</key>
-						<string>準備応答</string>
+						<string>準備応答の辞書</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
 					</dict>
@@ -877,6 +877,337 @@
 				</dict>
 				<key>UUID</key>
 				<string>f03d8089-24e0-5d07-84a1-86558a39718a</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>bfaa0257-0d73-50d1-bb21-bd60917a886e</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>100</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>OutputUUID</key>
+							<string>f03d8089-24e0-5d07-84a1-86558a39718a</string>
+							<key>OutputName</key>
+							<string>error</string>
+							<key>Type</key>
+							<string>ActionOutput</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>UUID</key>
+				<string>cad4c857-e098-531e-bfc3-ab36ce8b10ba</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.showresult</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>Text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>準備APIで失敗しました: ￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{14, 1}</key>
+							<dict>
+								<key>OutputUUID</key>
+								<string>f03d8089-24e0-5d07-84a1-86558a39718a</string>
+								<key>OutputName</key>
+								<string>準備APIのエラー</string>
+								<key>Type</key>
+								<string>ActionOutput</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>6b241982-269a-599c-8208-7c057debab0c</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.output</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFOutput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>PREPARATION_FAILED: error</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>0d757f3f-84eb-5097-9303-e9b3b13f7015</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>bfaa0257-0d73-50d1-bb21-bd60917a886e</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>UUID</key>
+				<string>1d054d79-7996-508e-ab7b-f3e1d3ba8188</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFGetDictionaryValueType</key>
+				<string>Value</string>
+				<key>WFDictionaryKey</key>
+				<string>scan_id</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>96706868-ed71-507d-a31f-4089ac75e7bd</string>
+						<key>OutputName</key>
+						<string>準備応答の辞書</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>UUID</key>
+				<string>bd6eea2f-dc6b-598a-9718-b426ccc548e0</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>676e7d0b-7123-5a19-a641-bfa044b5c6b2</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>101</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>OutputUUID</key>
+							<string>bd6eea2f-dc6b-598a-9718-b426ccc548e0</string>
+							<key>OutputName</key>
+							<string>scan_id</string>
+							<key>Type</key>
+							<string>ActionOutput</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>UUID</key>
+				<string>fcdf28d7-59ac-5d5a-8822-cf8c09706fdb</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.showresult</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>Text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>準備APIからscan_idを取得できませんでした。端末・タグの設定とAPIの配備状況を確認してください。記録は送信していません。</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>718dbebe-b1b4-5f60-afe4-a69ac5689353</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.output</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFOutput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>PREPARATION_FAILED: scan_id</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>51fbcc0f-9ca4-5b83-b6dc-a887c9247243</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>676e7d0b-7123-5a19-a641-bfa044b5c6b2</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>UUID</key>
+				<string>c0a1378b-e7a8-54d3-9e0f-393bcf2f82a5</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFGetDictionaryValueType</key>
+				<string>Value</string>
+				<key>WFDictionaryKey</key>
+				<string>occurred_at</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>96706868-ed71-507d-a31f-4089ac75e7bd</string>
+						<key>OutputName</key>
+						<string>準備応答の辞書</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>UUID</key>
+				<string>d9ba4588-b8e1-553a-890a-21f71bc89f43</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>b53210ed-327d-5a07-b833-646656096eee</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>101</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>OutputUUID</key>
+							<string>d9ba4588-b8e1-553a-890a-21f71bc89f43</string>
+							<key>OutputName</key>
+							<string>occurred_at</string>
+							<key>Type</key>
+							<string>ActionOutput</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>UUID</key>
+				<string>5987d186-9c96-558d-8758-3bc9d3f8732f</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.showresult</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>Text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>準備APIからoccurred_atを取得できませんでした。APIの配備状況を確認してください。記録は送信していません。</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>9a13358c-4f18-58de-a423-f4429227e128</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.output</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFOutput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>PREPARATION_FAILED: occurred_at</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>UUID</key>
+				<string>05973a39-3ca7-5600-8850-1ad231b4f5df</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>b53210ed-327d-5a07-b833-646656096eee</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+				<key>UUID</key>
+				<string>896aa8a5-3cc4-506b-9d0a-17c0acbe3322</string>
 			</dict>
 		</dict>
 		<dict>
@@ -999,7 +1330,7 @@
 											<key>{0, 1}</key>
 											<dict>
 												<key>OutputUUID</key>
-												<string>96706868-ed71-507d-a31f-4089ac75e7bd</string>
+												<string>bd6eea2f-dc6b-598a-9718-b426ccc548e0</string>
 												<key>OutputName</key>
 												<string>scan_id</string>
 												<key>Type</key>
@@ -1141,7 +1472,7 @@
 											<key>{0, 1}</key>
 											<dict>
 												<key>OutputUUID</key>
-												<string>f03d8089-24e0-5d07-84a1-86558a39718a</string>
+												<string>d9ba4588-b8e1-553a-890a-21f71bc89f43</string>
 												<key>OutputName</key>
 												<string>occurred_at</string>
 												<key>Type</key>
@@ -1159,7 +1490,7 @@
 					<string>WFDictionaryFieldValue</string>
 				</dict>
 				<key>UUID</key>
-				<string>cad4c857-e098-531e-bfc3-ab36ce8b10ba</string>
+				<string>66253ef1-a2bf-5466-b117-f954816dade4</string>
 			</dict>
 		</dict>
 		<dict>
@@ -1178,7 +1509,7 @@
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>cad4c857-e098-531e-bfc3-ab36ce8b10ba</string>
+								<string>66253ef1-a2bf-5466-b117-f954816dade4</string>
 								<key>OutputName</key>
 								<string>受付結果</string>
 								<key>Type</key>
@@ -1190,7 +1521,7 @@
 					<string>WFTextTokenString</string>
 				</dict>
 				<key>UUID</key>
-				<string>6b241982-269a-599c-8208-7c057debab0c</string>
+				<string>a37e0630-6f13-514a-8b1a-d5834fc870eb</string>
 			</dict>
 		</dict>
 	</array>
